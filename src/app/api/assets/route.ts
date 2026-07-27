@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const bucket = url.searchParams.get("bucket");
   const path = url.searchParams.get("path");
-  if (!bucket || !path || !buckets.has(bucket) || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp)$/i.test(path)) return new NextResponse(null, { status: 400 });
+  if (!bucket || !path || !buckets.has(bucket) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp)$/i.test(path)) return new NextResponse(null, { status: 400 });
   const admin = getAdminClient();
   const user = await getCurrentUser();
   const allowed = await canReadAsset(admin, bucket, path, user);
@@ -28,6 +28,17 @@ async function canReadAsset(
 ) {
   if (user?.role === "admin") return true;
   if (bucket === "avatars") return Boolean(user && path.startsWith(`${user.id}/`));
+  if (user?.role === "merchant") {
+    const shopId = path.split("/", 1)[0];
+    const { data: ownedShop } = await admin
+      .from("shops")
+      .select("id")
+      .eq("id", shopId)
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (ownedShop) return true;
+  }
   if (bucket === "shop-assets") {
     const { data: shop } = await admin.from("shops").select("id, owner_id, status, subscription_status, subscription_ends_at").or(`logo_path.eq.${path},cover_path.eq.${path}`).is("deleted_at", null).maybeSingle();
     if (!shop) return false;

@@ -5,11 +5,34 @@ import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function requireSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin === "null") return true;
+  if (!origin) return true;
+  if (origin === "null") return false;
   try {
+    const originUrl = new URL(origin);
+    const requestUrl = new URL(request.url);
+    const headerHost = request.headers.get("host")?.toLowerCase();
+    const forwardedHost = request.headers
+      .get("x-forwarded-host")
+      ?.split(",")[0]
+      .trim()
+      .toLowerCase();
+    const forwardedProtocol = request.headers
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      .trim()
+      .toLowerCase();
+    const publicProtocol =
+      forwardedProtocol === "http" || forwardedProtocol === "https"
+        ? `${forwardedProtocol}:`
+        : requestUrl.protocol;
+    const publicHost = forwardedHost ?? headerHost;
+    const publicOrigin = publicHost
+      ? `${publicProtocol}//${publicHost}`
+      : null;
     return (
-      new URL(origin).host === new URL(getSiteUrl()).host ||
-      new URL(origin).host === new URL(request.url).host
+      originUrl.origin === new URL(getSiteUrl()).origin ||
+      originUrl.origin === requestUrl.origin ||
+      originUrl.origin === publicOrigin
     );
   } catch {
     return false;
@@ -19,7 +42,11 @@ export async function requireSameOrigin(request: Request) {
 export async function getEventIdentity(userId?: string | null) {
   const store = await cookies();
   const existing = store.get("ft_session")?.value;
-  const valid = existing && /^[0-9a-f-]{36}$/i.test(existing) ? existing : null;
+  const valid =
+    existing &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(existing)
+      ? existing
+      : null;
   return { userId: userId ?? null, sessionId: valid ?? randomUUID(), isNewSession: !valid };
 }
 

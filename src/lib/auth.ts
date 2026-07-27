@@ -10,6 +10,17 @@ export interface CurrentUser {
   displayName: string | null;
 }
 
+export function isConfiguredAdmin(
+  profileRole: string | null | undefined,
+  email: string | null | undefined,
+) {
+  return (
+    profileRole === "admin" &&
+    Boolean(email) &&
+    getAdminEmails().has(email!.toLowerCase())
+  );
+}
+
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
@@ -24,10 +35,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!profile) return null;
 
   const email = user.email ?? null;
-  const role =
-    email && getAdminEmails().has(email.toLowerCase())
-      ? "admin"
-      : (profile.role as UserRole);
+  if (profile.role === "admin" && !isConfiguredAdmin(profile.role, email)) {
+    return null;
+  }
+  const role = profile.role as UserRole;
 
   return {
     id: user.id,

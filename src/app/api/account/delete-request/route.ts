@@ -19,5 +19,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "ส่งคำขอไม่สำเร็จ" }, { status: 400 });
   }
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/?account-deletion=requested", request.url), 303);
+  const redirectTo = "/?account-deletion=requested";
+  if (request.headers.get("accept")?.includes("application/json")) {
+    return NextResponse.json({ redirectTo });
+  }
+  return NextResponse.redirect(new URL(redirectTo, request.url), 303);
 }

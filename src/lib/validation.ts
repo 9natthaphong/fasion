@@ -7,6 +7,14 @@ const password = z
   .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
   .max(128, "รหัสผ่านยาวเกินไป");
 
+const storageObjectName =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/i;
+
+export function isOwnedAdAssetPath(path: string, shopId: string) {
+  const prefix = `${shopId}/`;
+  return path.startsWith(prefix) && storageObjectName.test(path.slice(prefix.length));
+}
+
 export const loginSchema = z.object({ email, password });
 export const registerSchema = loginSchema.extend({
   displayName: z.string().trim().min(2, "กรุณาใส่ชื่ออย่างน้อย 2 ตัวอักษร").max(100),
@@ -45,13 +53,14 @@ export const shopSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "ใช้ a-z, 0-9 และขีดกลางเท่านั้น"),
   description: z.string().trim().max(1500),
   shopeeUrl: shopeeUrlSchema.optional().or(z.literal("")),
-  instagramUrl: z
-    .string()
-    .trim()
-    .url("ลิงก์ Instagram ไม่ถูกต้อง")
-    .refine((value) => new URL(value).protocol === "https:", "ต้องใช้ HTTPS")
-    .optional()
-    .or(z.literal("")),
+  instagramUrl: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .url("ลิงก์ Instagram ไม่ถูกต้อง")
+      .refine((value) => new URL(value).protocol === "https:", "ต้องใช้ HTTPS"),
+  ]).optional(),
 });
 
 export const adSchema = z
@@ -91,7 +100,46 @@ export const adSchema = z
   .refine(
     (data) => !data.startsAt || !data.endsAt || new Date(data.endsAt) > new Date(data.startsAt),
     { path: ["endsAt"], message: "วันสิ้นสุดต้องอยู่หลังวันเริ่ม" },
-  );
+  )
+  .superRefine((data, context) => {
+    if (
+      data.coverImagePath &&
+      !isOwnedAdAssetPath(data.coverImagePath, data.shopId)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["coverImagePath"],
+        message: "รูปหน้าปกต้องเป็นไฟล์ที่อัปโหลดให้ร้านนี้",
+      });
+    }
+    const seenPaths = new Set<string>();
+    const seenOrders = new Set<number>();
+    data.images.forEach((image, index) => {
+      if (!isOwnedAdAssetPath(image.storagePath, data.shopId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["images", index, "storagePath"],
+          message: "รูปโฆษณาต้องเป็นไฟล์ที่อัปโหลดให้ร้านนี้",
+        });
+      }
+      if (seenPaths.has(image.storagePath)) {
+        context.addIssue({
+          code: "custom",
+          path: ["images", index, "storagePath"],
+          message: "ไม่สามารถใช้รูปเดิมซ้ำในโฆษณาเดียวกัน",
+        });
+      }
+      if (seenOrders.has(image.sortOrder)) {
+        context.addIssue({
+          code: "custom",
+          path: ["images", index, "sortOrder"],
+          message: "ลำดับรูปต้องไม่ซ้ำกัน",
+        });
+      }
+      seenPaths.add(image.storagePath);
+      seenOrders.add(image.sortOrder);
+    });
+  });
 
 export const impressionSchema = z.object({
   adId: z.string().uuid(),

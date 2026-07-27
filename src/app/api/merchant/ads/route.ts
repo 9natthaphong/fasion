@@ -15,10 +15,30 @@ export async function POST(request: Request) {
   if (!shop) return NextResponse.json({ error: "ไม่พบร้านหรือคุณไม่มีสิทธิ์" }, { status: 403 });
   if (parsed.data.intent === "submit" && !canSubmit(shop)) return NextResponse.json({ error: "ร้านต้องได้รับอนุมัติและ subscription ต้อง active ก่อนส่งตรวจ" }, { status: 409 });
   if (parsed.data.intent === "submit" && !parsed.data.coverImagePath) return NextResponse.json({ error: "กรุณาอัปโหลดรูปหน้าปกก่อนส่งตรวจ" }, { status: 400 });
-  const { data: ad, error } = await supabase.from("ads").insert(toAdRow(parsed.data)).select("id").single();
+  const { data: ad, error } = await supabase
+    .from("ads")
+    .insert(toAdInsertRow(parsed.data))
+    .select("id")
+    .single();
   if (error) return NextResponse.json({ error: error.code === "23505" ? "Slug โฆษณานี้ถูกใช้ในร้านแล้ว" : "สร้างโฆษณาไม่สำเร็จ" }, { status: 400 });
   const relationError = await replaceRelations(supabase, ad.id, parsed.data.categoryIds, parsed.data.images);
-  if (relationError) return NextResponse.json({ error: "สร้างโฆษณาแล้ว แต่บันทึกหมวดหมู่หรือรูปไม่ครบ กรุณาเปิดแก้ไขอีกครั้ง" }, { status: 500 });
+  if (relationError) {
+    await supabase.from("ads").delete().eq("id", ad.id).eq("status", "draft");
+    return NextResponse.json({ error: "บันทึกหมวดหมู่หรือรูปไม่สำเร็จ โฆษณายังไม่ถูกสร้าง" }, { status: 500 });
+  }
+  if (parsed.data.intent === "submit") {
+    const { error: submitError } = await supabase
+      .from("ads")
+      .update({ status: "pending_review" })
+      .eq("id", ad.id)
+      .eq("status", "draft");
+    if (submitError) {
+      return NextResponse.json(
+        { error: "บันทึกดราฟต์แล้ว แต่ส่งตรวจไม่สำเร็จ กรุณาเปิดดราฟต์แล้วลองใหม่" },
+        { status: 409 },
+      );
+    }
+  }
   return NextResponse.json({ id: ad.id });
 }
 
@@ -26,9 +46,8 @@ export function canSubmit(shop: { status: string; subscription_status: string; s
   return shop.status === "approved" && shop.subscription_status === "active" && (!shop.subscription_ends_at || new Date(shop.subscription_ends_at) > new Date());
 }
 
-export function toAdRow(data: ReturnType<typeof adSchema.parse>) {
+export function toAdUpdateRow(data: ReturnType<typeof adSchema.parse>) {
   return {
-    shop_id: data.shopId,
     title: data.title,
     slug: data.slug,
     description: data.description,
@@ -38,7 +57,14 @@ export function toAdRow(data: ReturnType<typeof adSchema.parse>) {
     cover_image_path: data.coverImagePath,
     starts_at: data.startsAt,
     ends_at: data.endsAt,
-    status: data.intent === "submit" ? "pending_review" : "draft",
+    status: "draft",
+  };
+}
+
+export function toAdInsertRow(data: ReturnType<typeof adSchema.parse>) {
+  return {
+    shop_id: data.shopId,
+    ...toAdUpdateRow(data),
   };
 }
 

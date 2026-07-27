@@ -1,4 +1,5 @@
 import { requirePageRole } from "@/lib/auth";
+import { AccountDeletionForm } from "@/components/account-deletion-form";
 
 export default async function AccountSettingsPage() {
   const user = await requirePageRole(["customer"], "/login/customer");
@@ -15,17 +16,8 @@ export default async function AccountSettingsPage() {
           การลบบัญชีจะลบโปรไฟล์ ความชอบ ประวัติคำแนะนำ และรายการถูกใจ
           ขั้นตอนนี้ไม่สามารถย้อนกลับได้
         </p>
-        <form action="/api/account/delete-request" method="post">
-          <label>
-            พิมพ์ DELETE เพื่อยืนยัน
-            <input name="confirmation" pattern="DELETE" required />
-          </label>
-          <button type="submit" className="button button-danger">
-            ส่งคำขอลบบัญชี
-          </button>
-        </form>
+        <AccountDeletionForm />
       </section>
     </>
   );
 }
-

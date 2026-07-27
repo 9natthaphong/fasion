@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { loginSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
+import { isConfiguredAdmin } from "@/lib/auth";
 
 export async function POST(request: Request) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
@@ -26,7 +27,14 @@ export async function POST(request: Request) {
     .select("role")
     .eq("id", data.user.id)
     .single();
-  if (requestedRole && profile?.role !== requestedRole) {
+  const adminLogin =
+    requestedRole === "customer" &&
+    isConfiguredAdmin(profile?.role, data.user.email);
+  if (
+    requestedRole &&
+    profile?.role !== requestedRole &&
+    !adminLogin
+  ) {
     await supabase.auth.signOut();
     return NextResponse.json(
       { error: `บัญชีนี้เป็นประเภท ${profile?.role ?? "อื่น"} กรุณาใช้หน้าเข้าสู่ระบบที่ถูกต้อง` },
@@ -34,6 +42,10 @@ export async function POST(request: Request) {
     );
   }
   return NextResponse.json({
-    redirectTo: profile?.role === "merchant" ? "/merchant" : "/account",
+    redirectTo: adminLogin
+      ? "/admin"
+      : profile?.role === "merchant"
+        ? "/merchant"
+        : "/account",
   });
 }

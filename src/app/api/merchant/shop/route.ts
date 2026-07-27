@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -19,10 +20,16 @@ export async function POST(request: Request) {
     shopee_url: parsed.data.shopeeUrl || null,
     instagram_url: parsed.data.instagramUrl || null,
   };
-  const query = existing
-    ? supabase.from("shops").update(values).eq("id", existing.id).select("id").single()
-    : supabase.from("shops").insert({ ...values, owner_id: auth.user.id, status: "pending", subscription_status: "inactive" }).select("id").single();
-  const { data, error } = await query;
+  const shopId = existing?.id ?? randomUUID();
+  const { error } = existing
+    ? await supabase.from("shops").update(values).eq("id", shopId)
+    : await supabase.from("shops").insert({
+        id: shopId,
+        ...values,
+        owner_id: auth.user.id,
+        status: "pending",
+        subscription_status: "inactive",
+      });
   if (error) return NextResponse.json({ error: error.code === "23505" ? "Slug ร้านนี้ถูกใช้แล้ว" : "บันทึกร้านไม่สำเร็จ" }, { status: 400 });
-  return NextResponse.json({ shopId: data.id });
+  return NextResponse.json({ shopId });
 }

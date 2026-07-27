@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ChangeEvent } from "react";
 
@@ -76,13 +77,15 @@ export function AdEditor({
         setMessage(result.error ?? "อัปโหลดไม่สำเร็จ");
         continue;
       }
-      const next = {
-        storage_path: result.path,
-        alt_text: file.name.replace(/\.[^.]+$/, ""),
-        sort_order: uploaded.length,
-      };
-      setUploaded((current) => [...current, next]);
-      if (!coverPath) setCoverPath(result.path);
+      setUploaded((current) => [
+        ...current,
+        {
+          storage_path: result.path!,
+          alt_text: file.name.replace(/\.[^.]+$/, ""),
+          sort_order: current.length,
+        },
+      ]);
+      setCoverPath((current) => current || result.path!);
     }
     event.target.value = "";
   }
@@ -189,16 +192,38 @@ export function AdEditor({
         <div className="upload-grid">
           {uploaded.map((item, index) => (
             <div className="upload-item" key={item.storage_path}>
-              <Image src={`/api/assets?bucket=ad-assets&path=${encodeURIComponent(item.storage_path)}`} alt={item.alt_text} width={180} height={220} />
+              <Image
+                src={`/api/assets?bucket=ad-assets&path=${encodeURIComponent(item.storage_path)}`}
+                alt={item.alt_text}
+                width={180}
+                height={220}
+                unoptimized
+              />
               <input
                 aria-label={`Alt text รูป ${index + 1}`}
                 value={item.alt_text}
                 onChange={(event) => setUploaded((current) => current.map((image, imageIndex) => imageIndex === index ? { ...image, alt_text: event.target.value } : image))}
               />
               <div className="inline-actions">
-                <button type="button" disabled={index === 0} onClick={() => setUploaded((current) => move(current, index, index - 1))}>←</button>
-                <button type="button" disabled={index === uploaded.length - 1} onClick={() => setUploaded((current) => move(current, index, index + 1))}>→</button>
-                <button type="button" onClick={() => removeImage(index)}>ลบ</button>
+                <button
+                  type="button"
+                  aria-label={`เลื่อนรูป ${index + 1} ไปซ้าย`}
+                  disabled={index === 0}
+                  onClick={() => setUploaded((current) => move(current, index, index - 1))}
+                >
+                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`เลื่อนรูป ${index + 1} ไปขวา`}
+                  disabled={index === uploaded.length - 1}
+                  onClick={() => setUploaded((current) => move(current, index, index + 1))}
+                >
+                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button type="button" aria-label={`ลบรูป ${index + 1}`} onClick={() => removeImage(index)}>
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                </button>
               </div>
               <label><input type="radio" checked={coverPath === item.storage_path} onChange={() => setCoverPath(item.storage_path)} /> รูปหน้าปก</label>
             </div>
