@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, CheckCircle2, ArrowUpRight } from "lucide-react";
+import { ArrowRight, ShieldCheck, CheckCircle2, ArrowUpRight, Sparkles } from "lucide-react";
 import { AdCard } from "@/components/ad-card";
 import { ShopCard } from "@/components/shop-card";
 import { Eyebrow, SectionHeading } from "@/components/ui";
@@ -13,105 +13,131 @@ export default async function HomePage() {
     getPublicShops(4),
   ]);
 
+  const directions = [
+    {
+      code: "01",
+      tag: "SAFE",
+      title: "เรียบง่าย ใส่ง่าย",
+      desc: "เพลย์เซฟสำหรับทุกวันด้วยโทนสีนิวทรัลและโครงเสื้อที่ใส่สบาย",
+      image: "/demo-assets/ad-linen-shirt.jpg",
+      caption: "01 · Everyday Neutral Linen",
+    },
+    {
+      code: "02",
+      tag: "ELEVATED",
+      title: "แต่งขึ้นอีกระดับ",
+      desc: "เพิ่มความเนี้ยบด้วยคัตติ้งคม โครงชุดชัด และการจับคู่สีมีระดับ",
+      image: "/demo-assets/ad-tailored-set.jpg",
+      caption: "02 · Structured Tailoring",
+    },
+    {
+      code: "03",
+      tag: "COMFORTABLE",
+      title: "สบายและคล่องตัว",
+      desc: "เน้นเนื้อผ้าระบายอากาศ ทรงหลวมสบาย คล่องตัวตลอดวัน",
+      image: "/demo-assets/hero-lookbook-2.jpg",
+      caption: "03 · Fluid & Relaxed Fit",
+    },
+  ];
+
   return (
     <>
-      {/* 2. Editorial Fashion Hero */}
-      <section className="pt-8 pb-16 border-b border-line bg-background">
-        <div className="container grid lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 text-xs tracking-widest text-muted uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-olive"></span>
-              <span>AI Fashion Assistant — FitToday</span>
+      {/* 2. Signature 3-Direction Hero */}
+      <section className="pt-10 pb-20 border-b border-line bg-background">
+        <div className="container space-y-12">
+          {/* Hero Header */}
+          <div className="max-w-3xl space-y-4">
+            <div className="inline-flex items-center gap-2 text-xs tracking-widest text-muted uppercase font-mono">
+              <span className="w-2 h-2 rounded-full bg-olive"></span>
+              <span>FitToday Lookbook Editorial</span>
             </div>
             
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal leading-[1.1] text-charcoal">
+            <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal leading-[1.05] text-charcoal">
               วันนี้จะไปไหน?
             </h1>
             
-            <p className="text-base sm:text-lg text-muted max-w-xl leading-relaxed">
-              ให้ AI ช่วยคิดชุดที่เหมาะกับกิจกรรม อากาศ และสไตล์ของคุณ
-              เลือกทิศทางที่ลงตัวที่สุด พร้อมแยกคำแนะนำที่เป็นกลางออกจากโฆษณาของร้านค้าอย่างชัดเจน
+            <p className="text-lg sm:text-xl text-muted leading-relaxed">
+              ทำให้แต่ละวันแต่งตัวง่ายขึ้น บอกกิจกรรม อากาศ และสไตล์ที่ชอบ แล้วรับไอเดียชุด 3 ทิศทางจาก AI Stylist
             </p>
 
-            <div className="pt-2 flex flex-wrap gap-3">
-              <Link href="/ai-stylist" className="px-6 py-3.5 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors flex items-center gap-2">
-                <span>เริ่มเลือกชุดสำหรับวันนี้</span>
+            <div className="pt-2 flex flex-wrap items-center gap-4">
+              <Link href="/ai-stylist" className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2">
+                <span>เริ่มเลือกชุด</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/discover" className="px-6 py-3.5 border border-line text-charcoal hover:bg-paper font-medium text-sm rounded-none transition-colors flex items-center gap-1.5">
-                <span>ดูคอลเลกชันจากร้านค้า</span>
+              <Link href="/discover" className="px-6 py-4 border border-line text-charcoal hover:bg-paper font-medium text-sm rounded-none transition-colors inline-flex items-center gap-1.5">
+                <span>ดูไอเดียล่าสุด</span>
                 <ArrowUpRight className="w-4 h-4 text-muted" />
               </Link>
             </div>
 
-            <div className="pt-4 flex items-center gap-3 text-xs text-muted border-t border-line/60 max-w-lg">
+            <p className="text-xs text-muted flex items-center gap-2 pt-2">
               <ShieldCheck className="w-4 h-4 text-olive shrink-0" />
-              <span>AI Neutrality Guarantee — คำแนะนำ AI ประมวลผลอย่างเป็นกลาง ไม่ขายอันดับสปอนเซอร์</span>
-            </div>
+              <span>คำแนะนำจาก AI แยกจากพื้นที่โฆษณาของร้านค้าอย่างชัดเจน</span>
+            </p>
           </div>
 
-          <div className="lg:col-span-6 grid grid-cols-12 gap-3 items-end">
-            <div className="col-span-7 space-y-2">
-              <div className="aspect-[3/4] relative bg-paper overflow-hidden border border-line">
-                <Image
-                  src="/demo-assets/hero-lookbook.jpg"
-                  alt="ภาพแต่งกายลินินโทนธรรมชาติสำหรับอากาศเมืองไทย"
-                  fill
-                  sizes="(max-width: 1024px) 60vw, 35vw"
-                  priority
-                  className="object-cover"
-                />
+          {/* Signature 3 Outfit Directions Lookbook Grid */}
+          <div className="grid md:grid-cols-3 gap-6 pt-4">
+            {directions.map((item) => (
+              <div key={item.tag} className="group border border-line bg-paper p-5 space-y-4 hover:border-charcoal transition-colors">
+                <div className="flex items-center justify-between border-b border-line pb-3">
+                  <span className="font-mono text-xs font-semibold tracking-wider text-charcoal">{item.code} {item.tag}</span>
+                  <span className="text-xs text-muted font-medium">{item.title}</span>
+                </div>
+
+                <div className="aspect-[3/4] relative bg-background border border-line overflow-hidden">
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    sizes="(max-width: 768px) 90vw, 30vw"
+                    priority
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+
+                <div>
+                  <h2 className="font-serif text-2xl font-normal text-charcoal mb-1">{item.title}</h2>
+                  <p className="text-xs text-muted leading-relaxed">{item.desc}</p>
+                </div>
               </div>
-              <p className="text-[11px] font-mono text-muted tracking-tight">01 · Summer Linen Lookbook</p>
-            </div>
-            <div className="col-span-5 space-y-2">
-              <div className="aspect-[3/4] relative bg-paper overflow-hidden border border-line">
-                <Image
-                  src="/demo-assets/hero-lookbook-2.jpg"
-                  alt="สไตล์มินิมอลสำหรับวันทำงานและคาเฟ่"
-                  fill
-                  sizes="(max-width: 1024px) 40vw, 20vw"
-                  priority
-                  className="object-cover"
-                />
-              </div>
-              <p className="text-[11px] font-mono text-muted tracking-tight">02 · Everyday Minimal</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 3. Activity Index */}
-      <section className="py-12 border-b border-line bg-paper">
+      {/* 3. Activity and Context Index */}
+      <section className="py-16 border-b border-line bg-paper">
         <div className="container">
           <SectionHeading
-            eyebrow="Occasion & Category Index"
-            title="เริ่มจากสิ่งที่อยากใส่ในวันนี้"
-            body="เลือกหมวดสไตล์ที่ใกล้เคียงกับโอกาสใช้งานของคุณ เพื่อดูไอเดียจากร้านค้าอิสระ"
+            eyebrow="Occasion Index"
+            title="เริ่มจากสไตล์ที่ต้องการในวันนี้"
+            body="เลือกหมวดกิจกรรมหรือโอกาสใช้งาน เพื่อสำรวจไอเดียจากร้านค้าอิสระ"
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 border-t border-l border-line bg-background">
             {categories.slice(0, 10).map((category, index) => (
               <Link
-                className="p-5 border-r border-b border-line hover:bg-paper transition-colors group flex flex-col justify-between min-h-[110px]"
+                className="p-6 border-r border-b border-line hover:bg-paper transition-colors group flex flex-col justify-between min-h-[120px]"
                 href={`/categories/${category.slug}`}
                 key={category.id}
               >
                 <span className="font-mono text-xs text-muted group-hover:text-charcoal">{String(index + 1).padStart(2, "0")}</span>
-                <strong className="font-medium text-sm group-hover:text-charcoal transition-colors">{category.name_th}</strong>
+                <strong className="font-medium text-base text-charcoal group-hover:underline decoration-1 underline-offset-4">{category.name_th}</strong>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 4. Recent Sponsored Advertisements */}
-      <section className="py-16 border-b border-line">
+      {/* 4. Latest Sponsored Lookbook */}
+      <section className="py-20 border-b border-line">
         <div className="container">
           <SectionHeading
-            eyebrow="Sponsored Editorial Gallery"
-            title="ชุดและคอลเลกชันล่าสุด"
-            body="รายการในส่วนนี้เป็นโฆษณาที่ผ่านการอนุมัติจากร้านค้าอิสระ ทุกชิ้นเชื่อมต่อไปยัง Shopee ร้านค้าโดยตรง"
-            action={{ href: "/discover", label: "ดูทั้งหมด" }}
+            eyebrow="Sponsored Editorial"
+            title="ชุดและคอลเลกชันล่าสุดจากร้านค้า"
+            body="พื้นที่นี้เป็นโฆษณาที่ผ่านการอนุมัติจากร้านค้าอิสระ ทุกรายการติดป้ายชัดเจนและเชื่อมต่อไปยัง Shopee ร้านค้าโดยตรง"
+            action={{ href: "/discover", label: "ดูคอลเลกชันทั้งหมด" }}
           />
           <div className="ad-grid">
             {ads.slice(0, 8).map((ad, index) => (
@@ -121,13 +147,67 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 5. Featured Independent Shops */}
-      <section className="py-16 border-b border-line bg-paper">
+      {/* 5. How FitToday AI Works */}
+      <section className="py-20 border-b border-line bg-paper">
+        <div className="container">
+          <div className="grid lg:grid-cols-12 gap-12 items-stretch border border-line bg-background p-8 sm:p-12">
+            <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
+              <div>
+                <Eyebrow>Transparency & Standard</Eyebrow>
+                <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal mt-3 mb-6 leading-tight text-charcoal">
+                  ความเที่ยงตรงและเป็นกลางของ AI Stylist
+                </h2>
+                <p className="text-muted text-base leading-relaxed">
+                  ระบบประมวลผลคำแนะนำจากกิจกรรม สภาพอากาศ อุณหภูมิ รูปร่าง และงบประมาณของคุณโดยเฉพาะ 
+                  ไม่มีการสอดไส้สินค้าสปอนเซอร์ หรือนำเงินโฆษณามามีผลต่อการจัดลุคเด็ดขาด
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-6 pt-6 border-t border-line">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-charcoal shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-base font-medium text-charcoal">คำแนะนำตรงโอกาส</strong>
+                    <span className="text-xs text-muted">คำนวณจากกาลเทศะ สภาพอากาศเมืองไทย และสไตล์ส่วนตัว</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-charcoal shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-base font-medium text-charcoal">ให้เกียรติความเป็นส่วนตัว</strong>
+                    <span className="text-xs text-muted">ไม่วิพากษ์วิจารณ์รูปร่าง และเลือกบันทึกข้อมูลสัดส่วนได้ตามต้องการ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-line pt-8 lg:pt-0 lg:pl-12 flex flex-col justify-center space-y-6">
+              <div className="p-6 border border-line bg-paper">
+                <span className="font-mono text-xs text-muted block mb-2">01 / UNBIASED ADVICE</span>
+                <h3 className="font-serif text-2xl font-normal text-charcoal mb-2">แยกพื้นที่โฆษณาชัดเจน</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  รายการสปอนเซอร์แสดงในส่วน Discover เท่านั้น ไม่ปะปนกับผลลัพธ์คำแนะนำ AI
+                </p>
+              </div>
+              <div className="p-6 border border-line bg-paper">
+                <span className="font-mono text-xs text-muted block mb-2">02 / 3 LOOK DIRECTIONS</span>
+                <h3 className="font-serif text-2xl font-normal text-charcoal mb-2">3 ทางเลือกในทุกการค้นหา</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  เสนอทางเลือก Safe, Elevated, และ Comfortable ให้คุณตัดสินใจตามอารมณ์วันนั้น
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Featured Independent Shops */}
+      <section className="py-20 border-b border-line">
         <div className="container">
           <SectionHeading
-            eyebrow="Curated Brands"
+            eyebrow="Independent Studios"
             title="ร้านค้าอิสระบน FitToday"
-            body="สำรวจหน้าร้านค้าตัวอย่างเพื่อดูคอลเลกชันและสไตล์ที่เป็นเอกลักษณ์"
+            body="สำรวจแบรนด์เสื้อผ้าและสตูดิโอออกแบบที่ร่วมแสดงคอลเลกชัน"
           />
           <div className="shop-grid">
             {shops.map((shop) => (
@@ -137,96 +217,66 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 6. AI Neutrality Standard */}
-      <section className="py-16 border-b border-line">
-        <div className="container">
-          <div className="grid lg:grid-cols-12 gap-10 items-stretch bg-paper p-8 sm:p-12 border border-line">
-            <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
-              <div>
-                <Eyebrow>Neutral AI Styling Guarantee</Eyebrow>
-                <h2 className="font-serif text-3xl sm:text-4xl font-normal mt-3 mb-4 leading-tight text-charcoal">
-                  ความเที่ยงตรงและเป็นกลางของระบบคำแนะนำ
-                </h2>
-                <p className="text-muted leading-relaxed text-sm sm:text-base">
-                  อัลกอริทึม AI Stylist คำนวณชุดแต่งกายจากปัจจัยจริงของผู้ใช้ ได้แก่ โอกาส อากาศ รูปร่าง และงบประมาณ
-                  โดยไม่มีการนำค่าโฆษณาหรือสปอนเซอร์มาแทรกแซงในผลลัพธ์คำแนะนำเด็ดขาด
-                </p>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-line">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-charcoal shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="block text-sm font-medium text-charcoal">คำแนะนำตรงโอกาส</strong>
-                    <span className="text-xs text-muted">วิเคราะห์ความเหมาะสมกับสภาพอากาศเมืองไทยและกาลเทศะ</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-charcoal shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="block text-sm font-medium text-charcoal">เคารพความเป็นส่วนตัว</strong>
-                    <span className="text-xs text-muted">ไม่ตัดสินรูปร่าง ไซซ์เสื้อผ้า และให้ผู้ใช้ควบคุมการบันทึกสัดส่วน</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-line pt-6 lg:pt-0 lg:pl-10 flex flex-col justify-center space-y-4">
-              <div className="p-6 border border-line bg-background">
-                <span className="font-mono text-xs text-muted block mb-1">01 / Pure Advice</span>
-                <h3 className="font-serif text-xl font-normal mb-2">แยกพื้นที่โฆษณาชัดเจน</h3>
-                <p className="text-xs text-muted leading-relaxed">
-                  โฆษณาจากร้านค้าจำกัดอยู่เฉพาะในส่วน Discover และ Sponsored Edit เพื่อไม่ให้กระทบต่อความน่าเชื่อถือของ AI
-                </p>
-              </div>
-              <div className="p-6 border border-line bg-background">
-                <span className="font-mono text-xs text-muted block mb-1">02 / 3 Distinct Directions</span>
-                <h3 className="font-serif text-xl font-normal mb-2">3 ทิศทางสไตล์ให้เลือก</h3>
-                <p className="text-xs text-muted leading-relaxed">
-                  ให้คำแนะนำแบบ Safe (เพลย์เซฟ), Elevated (ยกระดับ), และ Comfortable (เน้นความสบาย) ทุกครั้งที่ค้นหา
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7 & 8. Merchant Platform Statement */}
-      <section className="py-16 bg-charcoal text-white">
-        <div className="container grid lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <span className="text-xs tracking-widest text-muted uppercase">Merchant Partnership</span>
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight">
-              เชื่อมต่อแบรนด์ของคุณสู่ผู้ใช้ที่กำลังค้นหาสไตล์
+      {/* 7. Merchant Partnership Section (High-Contrast Dark Panel) */}
+      <section className="py-24 bg-[#171814] text-[#F4F0E8]">
+        <div className="container grid lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-7 space-y-8">
+            <span className="text-xs tracking-widest text-[#D4CEBF] uppercase font-mono">Merchant Partnership</span>
+            
+            <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal leading-[1.1] text-[#F4F0E8]">
+              พื้นที่สำหรับร้านแฟชั่นที่อยากถูกค้นพบ
             </h2>
-            <p className="text-muted text-sm sm:text-base leading-relaxed max-w-xl">
-               FitToday มอบพื้นที่โฆษณาแฟชั่นที่ตรงไปตรงมา วัดผลได้จริงด้วยยอด Impression, Click และ CTR 
-              พร้อมพาผู้ซื้อไปยังร้านค้าของคุณบน Shopee โดยตรง
+            
+            <p className="text-[#D4CEBF] text-base sm:text-lg leading-relaxed max-w-xl">
+              ลงโฆษณาสินค้า คอลเลกชัน หรือโปรโมชัน พร้อมติดตาม Impression, Like, Click และ CTR ได้ในที่เดียวแบบตรงไปตรงมา
             </p>
+
             <div className="pt-2">
-              <Link href="/register/merchant" className="px-6 py-3.5 bg-white text-charcoal hover:bg-paper font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2">
-                <span>สมัครเปิดหน้าร้านบน FitToday</span>
+              <Link
+                href="/register/merchant"
+                className="px-8 py-4 bg-[#F4F0E8] text-[#161713] hover:bg-white font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2 shadow-sm"
+              >
+                <span>เปิดร้านบน FitToday</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
 
-          <div className="lg:col-span-5 space-y-4 border-l border-white/10 pl-6 lg:pl-10">
-            <div className="space-y-1">
-              <span className="font-mono text-xs text-white/50">STEP 01</span>
-              <h3 className="text-base font-medium text-white">สร้างร้านและลงโฆษณา</h3>
-              <p className="text-xs text-white/70">ใส่รูปภาพสินค้า คำบรรยาย สไตล์ และปลายทาง Shopee</p>
+          <div className="lg:col-span-5 space-y-6 border-l border-[#D4CEBF]/20 pl-8 lg:pl-12">
+            <div className="space-y-2">
+              <span className="font-mono text-xs text-[#D4CEBF]">01</span>
+              <h3 className="text-lg font-medium text-[#F4F0E8]">สร้างโปรไฟล์ร้าน & ดราฟต์โฆษณา</h3>
+              <p className="text-xs text-[#D4CEBF] leading-relaxed">ลงข้อมูลสินค้า รูปภาพ คอลเลกชัน พร้อมใส่ลิงก์ Shopee ของร้านคุณ</p>
             </div>
-            <div className="space-y-1 pt-3 border-t border-white/10">
-              <span className="font-mono text-xs text-white/50">STEP 02</span>
-              <h3 className="text-base font-medium text-white">ผ่านการตรวจสอบมาตรฐาน</h3>
-              <p className="text-xs text-white/70">ทีมงานอนุมัติร้านค้าและรายการโฆษณาเพื่อความมั่นใจของผู้ใช้</p>
+            <div className="space-y-2 pt-4 border-t border-[#D4CEBF]/20">
+              <span className="font-mono text-xs text-[#D4CEBF]">02</span>
+              <h3 className="text-lg font-medium text-[#F4F0E8]">ส่งโฆษณาให้ตรวจสอบ</h3>
+              <p className="text-xs text-[#D4CEBF] leading-relaxed">ทีมงานอนุมัติมาตรฐานความถูกต้องเพื่อความมั่นใจของผู้ซื้อ</p>
             </div>
-            <div className="space-y-1 pt-3 border-t border-white/10">
-              <span className="font-mono text-xs text-white/50">STEP 03</span>
-              <h3 className="text-base font-medium text-white">วิเคราะห์ผลตอบรับ Real-time</h3>
-              <p className="text-xs text-white/70">ดูสถิติ Impression, Click และ CTR ย้อนหลังใน Merchant Studio</p>
+            <div className="space-y-2 pt-4 border-t border-[#D4CEBF]/20">
+              <span className="font-mono text-xs text-[#D4CEBF]">03</span>
+              <h3 className="text-lg font-medium text-[#F4F0E8]">ดูผลตอบรับและคลิกไป Shopee</h3>
+              <p className="text-xs text-[#D4CEBF] leading-relaxed">ติดตามยอดชม ยอดคลิก และ CTR แบบ Real-time ใน Merchant Studio</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Final AI Stylist CTA */}
+      <section className="py-20 bg-background border-b border-line">
+        <div className="container text-center max-w-3xl space-y-6">
+          <Eyebrow>Ready to Style?</Eyebrow>
+          <h2 className="font-serif text-4xl sm:text-5xl font-normal text-charcoal">
+            พร้อมรับไอเดียแต่งตัวสำหรับวันนี้หรือยัง?
+          </h2>
+          <p className="text-muted text-base">
+            ให้ AI ช่วยจัดลุค 3 ทิศทางที่เหมาะกับกิจกรรมและอากาศของคุณในไม่กี่วินาที
+          </p>
+          <div>
+            <Link href="/ai-stylist" className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span>เริ่มเลือกชุดกับ AI Stylist</span>
+            </Link>
           </div>
         </div>
       </section>
