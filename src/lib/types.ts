@@ -191,6 +191,30 @@ export interface WardrobeOutfitResponse {
   sponsoredAds?: PersonalizedAd[];
 }
 
+export interface AIHistoryItem {
+  id: string;
+  created_at: string;
+  input_data: Record<string, unknown>;
+  result: {
+    id: string;
+    summary: string;
+    outfits: Array<{
+      direction: string;
+      name: string;
+      style: string;
+      reason: string;
+      comfortNote?: string;
+      estimatedBudgetText?: string;
+      items?: Array<{
+        wardrobeItemId?: string;
+        role?: string;
+        stylingInstruction?: string;
+        itemDetails?: WardrobeItem | null;
+      }>;
+    }>;
+  } | null;
+}
+
 export type BodyShapeOption =
   | "straight"
   | "triangle"
@@ -240,6 +264,8 @@ export interface CustomerFitProfile {
   use_for_ai_styling: boolean;
   use_wardrobe_for_personalization: boolean;
   enable_personalized_ads: boolean;
+  personalized_ads_consent_at?: string | null;
+  personalization_reset_at?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -64,8 +64,9 @@ export async function getPersonalizedAds(
   }
 
   // Check user personalization preferences
-  let enablePersonalization = true;
+  let enablePersonalization = false;
   let useWardrobePersonalization = false;
+  let resetCutoffIso: string | null = null;
   let preferredStyles: string[] = [];
   let preferredColors: string[] = [];
   let likedAdIds: string[] = [];
@@ -75,8 +76,10 @@ export async function getPersonalizedAds(
   if (userId) {
     const fitProfile = await getFitProfile(userId);
     if (fitProfile) {
-      enablePersonalization = fitProfile.enable_personalized_ads;
-      useWardrobePersonalization = fitProfile.use_wardrobe_for_personalization;
+      // Personalized ads active ONLY when enable_personalized_ads === true AND consent timestamp is set
+      enablePersonalization = Boolean(fitProfile.enable_personalized_ads && fitProfile.personalized_ads_consent_at);
+      useWardrobePersonalization = Boolean(fitProfile.use_wardrobe_for_personalization);
+      resetCutoffIso = fitProfile.personalization_reset_at || null;
     }
 
     // Fetch customer preferences
@@ -91,18 +94,20 @@ export async function getPersonalizedAds(
       preferredColors = prefData.preferred_colors || [];
     }
 
-    // Fetch user liked ad IDs
-    const { data: likesData } = await supabase
-      .from("ad_likes")
-      .select("ad_id")
-      .eq("user_id", userId);
+    // Fetch user liked ad IDs (filtered by reset cutoff)
+    let likesQuery = supabase.from("ad_likes").select("ad_id, created_at").eq("user_id", userId);
+    if (resetCutoffIso) {
+      likesQuery = likesQuery.gte("created_at", resetCutoffIso);
+    }
+    const { data: likesData } = await likesQuery;
     if (likesData) likedAdIds = likesData.map((l) => l.ad_id);
 
-    // Fetch user clicked ad IDs
-    const { data: clicksData } = await supabase
-      .from("ad_clicks")
-      .select("ad_id")
-      .eq("user_id", userId);
+    // Fetch user clicked ad IDs (filtered by reset cutoff)
+    let clicksQuery = supabase.from("ad_clicks").select("ad_id, created_at").eq("user_id", userId);
+    if (resetCutoffIso) {
+      clicksQuery = clicksQuery.gte("created_at", resetCutoffIso);
+    }
+    const { data: clicksData } = await clicksQuery;
     if (clicksData) clickedAdIds = clicksData.map((c) => c.ad_id);
 
     // Fetch wardrobe styles if consent enabled

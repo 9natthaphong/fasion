@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Check, AlertCircle, Loader2, RotateCcw } from "lucide-react";
+import { ShieldCheck, Check, AlertCircle, Loader2, RotateCcw, Info } from "lucide-react";
 import type { CustomerFitProfile } from "@/lib/types";
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 export function PrivacySettingsForm({ initialProfile }: Props) {
   const router = useRouter();
 
-  const [enablePersonalizedAds, setEnablePersonalizedAds] = useState(initialProfile?.enable_personalized_ads ?? true);
+  const [enablePersonalizedAds, setEnablePersonalizedAds] = useState(initialProfile?.enable_personalized_ads ?? false);
   const [useWardrobePersonalization, setUseWardrobePersonalization] = useState(initialProfile?.use_wardrobe_for_personalization ?? false);
   const [useForAiStyling, setUseForAiStyling] = useState(initialProfile?.use_for_ai_styling ?? false);
 
@@ -27,6 +27,8 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
     setMsg(null);
     setErrorMsg(null);
 
+    const consentTimestamp = enablePersonalizedAds ? (initialProfile?.personalized_ads_consent_at || new Date().toISOString()) : null;
+
     try {
       const res = await fetch("/api/account/fit-profile", {
         method: "POST",
@@ -36,6 +38,7 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
           useForAiStyling,
           useWardrobeForPersonalization: useWardrobePersonalization,
           enablePersonalizedAds,
+          personalizedAdsConsentAt: consentTimestamp,
         }),
       });
 
@@ -56,8 +59,9 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
     setMsg(null);
     setErrorMsg(null);
 
+    const resetTimestamp = new Date().toISOString();
+
     try {
-      // Toggle off and save
       setEnablePersonalizedAds(false);
       setUseWardrobePersonalization(false);
 
@@ -68,12 +72,13 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
           ...initialProfile,
           useWardrobeForPersonalization: false,
           enablePersonalizedAds: false,
+          personalizationResetAt: resetTimestamp,
         }),
       });
 
       if (!res.ok) throw new Error("ล้างค่าสัญญาณไม่สำเร็จ");
 
-      setMsg("ล้างค่าสัญญาณความสนใจ (Personalization Signals) เรียบร้อยแล้ว");
+      setMsg("ล้างค่าสัญญาณความสนใจ (Reset Signals) เรียบร้อยแล้ว กิจกรรมในอดีตถูกตัดออกจากการวิเคราะห์โฆษณาในอนาคต");
       router.refresh();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
@@ -98,11 +103,16 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
         </div>
       )}
 
-      <div className="p-6 bg-paper border border-line space-y-4">
-        <h2 className="font-serif text-xl font-normal text-charcoal flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-olive" />
-          <span>การตั้งค่าโฆษณาแนะนำและการประมวลผลข้อมูล</span>
-        </h2>
+      <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
+        <div className="space-y-1 border-b border-line pb-4">
+          <h2 className="font-serif text-2xl font-normal text-charcoal flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-olive" />
+            <span>การตั้งค่าโฆษณาแนะนำและการยินยอมประมวลผลข้อมูล</span>
+          </h2>
+          <p className="text-xs text-muted">
+            การปรับแต่งโฆษณาถูกปิดเป็นค่าเริ่มต้นตามหลักความเป็นส่วนตัว คุณสามารถเลือกเปิดใช้งานเมื่อต้องการ
+          </p>
+        </div>
 
         <div className="space-y-4 text-xs">
           <label className="flex items-start gap-3 p-4 border border-line bg-background cursor-pointer">
@@ -113,9 +123,9 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
               className="mt-0.5 accent-charcoal cursor-pointer"
             />
             <div>
-              <strong className="block text-sm text-charcoal">เปิดใช้งานโฆษณาแนะนำตามสไตล์ที่ชอบ (Personalized Ads)</strong>
+              <strong className="block text-sm text-charcoal">เปิดใช้งานโฆษณาแนะนำตามสไตล์ที่สนใจ (Personalized Ads Consent)</strong>
               <span className="text-muted block mt-0.5">
-                หากปิด ระบบจะแสดงโฆษณาล่าสุดตามลำดับปกติโดยไม่วิเคราะห์ความสนใจ
+                ยินยอมให้ระบบวิเคราะห์ประเภทสไตล์และหมวดหมู่ที่คุณสนใจ หากปิด ระบบจะแสดงเฉพาะโฆษณาล่าสุดทั่วไป
               </span>
             </div>
           </label>
@@ -130,7 +140,7 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
             <div>
               <strong className="block text-sm text-charcoal">ยินยอมใช้ประเภทสไตล์ในตู้เสื้อผ้าในการปรับความเกี่ยวข้องโฆษณา</strong>
               <span className="text-muted block mt-0.5">
-                ใช้เฉพาะประเภทและโทนสีของเสื้อผ้าในตู้ส่วนตัว ข้อมูลรูปภาพและสัดส่วนจะไม่ถูกนำมาใช้
+                นำเฉพาะสไตล์และโทนสีของตู้เสื้อผ้าส่วนตัวมาจัดอันดับโฆษณา (ข้อมูลรูปภาพและสัดส่วนจะไม่ถูกนำมาใช้)
               </span>
             </div>
           </label>
@@ -143,12 +153,24 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
               className="mt-0.5 accent-charcoal cursor-pointer"
             />
             <div>
-              <strong className="block text-sm text-charcoal">ยินยอมให้ AI Stylist นำสัดส่วนส่วนตัวไปปรับแต่งชุด</strong>
+              <strong className="block text-sm text-charcoal">ยินยอมให้ AI Stylist นำสัดส่วนและไซซ์ไปช่วยประเมินการแต่งชุด</strong>
               <span className="text-muted block mt-0.5">
-                ส่งสัดส่วนและไซซ์เสื้อผ้าให้ OpenAI ช่วยประเมินทรงและความกระชับของชุด
+                ส่งไซซ์และสัดส่วนร่างกายให้ OpenAI ช่วยประเมินทรงและความสบายของชุด (ข้อมูลสัดส่วนจะไม่ถูกส่งไปยังร้านค้าหรือโฆษณา)
               </span>
             </div>
           </label>
+        </div>
+
+        {/* Signal Reset Notice Box */}
+        <div className="p-4 border border-line bg-background text-xs space-y-2">
+          <strong className="font-medium text-charcoal flex items-center gap-1.5">
+            <Info className="w-4 h-4 text-olive" />
+            <span>เกี่ยวกับปุ่มล้างค่าสัญญาณความสนใจ (Reset Signals)</span>
+          </strong>
+          <p className="text-muted leading-relaxed">
+            การกดล้างค่าสัญญาณจะบันทึกเวลา `personalization_reset_at` และตัดประวัติกิจกรรม กิจกรรมการกดถูกใจ
+            และการคลิกในอดีตออกจากการคำนวณความเกี่ยวข้องของโฆษณาในอนาคตทั้งหมด (รายการถูกใจในหน้าบัญชีของคุณยังคงอยู่ตามปกติ)
+          </p>
         </div>
 
         <div className="pt-4 border-t border-line flex flex-wrap items-center justify-between gap-4">
@@ -156,10 +178,10 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
             type="button"
             onClick={handleResetSignals}
             disabled={isResetting}
-            className="px-4 py-2 border border-line text-xs text-muted hover:text-charcoal hover:bg-background inline-flex items-center gap-1.5"
+            className="px-4 py-2.5 border border-line text-xs font-medium text-muted hover:text-charcoal hover:bg-background inline-flex items-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>{isResetting ? "กำลังล้างค่า..." : "ล้างค่าสัญญาณความสนใจ (Reset Signals)"}</span>
+            <span>{isResetting ? "กำลังล้างค่า..." : "ล้างค่าสัญญาณความสนใจ (Reset Personalization Signals)"}</span>
           </button>
 
           <button
@@ -175,7 +197,7 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                <span>บันทึกการตั้งค่า</span>
+                <span>บันทึกการตั้งค่าความเป็นส่วนตัว</span>
               </>
             )}
           </button>

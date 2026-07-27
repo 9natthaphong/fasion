@@ -34,6 +34,6 @@ describe("customer fit profile validation", () => {
     const parsed = customerFitProfileSchema.parse({});
     expect(parsed.useForAiStyling).toBe(false);
     expect(parsed.useWardrobeForPersonalization).toBe(false);
-    expect(parsed.enablePersonalizedAds).toBe(true);
+    expect(parsed.enablePersonalizedAds).toBe(false);
   });
 });

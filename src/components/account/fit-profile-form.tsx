@@ -2,18 +2,38 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Trash2, AlertCircle, Info, Loader2, Sparkles, ArrowRight } from "lucide-react";
+import { Check, Trash2, AlertCircle, Loader2, Sparkles, ArrowRight, UserCheck, Heart, Sliders, ShieldCheck } from "lucide-react";
 import type { CustomerFitProfile, BodyShapeOption, SkinUndertoneOption, SkinDepthOption } from "@/lib/types";
 
 interface Props {
+  initialDisplayName: string;
+  initialPreferences: {
+    clothingPresentation?: string;
+    preferredStyles?: string[];
+    preferredColors?: string[];
+    avoidedColors?: string[];
+    preferredFit?: string;
+    defaultBudget?: number | null;
+  } | null;
   initialProfile: CustomerFitProfile | null;
 }
 
-export function FitProfileForm({ initialProfile }: Props) {
+export function FitProfileForm({ initialDisplayName, initialPreferences, initialProfile }: Props) {
   const router = useRouter();
-  const [activeStep, setActiveStep] = useState<number>(1);
+  const [activeTab, setActiveTab] = useState<"general" | "styles" | "measurements" | "privacy">("general");
 
-  // Form states
+  // General Profile state
+  const [displayName, setDisplayName] = useState(initialDisplayName || "");
+
+  // Preferences state
+  const [clothingPresentation, setClothingPresentation] = useState(initialPreferences?.clothingPresentation || "unspecified");
+  const [preferredStylesText, setPreferredStylesText] = useState((initialPreferences?.preferredStyles || []).join(", "));
+  const [preferredColorsText, setPreferredColorsText] = useState((initialPreferences?.preferredColors || []).join(", "));
+  const [avoidedColorsText, setAvoidedColorsText] = useState((initialPreferences?.avoidedColors || []).join(", "));
+  const [preferredFit, setPreferredFit] = useState(initialPreferences?.preferredFit || "unspecified");
+  const [defaultBudget, setDefaultBudget] = useState(initialPreferences?.defaultBudget?.toString() || "");
+
+  // Fit Profile Measurements state
   const [heightCm, setHeightCm] = useState(initialProfile?.height_cm?.toString() || "");
   const [weightKg, setWeightKg] = useState(initialProfile?.weight_kg?.toString() || "");
   const [chestCm, setChestCm] = useState(initialProfile?.chest_cm?.toString() || "");
@@ -37,56 +57,88 @@ export function FitProfileForm({ initialProfile }: Props) {
 
   const [useForAiStyling, setUseForAiStyling] = useState(initialProfile?.use_for_ai_styling ?? false);
   const [useWardrobePersonalization, setUseWardrobePersonalization] = useState(initialProfile?.use_wardrobe_for_personalization ?? false);
-  const [enablePersonalizedAds, setEnablePersonalizedAds] = useState(initialProfile?.enable_personalized_ads ?? true);
+  const [enablePersonalizedAds, setEnablePersonalizedAds] = useState(initialProfile?.enable_personalized_ads ?? false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleSave = async (e?: React.FormEvent) => {
+  const handleSaveAll = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const payload = {
-      heightCm: heightCm ? Number(heightCm) : null,
-      weightKg: weightKg ? Number(weightKg) : null,
-      chestCm: chestCm ? Number(chestCm) : null,
-      bustCm: bustCm ? Number(bustCm) : null,
-      waistCm: waistCm ? Number(waistCm) : null,
-      hipsCm: hipsCm ? Number(hipsCm) : null,
-      shoulderWidthCm: shoulderWidthCm ? Number(shoulderWidthCm) : null,
-      inseamCm: inseamCm ? Number(inseamCm) : null,
-      sleeveLengthCm: sleeveLengthCm ? Number(sleeveLengthCm) : null,
-      shoeLengthCm: shoeLengthCm ? Number(shoeLengthCm) : null,
-      usualTopSize: usualTopSize.trim() || null,
-      usualBottomSize: usualBottomSize.trim() || null,
-      usualShoeSize: usualShoeSize.trim() || null,
-      selfDescribedBodyShape: bodyShape,
-      skinUndertone,
-      skinDepth,
-      colorContrastPreference: colorContrast.trim() || null,
-      fitNotes: fitNotes.trim() || null,
-      useForAiStyling,
-      useWardrobeForPersonalization: useWardrobePersonalization,
-      enablePersonalizedAds,
-    };
+    const parseList = (str: string) =>
+      str
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
     try {
-      const res = await fetch("/api/account/fit-profile", {
-        method: "POST",
+      // 1. Save Display Name & Customer Preferences via /api/account/profile
+      const prefPayload = {
+        displayName: displayName.trim() || "ผู้ใช้งาน",
+        heightCm: heightCm ? Number(heightCm) : null,
+        weightKg: weightKg ? Number(weightKg) : null,
+        clothingPresentation,
+        preferredStyles: parseList(preferredStylesText),
+        preferredColors: parseList(preferredColorsText),
+        avoidedColors: parseList(avoidedColorsText),
+        preferredFit,
+        defaultBudget: defaultBudget ? Number(defaultBudget) : null,
+        saveBodyInformation: true,
+      };
+
+      const resPref = await fetch("/api/account/profile", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(prefPayload),
       });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || "บันทึกโปรไฟล์ไม่สำเร็จ");
+      if (!resPref.ok) {
+        const d = await resPref.json();
+        throw new Error(d.error || "บันทึกโปรไฟล์ทั่วไปไม่สำเร็จ");
       }
 
-      setSuccessMsg("บันทึกข้อมูลโปรไฟล์และความชอบเรียบร้อยแล้ว");
+      // 2. Save Canonical Fit Profile via /api/account/fit-profile
+      const fitPayload = {
+        heightCm: heightCm ? Number(heightCm) : null,
+        weightKg: weightKg ? Number(weightKg) : null,
+        chestCm: chestCm ? Number(chestCm) : null,
+        bustCm: bustCm ? Number(bustCm) : null,
+        waistCm: waistCm ? Number(waistCm) : null,
+        hipsCm: hipsCm ? Number(hipsCm) : null,
+        shoulderWidthCm: shoulderWidthCm ? Number(shoulderWidthCm) : null,
+        inseamCm: inseamCm ? Number(inseamCm) : null,
+        sleeveLengthCm: sleeveLengthCm ? Number(sleeveLengthCm) : null,
+        shoeLengthCm: shoeLengthCm ? Number(shoeLengthCm) : null,
+        usualTopSize: usualTopSize.trim() || null,
+        usualBottomSize: usualBottomSize.trim() || null,
+        usualShoeSize: usualShoeSize.trim() || null,
+        selfDescribedBodyShape: bodyShape,
+        skinUndertone,
+        skinDepth,
+        colorContrastPreference: colorContrast.trim() || null,
+        fitNotes: fitNotes.trim() || null,
+        useForAiStyling,
+        useWardrobeForPersonalization: useWardrobePersonalization,
+        enablePersonalizedAds,
+      };
+
+      const resFit = await fetch("/api/account/fit-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fitPayload),
+      });
+
+      if (!resFit.ok) {
+        const d = await resFit.json();
+        throw new Error(d.error || "บันทึกข้อมูลสัดส่วนไม่สำเร็จ");
+      }
+
+      setSuccessMsg("บันทึกข้อมูลโปรไฟล์ สไตล์ และสัดส่วนทั้งหมดเรียบร้อยแล้ว");
       router.refresh();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึก");
@@ -142,42 +194,39 @@ export function FitProfileForm({ initialProfile }: Props) {
 
   return (
     <div className="space-y-8 max-w-4xl">
-      {/* Onboarding Step Tracker */}
-      <div className="bg-paper border border-line p-4 sm:p-6">
-        <div className="flex items-center justify-between border-b border-line pb-4 mb-4">
+      {/* 4 Section Tabs */}
+      <div className="bg-paper border border-line p-4 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center gap-2 text-xs font-mono text-charcoal font-semibold uppercase">
             <Sparkles className="w-4 h-4 text-olive" />
-            <span>Guided Profile Onboarding (ขั้นตอนที่ {activeStep}/4)</span>
+            <span>Customer Profile Settings</span>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/account")}
-            className="text-xs text-muted hover:text-charcoal underline"
-          >
-            ทำทีหลัง (Skip for now)
-          </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { step: 1, title: "1. สัดส่วนและไซซ์" },
-            { step: 2, title: "2. ทรงและสไตล์" },
-            { step: 3, title: "3. โทนสีและผิว" },
-            { step: 4, title: "4. ความเป็นส่วนตัว" },
-          ].map((s) => (
-            <button
-              key={s.step}
-              type="button"
-              onClick={() => setActiveStep(s.step)}
-              className={`py-2 px-1 text-[11px] sm:text-xs text-center border font-medium transition-colors ${
-                activeStep === s.step
-                  ? "bg-charcoal text-white border-charcoal"
-                  : "bg-background text-muted border-line hover:border-charcoal"
-              }`}
-            >
-              {s.title}
-            </button>
-          ))}
+            { key: "general", title: "1. โปรไฟล์ทั่วไป", icon: UserCheck },
+            { key: "styles", title: "2. สไตล์และสีที่ชอบ", icon: Heart },
+            { key: "measurements", title: "3. สัดส่วนและไซซ์", icon: Sliders },
+            { key: "privacy", title: "4. การอนุญาตใช้ข้อมูล", icon: ShieldCheck },
+          ].map((s) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => setActiveTab(s.key as "general" | "styles" | "measurements" | "privacy")}
+                className={`py-3 px-2 text-xs font-medium border text-center transition-colors flex items-center justify-center gap-1.5 ${
+                  activeTab === s.key
+                    ? "bg-charcoal text-white border-charcoal"
+                    : "bg-background text-charcoal border-line hover:border-charcoal"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{s.title}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -195,14 +244,150 @@ export function FitProfileForm({ initialProfile }: Props) {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="space-y-8">
-        {/* Step 1: Optional Measurements & Usual Sizes */}
-        {activeStep === 1 && (
+      <form onSubmit={handleSaveAll} className="space-y-8">
+        {/* Tab 1: General Profile */}
+        {activeTab === "general" && (
           <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
             <div className="space-y-1 border-b border-line pb-4">
-              <h2 className="font-serif text-2xl font-normal text-charcoal">สัดส่วนและขนาดเสื้อผ้า (ระบุตามความสมัครใจ)</h2>
+              <h2 className="font-serif text-2xl font-normal text-charcoal">โปรไฟล์ทั่วไป (General Identity)</h2>
+              <p className="text-xs text-muted">แก้ไขชื่อที่ต้องการให้แสดงในระบบ</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-charcoal mb-1">ชื่อที่แสดง (Display Name) *</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="เช่น ณัฐพงษ์"
+                className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab("styles")}
+                className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
+              >
+                <span>ถัดไป: สไตล์และสีที่ชอบ</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Style & Preferences */}
+        {activeTab === "styles" && (
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
+            <div className="space-y-1 border-b border-line pb-4">
+              <h2 className="font-serif text-2xl font-normal text-charcoal">สไตล์และสีที่ชอบ (Style Preferences)</h2>
+              <p className="text-xs text-muted">กำหนดสไตล์ โทนสีโปรด สีที่หลีกเลี่ยง และงบประมาณตั้งต้น</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">การแต่งกายหลัก (Presentation)</label>
+                <select
+                  value={clothingPresentation}
+                  onChange={(e) => setClothingPresentation(e.target.value)}
+                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                >
+                  <option value="unspecified">ไม่ระบุ</option>
+                  <option value="menswear">Menswear (ชาย)</option>
+                  <option value="womenswear">Womenswear (หญิง)</option>
+                  <option value="unisex">Unisex (เป็นกลาง)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">ความกระชับของชุดที่ชอบ (Preferred Fit)</label>
+                <select
+                  value={preferredFit}
+                  onChange={(e) => setPreferredFit(e.target.value)}
+                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                >
+                  <option value="unspecified">ไม่ระบุ</option>
+                  <option value="fitted">เข้ารูป (Fitted)</option>
+                  <option value="relaxed">หลวมสบาย (Relaxed / Oversized)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">สไตล์ที่ชอบ (คั่นด้วยเครื่องหมายจุลภาค)</label>
+                <input
+                  type="text"
+                  value={preferredStylesText}
+                  onChange={(e) => setPreferredStylesText(e.target.value)}
+                  placeholder="เช่น Minimal, Smart Casual, Streetwear, Vintage"
+                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">โทนสีที่ชอบ (คั่นด้วยเครื่องหมายจุลภาค)</label>
+                <input
+                  type="text"
+                  value={preferredColorsText}
+                  onChange={(e) => setPreferredColorsText(e.target.value)}
+                  placeholder="เช่น ครีม, เขียวมะกอก, กรมท่า, ดำ, ขาว"
+                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">สีที่ต้องการหลีกเลี่ยง (คั่นด้วยเครื่องหมายจุลภาค)</label>
+                <input
+                  type="text"
+                  value={avoidedColorsText}
+                  onChange={(e) => setAvoidedColorsText(e.target.value)}
+                  placeholder="เช่น สีนีออน, สีส้มสด"
+                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal mb-1">งบประมาณตั้งต้นต่อชุด (บาท)</label>
+                <input
+                  type="number"
+                  value={defaultBudget}
+                  onChange={(e) => setDefaultBudget(e.target.value)}
+                  placeholder="เช่น 2500"
+                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab("general")}
+                className="px-6 py-3 border border-line text-charcoal text-xs font-medium hover:bg-background"
+              >
+                ย้อนกลับ
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("measurements")}
+                className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
+              >
+                <span>ถัดไป: สัดส่วนและไซซ์</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Measurements & Sizes (Canonical customer_fit_profiles) */}
+        {activeTab === "measurements" && (
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
+            <div className="space-y-1 border-b border-line pb-4">
+              <h2 className="font-serif text-2xl font-normal text-charcoal">สัดส่วนและไซซ์ส่วนตัว (ระบุตามความสมัครใจ)</h2>
               <p className="text-xs text-muted">
-                กรอกเฉพาะช่องที่ต้องการ ข้อมูลสัดส่วนเป็นเซนติเมตรช่วยให้ AI คำนวณความกระชับของชุดได้ดียิ่งขึ้น
+                ข้อมูลสัดส่วนเป็นเซนติเมตรเป็นข้อมูลส่วนตัว Canonical ที่ช่วยให้ AI ประเมินทรงได้อย่างแม่นยำ
               </p>
             </div>
 
@@ -260,7 +445,7 @@ export function FitProfileForm({ initialProfile }: Props) {
                   type="number"
                   value={waistCm}
                   onChange={(e) => setWaistCm(e.target.value)}
-                  placeholder="<ctrl42>เช่น 76"
+                  placeholder="เช่น 76"
                   className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
                 />
               </div>
@@ -272,39 +457,6 @@ export function FitProfileForm({ initialProfile }: Props) {
                   value={hipsCm}
                   onChange={(e) => setHipsCm(e.target.value)}
                   placeholder="เช่น 96"
-                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">ความยาวช่วงขา (Inseam ซม.)</label>
-                <input
-                  type="number"
-                  value={inseamCm}
-                  onChange={(e) => setInseamCm(e.target.value)}
-                  placeholder="เช่น 75"
-                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">ความยาวแขน (ซม.)</label>
-                <input
-                  type="number"
-                  value={sleeveLengthCm}
-                  onChange={(e) => setSleeveLengthCm(e.target.value)}
-                  placeholder="เช่น 60"
-                  className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">ความยาวเท้า (ซม.)</label>
-                <input
-                  type="number"
-                  value={shoeLengthCm}
-                  onChange={(e) => setShoeLengthCm(e.target.value)}
-                  placeholder="เช่น 26.5"
                   className="w-full p-3 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
                 />
               </div>
@@ -345,158 +497,28 @@ export function FitProfileForm({ initialProfile }: Props) {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between pt-4">
               <button
                 type="button"
-                onClick={() => setActiveStep(2)}
-                className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
-              >
-                <span>ถัดไป: ทรงและสไตล์</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Body Shape & Fit Preferences */}
-        {activeStep === 2 && (
-          <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
-            <div className="space-y-1 border-b border-line pb-4">
-              <h2 className="font-serif text-2xl font-normal text-charcoal">ทรงและสไตล์การแต่งตัว</h2>
-              <p className="text-xs text-muted">
-                เลือกคำอธิบายทรงที่ตรงกับสไตล์ที่คุณชอบ การเลือกนี้เป็นเพียงแนวทางประมาณการณ์ความสมส่วนของชุด
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <label className="block text-xs font-medium text-charcoal">รูปทรงสัดส่วนที่อธิบายตัวเอง</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { value: "straight", label: "ทรงตรง (Straight)" },
-                  { value: "triangle", label: "สามเหลี่ยม (Triangle)" },
-                  { value: "inverted_triangle", label: "สามเหลี่ยมคว่ำ (Inverted)" },
-                  { value: "oval", label: "ทรงกลม/รี (Oval)" },
-                  { value: "hourglass", label: "นาฬิกาทราย (Hourglass)" },
-                  { value: "unsure", label: "ไม่แน่ใจ" },
-                  { value: "prefer_not_to_say", label: "ไม่ระบุ" },
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setBodyShape(item.value as BodyShapeOption)}
-                    className={`p-3 text-xs font-medium border text-center transition-colors ${
-                      bodyShape === item.value
-                        ? "bg-charcoal text-white border-charcoal"
-                        : "bg-background text-charcoal border-line hover:border-charcoal"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-4 border-t border-line">
-              <label className="block text-xs font-medium text-charcoal">โน้ตเฉพาะตัวเรื่องทรงเสื้อผ้า</label>
-              <textarea
-                rows={3}
-                value={fitNotes}
-                onChange={(e) => setFitNotes(e.target.value)}
-                placeholder="เช่น ชอบเสื้อเชิ้ตไหล่ตกเล็กน้อย, ไม่ชอบกางเกงที่รัดต้นขา"
-                className="w-full p-4 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
-              />
-            </div>
-
-            <div className="flex justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveStep(1)}
+                onClick={() => setActiveTab("styles")}
                 className="px-6 py-3 border border-line text-charcoal text-xs font-medium hover:bg-background"
               >
                 ย้อนกลับ
               </button>
               <button
                 type="button"
-                onClick={() => setActiveStep(3)}
+                onClick={() => setActiveTab("privacy")}
                 className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
               >
-                <span>ถัดไป: โทนสีและผิว</span>
+                <span>ถัดไป: การอนุญาตใช้ข้อมูล</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Skin Undertone & Color Guidance */}
-        {activeStep === 3 && (
-          <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
-            <div className="space-y-1 border-b border-line pb-4">
-              <h2 className="font-serif text-2xl font-normal text-charcoal">โทนสีและอันเดอร์โทนผิว (คำแนะนำคู่สี)</h2>
-              <p className="text-xs text-muted">
-                ช่วยให้ AI แมตช์พาเลตต์สีเสื้อผ้าที่ขับผิวและสร้างความกลมกลืนกับโทนสีธรรมชาติของคุณ
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <label className="block text-xs font-medium text-charcoal">อันเดอร์โทนผิว (Skin Undertone)</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  { value: "warm", label: "Warm Tone (อุ่น/ทอง/เหลือง)" },
-                  { value: "cool", label: "Cool Tone (เย็น/ชมพู/อมฟ้า)" },
-                  { value: "neutral", label: "Neutral Tone (เป็นกลาง)" },
-                  { value: "olive", label: "Olive Tone (อมเขียวมะกอก)" },
-                  { value: "unsure", label: "ไม่แน่ใจ" },
-                  { value: "prefer_not_to_say", label: "ไม่ระบุ" },
-                ].map((u) => (
-                  <button
-                    key={u.value}
-                    type="button"
-                    onClick={() => setSkinUndertone(u.value as SkinUndertoneOption)}
-                    className={`p-3 text-xs font-medium border text-center transition-colors ${
-                      skinUndertone === u.value
-                        ? "bg-charcoal text-white border-charcoal"
-                        : "bg-background text-charcoal border-line hover:border-charcoal"
-                    }`}
-                  >
-                    {u.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-4 border-t border-line">
-              <label className="block text-xs font-medium text-charcoal">ความชอบเกี่ยวกับความจัดจ้าน/ความต่างของสี</label>
-              <input
-                type="text"
-                value={colorContrast}
-                onChange={(e) => setColorContrast(e.target.value)}
-                placeholder="เช่น ชอบสีคอนทราสต์ตัดกันชัดเจน, ชอบคุมโทนพาสเทลนุ่มนวล"
-                className="w-full p-4 border border-line bg-background text-sm text-charcoal outline-none focus:border-charcoal"
-              />
-            </div>
-
-            <div className="flex justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveStep(2)}
-                className="px-6 py-4 border border-line text-charcoal text-xs font-medium hover:bg-background"
-              >
-                ย้อนกลับ
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveStep(4)}
-                className="px-6 py-4 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
-              >
-                <span>ถัดไป: ความเป็นส่วนตัว</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Privacy, Consent Review & Save */}
-        {activeStep === 4 && (
+        {/* Tab 4: Privacy & Save All */}
+        {activeTab === "privacy" && (
           <div className="p-6 sm:p-8 bg-paper border border-line space-y-6">
             <div className="space-y-1 border-b border-line pb-4">
               <h2 className="font-serif text-2xl font-normal text-charcoal">การยินยอมและสิทธิ์ความเป็นส่วนตัว</h2>
@@ -552,17 +574,6 @@ export function FitProfileForm({ initialProfile }: Props) {
               </label>
             </div>
 
-            {/* Size Disclaimer Banner */}
-            <div className="p-4 border border-olive/30 bg-olive-pale/30 text-xs space-y-1">
-              <strong className="font-medium text-charcoal flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-olive" />
-                <span>ข้อแนะนำเรื่องตารางไซซ์</span>
-              </strong>
-              <p className="text-muted">
-                ไซซ์ที่ AI แนะนำเป็นเพียงการประเมินเบื้องต้นเชิงสไตล์เท่านั้น กรุณาตรวจสอบตารางไซซ์จริงของแต่ละร้านก่อนสั่งซื้อ
-              </p>
-            </div>
-
             <div className="pt-4 border-t border-line flex flex-wrap items-center justify-between gap-4">
               <button
                 type="button"
@@ -577,8 +588,8 @@ export function FitProfileForm({ initialProfile }: Props) {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setActiveStep(3)}
-                  className="px-6 py-4 border border-line text-charcoal text-xs font-medium hover:bg-background"
+                  onClick={() => setActiveTab("measurements")}
+                  className="px-6 py-3 border border-line text-charcoal text-xs font-medium hover:bg-background"
                 >
                   ย้อนกลับ
                 </button>
@@ -596,7 +607,7 @@ export function FitProfileForm({ initialProfile }: Props) {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>บันทึกโปรไฟล์และความชอบ</span>
+                      <span>บันทึกข้อมูลทั้งหมด</span>
                     </>
                   )}
                 </button>

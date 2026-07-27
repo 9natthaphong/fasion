@@ -94,7 +94,9 @@ export const customerFitProfileSchema = z.object({
   fitNotes: z.string().trim().max(800).nullable().optional(),
   useForAiStyling: z.boolean().default(false),
   useWardrobeForPersonalization: z.boolean().default(false),
-  enablePersonalizedAds: z.boolean().default(true),
+  enablePersonalizedAds: z.boolean().default(false),
+  personalizedAdsConsentAt: z.string().datetime().nullable().optional(),
+  personalizationResetAt: z.string().datetime().nullable().optional(),
 });
 
 export const shopSchema = z.object({

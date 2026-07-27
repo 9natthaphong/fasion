@@ -1,47 +1,56 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApiRole } from "@/lib/auth";
 import { getFitProfile, upsertFitProfile, deleteFitProfile } from "@/lib/fit-profile";
+import { requireSameOrigin } from "@/lib/request-security";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireApiRole(["customer"]);
+  if (!auth.user) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const profile = await getFitProfile(user.id);
+  const profile = await getFitProfile(auth.user.id);
   return NextResponse.json({ profile });
 }
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await requireSameOrigin(req))) {
+    return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
+  }
+
+  const auth = await requireApiRole(["customer"]);
+  if (!auth.user) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   try {
     const body = await req.json();
-    const profile = await upsertFitProfile(user.id, body);
+    const profile = await upsertFitProfile(auth.user.id, body);
     return NextResponse.json({ profile });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to update fit profile" },
+      { error: err instanceof Error ? err.message : "บันทึกโปรไฟล์สัดส่วนไม่สำเร็จ" },
       { status: 400 },
     );
   }
 }
 
-export async function DELETE() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function DELETE(req: Request) {
+  if (!(await requireSameOrigin(req))) {
+    return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
+  }
+
+  const auth = await requireApiRole(["customer"]);
+  if (!auth.user) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   try {
-    await deleteFitProfile(user.id);
-    return NextResponse.json({ message: "Fit profile deleted successfully" });
+    await deleteFitProfile(auth.user.id);
+    return NextResponse.json({ message: "ลบโปรไฟล์สัดส่วนสำเร็จ" });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to delete fit profile" },
+      { error: err instanceof Error ? err.message : "ลบข้อมูลสัดส่วนไม่สำเร็จ" },
       { status: 500 },
     );
   }

@@ -1,25 +1,45 @@
 import { NextResponse } from "next/server";
-import { requireApiRole } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { requireSameOrigin } from "@/lib/request-security";
 
-export async function POST(
-  request: Request,
+export async function DELETE(
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
-  const formData = await request.formData();
-  if (formData.get("_method") !== "DELETE") {
-    return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const auth = await requireApiRole(["customer"]);
-  if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("outfit_requests")
-    .delete()
-    .eq("id", (await params).id)
-    .eq("user_id", auth.user.id);
-  if (error) return NextResponse.json({ error: "ลบไม่สำเร็จ" }, { status: 400 });
-  return NextResponse.redirect(new URL("/account/outfits", request.url), 303);
+
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+
+    // Verify ownership of outfit_request
+    const { data: requestRow } = await supabase
+      .from("outfit_requests")
+      .select("id, user_id")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!requestRow) {
+      return NextResponse.json({ error: "ไม่พบประวัติการจัดชุดหรือไม่มีสิทธิ์ลบ" }, { status: 404 });
+    }
+
+    const { error } = await supabase
+      .from("outfit_requests")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) throw new Error(error.message);
+
+    return NextResponse.json({ message: "ลบประวัติการจัดชุดเรียบร้อยแล้ว" });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "ลบประวัติไม่สำเร็จ" },
+      { status: 500 },
+    );
+  }
 }

@@ -47,6 +47,8 @@ export async function upsertFitProfile(
     use_for_ai_styling: parsed.useForAiStyling,
     use_wardrobe_for_personalization: parsed.useWardrobeForPersonalization,
     enable_personalized_ads: parsed.enablePersonalizedAds,
+    personalized_ads_consent_at: parsed.personalizedAdsConsentAt ?? null,
+    personalization_reset_at: parsed.personalizationResetAt ?? null,
     updated_at: new Date().toISOString(),
   };
 

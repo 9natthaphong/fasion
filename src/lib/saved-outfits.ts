@@ -1,6 +1,44 @@
 import { createClient } from "@/lib/supabase/server";
 import { savedOutfitSchema, wearLogSchema, outfitFeedbackSchema } from "@/lib/validation";
-import type { SavedOutfit, WearLog, OutfitFeedback } from "@/lib/types";
+import type { SavedOutfit, WearLog, OutfitFeedback, AIHistoryItem } from "@/lib/types";
+
+export async function getAIHistory(userId: string): Promise<AIHistoryItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("outfit_requests")
+    .select(`
+      id,
+      created_at,
+      input_data,
+      outfit_results(
+        id,
+        result_data
+      )
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  if (error || !data) return [];
+
+  return data.map((item: { id: string; created_at: string; input_data: Record<string, unknown>; outfit_results: unknown }) => {
+    const resRow = Array.isArray(item.outfit_results)
+      ? (item.outfit_results[0] as { id: string; result_data: { summary?: string; outfits?: Array<{ direction: string; name: string; style: string; reason: string }> } } | null)
+      : (item.outfit_results as { id: string; result_data: { summary?: string; outfits?: Array<{ direction: string; name: string; style: string; reason: string }> } } | null);
+    return {
+      id: item.id,
+      created_at: item.created_at,
+      input_data: item.input_data || {},
+      result: resRow
+        ? {
+            id: resRow.id,
+            summary: resRow.result_data?.summary || "",
+            outfits: resRow.result_data?.outfits || [],
+          }
+        : null,
+    };
+  });
+}
 
 export async function getSavedOutfits(userId: string): Promise<SavedOutfit[]> {
   const supabase = await createClient();

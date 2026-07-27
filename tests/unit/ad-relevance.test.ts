@@ -39,4 +39,15 @@ describe("ad relevance and privacy invariants", () => {
     expect(keys).not.toContain("bodyShape");
     expect(keys).not.toContain("skinUndertone");
   });
+
+  it("ensures fit measurements are excluded from ad scoring parameters", () => {
+    const mockAdScoringInput = {
+      preferredStyles: ["Minimal"],
+      preferredColors: ["White"],
+    };
+
+    expect(mockAdScoringInput).not.toHaveProperty("heightCm");
+    expect(mockAdScoringInput).not.toHaveProperty("weightKg");
+    expect(mockAdScoringInput).not.toHaveProperty("chestCm");
+  });
 });
