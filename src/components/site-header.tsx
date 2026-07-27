@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 
 const links = [
   { href: "/ai-stylist", label: "เลือกชุดกับ AI" },
@@ -35,9 +35,7 @@ export function SiteHeader() {
 
           <details className="md:hidden relative">
             <summary aria-label="เปิดเมนู" className="cursor-pointer p-2 text-charcoal hover:bg-paper list-none">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Menu className="w-6 h-6" aria-hidden="true" />
             </summary>
             <nav aria-label="เมนูมือถือ" className="absolute right-0 top-full mt-2 w-56 bg-background border border-line p-4 shadow-xl space-y-3 z-50">
               {links.map((link) => (
@@ -57,4 +55,3 @@ export function SiteHeader() {
     </header>
   );
 }
-

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { ShieldCheck, Info, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { ShieldCheck, Info, Check, AlertCircle, RefreshCw, Ruler } from "lucide-react";
 import type { OutfitResponse } from "@/lib/types";
 
 type StylistFields = {
@@ -354,8 +354,14 @@ export function StylistForm({ configured }: { configured: boolean }) {
                     </div>
 
                     <div className="pt-4 border-t border-line space-y-2 text-xs">
-                      <p className="text-muted">💡 {outfit.comfortNote}</p>
-                      <p className="text-muted">📏 {outfit.sizeNote}</p>
+                      <p className="text-muted flex items-start gap-2">
+                        <Info className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <span>{outfit.comfortNote}</span>
+                      </p>
+                      <p className="text-muted flex items-start gap-2">
+                        <Ruler className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <span>{outfit.sizeNote}</span>
+                      </p>
                       <strong className="block text-sm text-charcoal font-medium pt-1">{outfit.estimatedBudgetText}</strong>
                     </div>
                   </article>
@@ -398,4 +404,3 @@ function getDirectionBadge(direction: string) {
       return { label: "สบาย (Comfortable)", bg: "bg-background border border-line", color: "text-charcoal" };
   }
 }
-

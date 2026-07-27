@@ -1,5 +1,6 @@
 "use client";
 
+import { Heart } from "lucide-react";
 import { useState } from "react";
 
 export function LikeButton({ adId, initialLiked = false }: { adId: string; initialLiked?: boolean }) {
@@ -18,5 +19,13 @@ export function LikeButton({ adId, initialLiked = false }: { adId: string; initi
       setError(response.status === 401 ? "เข้าสู่ระบบลูกค้าก่อนกดถูกใจ" : "บันทึกไม่สำเร็จ ลองอีกครั้ง");
     }
   }
-  return <div><button type="button" className="button button-ghost" disabled={pending} onClick={toggle} aria-pressed={liked}>{liked ? "♥ ถูกใจแล้ว" : "♡ ถูกใจ"}</button>{error ? <small className="field-error">{error}</small> : null}</div>;
+  return (
+    <div>
+      <button type="button" className="button button-ghost" disabled={pending} onClick={toggle} aria-pressed={liked}>
+        <Heart className="w-4 h-4" fill={liked ? "currentColor" : "none"} aria-hidden="true" />
+        {liked ? "ถูกใจแล้ว" : "ถูกใจ"}
+      </button>
+      {error ? <small className="field-error">{error}</small> : null}
+    </div>
+  );
 }

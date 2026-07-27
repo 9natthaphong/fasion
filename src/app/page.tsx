@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, CheckCircle2, ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowRight, ShieldCheck, CheckCircle2, ArrowUpRight } from "lucide-react";
 import { AdCard } from "@/components/ad-card";
 import { ShopCard } from "@/components/shop-card";
 import { Eyebrow, SectionHeading } from "@/components/ui";
@@ -19,89 +19,101 @@ export default async function HomePage() {
       tag: "SAFE",
       title: "เรียบง่าย ใส่ง่าย",
       desc: "เพลย์เซฟสำหรับทุกวันด้วยโทนสีนิวทรัลและโครงเสื้อที่ใส่สบาย",
-      image: "/demo-assets/ad-linen-shirt.jpg",
-      caption: "01 · Everyday Neutral Linen",
+      image: "/images/fittoday/direction-safe-editorial-v1.webp",
     },
     {
       code: "02",
       tag: "ELEVATED",
       title: "แต่งขึ้นอีกระดับ",
       desc: "เพิ่มความเนี้ยบด้วยคัตติ้งคม โครงชุดชัด และการจับคู่สีมีระดับ",
-      image: "/demo-assets/ad-tailored-set.jpg",
-      caption: "02 · Structured Tailoring",
+      image: "/images/fittoday/direction-elevated-editorial-v1.webp",
     },
     {
       code: "03",
       tag: "COMFORTABLE",
       title: "สบายและคล่องตัว",
       desc: "เน้นเนื้อผ้าระบายอากาศ ทรงหลวมสบาย คล่องตัวตลอดวัน",
-      image: "/demo-assets/hero-lookbook-2.jpg",
-      caption: "03 · Fluid & Relaxed Fit",
+      image: "/images/fittoday/direction-comfortable-editorial-v1.webp",
     },
   ];
 
   return (
     <>
-      {/* 2. Signature 3-Direction Hero */}
-      <section className="pt-10 pb-20 border-b border-line bg-background">
-        <div className="container space-y-12">
-          {/* Hero Header */}
-          <div className="max-w-3xl space-y-4">
+      <section className="home-hero border-b border-line bg-background">
+        <div className="container home-hero-grid">
+          <div className="home-hero-copy">
             <div className="inline-flex items-center gap-2 text-xs tracking-widest text-muted uppercase font-mono">
-              <span className="w-2 h-2 rounded-full bg-olive"></span>
-              <span>FitToday Lookbook Editorial</span>
+              <span className="w-2 h-2 rounded-full bg-olive" aria-hidden="true" />
+              <span>FitToday / Bangkok Daily Style</span>
             </div>
-            
-            <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal leading-[1.05] text-charcoal">
-              วันนี้จะไปไหน?
+            <h1 className="font-serif font-normal text-charcoal">
+              วันนี้จะไปไหน
+              <span>ให้ AI ช่วยเลือกชุด</span>
             </h1>
-            
-            <p className="text-lg sm:text-xl text-muted leading-relaxed">
-              ทำให้แต่ละวันแต่งตัวง่ายขึ้น บอกกิจกรรม อากาศ และสไตล์ที่ชอบ แล้วรับไอเดียชุด 3 ทิศทางจาก AI Stylist
+            <p className="home-hero-lede">
+              บอกกิจกรรม อากาศ และสไตล์ที่ชอบ รับไอเดียแต่งตัว 3 ทิศทางที่ใช้ได้จริงกับวันของคุณ
             </p>
-
-            <div className="pt-2 flex flex-wrap items-center gap-4">
-              <Link href="/ai-stylist" className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2">
-                <span>เริ่มเลือกชุด</span>
-                <ArrowRight className="w-4 h-4" />
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/ai-stylist" className="home-primary-action">
+                <span>เริ่มเลือกชุดวันนี้</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
-              <Link href="/discover" className="px-6 py-4 border border-line text-charcoal hover:bg-paper font-medium text-sm rounded-none transition-colors inline-flex items-center gap-1.5">
-                <span>ดูไอเดียล่าสุด</span>
-                <ArrowUpRight className="w-4 h-4 text-muted" />
+              <Link href="/discover" className="home-secondary-action">
+                <span>สำรวจแฟชั่นจากร้านค้า</span>
+                <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
-
-            <p className="text-xs text-muted flex items-center gap-2 pt-2">
-              <ShieldCheck className="w-4 h-4 text-olive shrink-0" />
-              <span>คำแนะนำจาก AI แยกจากพื้นที่โฆษณาของร้านค้าอย่างชัดเจน</span>
+            <p className="home-trust-note">
+              <ShieldCheck className="w-4 h-4 text-olive shrink-0" aria-hidden="true" />
+              <span>คำแนะนำ AI เป็นกลาง และแยกจากโฆษณาร้านค้าอย่างชัดเจน</span>
             </p>
           </div>
+          <figure className="home-hero-visual">
+            <Image
+              src="/images/fittoday/home-hero-bangkok-editorial-v1.webp"
+              alt="คนไทยสองคนในลุคร่วมสมัยโทนครีม เขียวมะกอก และกรมท่า เดินในพื้นที่สถาปัตยกรรมกรุงเทพ"
+              fill
+              priority
+              fetchPriority="high"
+              sizes="(max-width: 960px) 100vw, 56vw"
+              className="object-cover"
+            />
+            <figcaption>
+              <span>Daily direction 01</span>
+              <strong>Bangkok, warm light</strong>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-          {/* Signature 3 Outfit Directions Lookbook Grid */}
-          <div className="grid md:grid-cols-3 gap-6 pt-4">
+      <section className="py-16 sm:py-20 border-b border-line bg-paper">
+        <div className="container">
+          <div className="direction-intro">
+            <Eyebrow>Three directions</Eyebrow>
+            <h2>หนึ่งวัน สามวิธีแต่งตัว</h2>
+            <p>เลือกจุดเริ่มที่มั่นใจ แล้วปรับระดับความเนี้ยบหรือความสบายให้ตรงกับชีวิตจริง</p>
+          </div>
+          <div className="direction-grid">
             {directions.map((item) => (
-              <div key={item.tag} className="group border border-line bg-paper p-5 space-y-4 hover:border-charcoal transition-colors">
+              <article key={item.tag} className="direction-card group">
                 <div className="flex items-center justify-between border-b border-line pb-3">
                   <span className="font-mono text-xs font-semibold tracking-wider text-charcoal">{item.code} {item.tag}</span>
                   <span className="text-xs text-muted font-medium">{item.title}</span>
                 </div>
-
-                <div className="aspect-[3/4] relative bg-background border border-line overflow-hidden">
+                <div className="direction-image">
                   <Image
                     src={item.image}
-                    alt={item.title}
+                    alt={`ตัวอย่างแนวแต่งตัว ${item.title}`}
                     fill
-                    sizes="(max-width: 768px) 90vw, 30vw"
-                    priority
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 92vw, 31vw"
+                    className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                   />
                 </div>
-
                 <div>
-                  <h2 className="font-serif text-2xl font-normal text-charcoal mb-1">{item.title}</h2>
-                  <p className="text-xs text-muted leading-relaxed">{item.desc}</p>
+                  <h3 className="font-serif text-2xl font-normal text-charcoal mb-1">{item.title}</h3>
+                  <p className="text-sm text-muted leading-relaxed">{item.desc}</p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </div>
@@ -234,7 +246,7 @@ export default async function HomePage() {
             <div className="pt-2">
               <Link
                 href="/register/merchant"
-                className="px-8 py-4 bg-[#F4F0E8] text-[#161713] hover:bg-white font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2 shadow-sm"
+                className="merchant-partner-button"
               >
                 <span>เปิดร้านบน FitToday</span>
                 <ArrowRight className="w-4 h-4" />
@@ -274,8 +286,8 @@ export default async function HomePage() {
           </p>
           <div>
             <Link href="/ai-stylist" className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
               <span>เริ่มเลือกชุดกับ AI Stylist</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           </div>
         </div>

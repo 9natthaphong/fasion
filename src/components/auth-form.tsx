@@ -98,11 +98,12 @@ export function AuthForm({
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       {mode === "register" ? (
         <div>
-          <label className="block text-sm font-medium mb-1">ชื่อที่แสดง</label>
+          <label htmlFor="auth-display-name" className="block text-sm font-medium mb-1">ชื่อที่แสดง</label>
           <div className="relative">
             <User className="w-4 h-4 text-muted absolute left-3 top-3" />
             <input
               className="w-full pl-9 pr-3 py-2.5 bg-background border border-line rounded-lg text-sm"
+              id="auth-display-name"
               placeholder="สมชาย ใจดี"
               autoComplete="name"
               {...form.register("displayName")}
@@ -115,11 +116,12 @@ export function AuthForm({
       ) : null}
 
       <div>
-        <label className="block text-sm font-medium mb-1">อีเมล</label>
+        <label htmlFor="auth-email" className="block text-sm font-medium mb-1">อีเมล</label>
         <div className="relative">
           <Mail className="w-4 h-4 text-muted absolute left-3 top-3" />
           <input
             className="w-full pl-9 pr-3 py-2.5 bg-background border border-line rounded-lg text-sm"
+            id="auth-email"
             type="email"
             placeholder="name@example.com"
             autoComplete="email"
@@ -132,11 +134,12 @@ export function AuthForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">รหัสผ่าน</label>
+        <label htmlFor="auth-password" className="block text-sm font-medium mb-1">รหัสผ่าน</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-muted absolute left-3 top-3" />
           <input
             className="w-full pl-9 pr-10 py-2.5 bg-background border border-line rounded-lg text-sm"
+            id="auth-password"
             type={showPassword ? "text" : "password"}
             placeholder="อย่างน้อย 6 ตัวอักษร"
             autoComplete={mode === "login" ? "current-password" : "new-password"}
@@ -146,7 +149,7 @@ export function AuthForm({
             type="button"
             className="absolute right-3 top-2.5 text-muted hover:text-charcoal"
             onClick={() => setShowPassword(!showPassword)}
-            tabIndex={-1}
+            aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
