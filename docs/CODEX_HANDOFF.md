@@ -94,7 +94,7 @@ Storage buckets จริง:
 ## Functional verification
 
 - Public: routes ที่กำหนดทั้งหมดตอบต่ำกว่า 400, ไม่มี console/CSP/image error และไม่มี horizontal overflow ใน Playwright desktop/mobile
-- Customer: login, profile, private body-data opt-in, opt-out พร้อม clear values, like, duplicate-like prevention, unlike, Shopee click และ account deletion request ผ่านด้วย temporary user
+- Customer: login, profile, private body-data opt-in, opt-out พร้อม clear values, owned outfit history view/delete, like, duplicate-like prevention, unlike, Shopee click และ account deletion request ผ่านด้วย temporary user
 - Merchant: login, onboarding pending/inactive, upload 2 ภาพ, signed preview, draft creation, alt text, reorder, edit, submit pending review หลัง test fixture อนุมัติ shop/subscription และ owned analytics ผ่านด้วย temporary user
 - Registration: เรียกจริงแล้ว Supabase ตอบ `email rate limit exceeded`; จึง Blocked ไม่ใช่ Passed
 - Admin: anonymous redirect และ server authorization ผ่าน; browser Admin E2E Blocked เพราะ `ADMIN_EMAILS` ตั้งใจ unset

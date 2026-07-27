@@ -95,6 +95,7 @@ test("customer can update private preferences, like safely, and request deletion
   let userId = "";
   let adId = "";
   let storagePath = "";
+  let outfitRequestId = "";
 
   try {
     const created = await admin.auth.admin.createUser({
@@ -187,6 +188,49 @@ test("customer can update private preferences, like safely, and request deletion
       save_body_information: false,
     });
 
+    const outfitRequest = await admin
+      .from("outfit_requests")
+      .insert({
+        user_id: userId,
+        input_data: { activity: "Customer E2E outfit history" },
+      })
+      .select("id")
+      .single();
+    expect(outfitRequest.error).toBeNull();
+    outfitRequestId = outfitRequest.data!.id;
+    const outfitResult = await admin.from("outfit_results").insert({
+      request_id: outfitRequestId,
+      model_name: "e2e-fixture",
+      result_data: {
+        summary: "Owned outfit history is visible only to this customer.",
+        outfits: [
+          { name: "Safe E2E" },
+          { name: "Elevated E2E" },
+          { name: "Comfortable E2E" },
+        ],
+      },
+    });
+    expect(outfitResult.error).toBeNull();
+
+    await page.goto("/account/outfits");
+    await expect(
+      page.getByRole("heading", { name: "Customer E2E outfit history" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Owned outfit history is visible only to this customer."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "ลบ", exact: true }).click();
+    await expect(page).toHaveURL(/\/account\/outfits$/);
+    await expect.poll(async () => {
+      const ownedRequest = await admin
+        .from("outfit_requests")
+        .select("id")
+        .eq("id", outfitRequestId)
+        .maybeSingle();
+      return ownedRequest.data;
+    }).toBeNull();
+    outfitRequestId = "";
+
     await page.goto(`/ads/${slug}`);
     const like = page.getByRole("button", { name: "ถูกใจ", exact: true });
     await like.click();
@@ -237,6 +281,16 @@ test("customer can update private preferences, like safely, and request deletion
       .single();
     expect(deletion.data?.status).toBe("pending");
   } finally {
+    if (outfitRequestId) {
+      await admin
+        .from("outfit_results")
+        .delete()
+        .eq("request_id", outfitRequestId);
+      await admin
+        .from("outfit_requests")
+        .delete()
+        .eq("id", outfitRequestId);
+    }
     if (adId) {
       await admin.from("ad_clicks").delete().eq("ad_id", adId);
       await admin.from("ad_impressions").delete().eq("ad_id", adId);
