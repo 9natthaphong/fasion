@@ -5,13 +5,16 @@ import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getEventIdentity, passRateLimit, requireSameOrigin } from "@/lib/request-security";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { getFitProfile } from "@/lib/fit-profile";
+import { getAggregatedFeedbackSummary } from "@/lib/saved-outfits";
+import { getPersonalizedAds } from "@/lib/ad-relevance";
 import {
   outfitResponseSchema,
   wardrobeOutfitInputSchema,
   wardrobeOutfitResponseSchema,
 } from "@/lib/validation";
 import { getWardrobeItems, wardrobeAssetUrl } from "@/lib/wardrobe";
-import type { WardrobeOutfitResponse, WardrobeItem } from "@/lib/types";
+import type { WardrobeOutfitResponse, WardrobeItem, OutfitResponse } from "@/lib/types";
 
 const generalSystemPrompt = `คุณคือสไตลิสต์ภาษาไทยที่สุภาพ ให้คำแนะนำแฟชั่นตามกิจกรรม อากาศ ความสบาย ความชอบ และงบประมาณ
 ต้องตอบ 3 ชุดที่ต่างกันจริงและมี direction ตามลำดับ safe, elevated, comfortable
@@ -54,6 +57,24 @@ export async function POST(request: Request) {
     !(await passRateLimit("ai-stylist", user?.id ?? identity.sessionId, 10, 3600))
   ) {
     return NextResponse.json({ error: "ใช้งานครบโควตาชั่วคราว กรุณาลองใหม่ภายหลัง" }, { status: 429 });
+  }
+
+  // Fetch optional feedback summary if user logged in
+  let feedbackSummary: string | null = null;
+  let fitProfilePromptPart: Record<string, unknown> = {};
+
+  if (user) {
+    feedbackSummary = await getAggregatedFeedbackSummary(user.id);
+    const fitProfile = await getFitProfile(user.id);
+    if (fitProfile && fitProfile.use_for_ai_styling) {
+      fitProfilePromptPart = {
+        usualTopSize: fitProfile.usual_top_size,
+        usualBottomSize: fitProfile.usual_bottom_size,
+        usualShoeSize: fitProfile.usual_shoe_size,
+        fitNotes: fitProfile.fit_notes,
+        colorContrastPreference: fitProfile.color_contrast_preference,
+      };
+    }
   }
 
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 1, timeout: 25_000 });
@@ -104,6 +125,8 @@ export async function POST(request: Request) {
         avoidedColors: parsed.data.avoidedColors,
         anchorItem: parsed.data.anchorItem,
         notes: parsed.data.notes,
+        feedbackSummary,
+        fitProfileOptions: fitProfilePromptPart,
       },
     })}`;
 
@@ -159,10 +182,19 @@ export async function POST(request: Request) {
       };
     });
 
+    // Separated sponsored ads retrieval (AFTER AI recommendation generation finishes)
+    const sponsoredAds = await getPersonalizedAds({
+      userId: user.id,
+      contextStyle: wardrobeResult.outfits[0]?.style,
+      contextOccasion: parsed.data.activity,
+      limit: 3,
+    });
+
     const finalWardrobeResult: WardrobeOutfitResponse = {
       summary: wardrobeResult.summary,
       outfits: validatedOutfits,
       generalTips: wardrobeResult.generalTips,
+      sponsoredAds,
     };
 
     // Save to Database History
@@ -207,9 +239,14 @@ export async function POST(request: Request) {
     return NextResponse.json(finalWardrobeResult);
   }
 
-  // Handle General Mode (Original flow)
-  const input = parsed.data.saveForNextTime ? parsed.data : { ...parsed.data, heightCm: null, weightKg: null };
-  let result = null;
+  // Handle General Mode
+  const inputPromptData = {
+    ...(parsed.data.saveForNextTime ? parsed.data : { ...parsed.data, heightCm: null, weightKg: null }),
+    feedbackSummary,
+    fitProfileOptions: fitProfilePromptPart,
+  };
+
+  let result: OutfitResponse | null = null;
 
   for (let attempt = 0; attempt < 2 && !result; attempt += 1) {
     try {
@@ -219,7 +256,7 @@ export async function POST(request: Request) {
           store: false,
           input: [
             { role: "system", content: generalSystemPrompt },
-            { role: "user", content: `สร้างคำแนะนำจากข้อมูลต่อไปนี้:\n${JSON.stringify(input)}` },
+            { role: "user", content: `สร้างคำแนะนำจากข้อมูลต่อไปนี้:\n${JSON.stringify(inputPromptData)}` },
           ],
           text: { format: zodTextFormat(outfitResponseSchema, "fittoday_outfits") },
         },
@@ -234,11 +271,24 @@ export async function POST(request: Request) {
 
   if (!result) return NextResponse.json({ error: "AI ส่งผลลัพธ์ไม่สมบูรณ์ กรุณาลองอีกครั้ง" }, { status: 502 });
 
+  // Separated sponsored ads retrieval (AFTER AI recommendation generation finishes)
+  const sponsoredAds = await getPersonalizedAds({
+    userId: user?.id,
+    contextStyle: result.outfits[0]?.style,
+    contextOccasion: parsed.data.activity,
+    limit: 3,
+  });
+
+  const finalResult: OutfitResponse = {
+    ...result,
+    sponsoredAds,
+  };
+
   if (isSupabaseAdminConfigured()) {
     const admin = getAdminClient();
     const storedInput = parsed.data.saveForNextTime ? parsed.data : { ...parsed.data, heightCm: null, weightKg: null };
     const { data: saved } = await admin.from("outfit_requests").insert({ user_id: user?.id ?? null, input_data: storedInput }).select("id").single();
-    if (saved) await admin.from("outfit_results").insert({ request_id: saved.id, model_name: process.env.OPENAI_MODEL || "gpt-4o-mini", result_data: result });
+    if (saved) await admin.from("outfit_results").insert({ request_id: saved.id, model_name: process.env.OPENAI_MODEL || "gpt-4o-mini", result_data: finalResult });
     if (user?.role === "customer" && parsed.data.saveForNextTime) {
       await admin.from("customer_preferences").upsert({
         user_id: user.id,
@@ -255,5 +305,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json(finalResult);
 }

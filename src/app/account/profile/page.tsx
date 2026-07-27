@@ -1,36 +1,32 @@
-import { ProfileForm } from "@/components/profile-form";
 import { requirePageRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { getFitProfile } from "@/lib/fit-profile";
+import { FitProfileForm } from "@/components/account/fit-profile-form";
+import { UserCheck } from "lucide-react";
 
-export default async function AccountProfilePage() {
+export const dynamic = "force-dynamic";
+
+export default async function ProfilePage() {
   const user = await requirePageRole(["customer"], "/login/customer");
-  const supabase = await createClient();
-  const [{ data: profile }, { data: preferences }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
-    supabase.from("customer_preferences").select("*").eq("user_id", user.id).maybeSingle(),
-  ]);
+  const fitProfile = await getFitProfile(user.id);
+
   return (
-    <>
-      <header className="dashboard-heading">
-        <p className="eyebrow">Profile</p>
-        <h1>โปรไฟล์และความชอบ</h1>
-        <p>เลือกได้ว่าจะเก็บข้อมูลร่างกายหรือใช้เฉพาะครั้งนี้</p>
-      </header>
-      <ProfileForm
-        initial={{
-          displayName: profile?.display_name ?? "",
-          heightCm: preferences?.height_cm ?? null,
-          weightKg: preferences?.weight_kg ?? null,
-          clothingPresentation: preferences?.clothing_presentation ?? "unspecified",
-          preferredFit: preferences?.preferred_fit ?? "unspecified",
-          defaultBudget: preferences?.default_budget ?? null,
-          preferredStyles: preferences?.preferred_styles ?? [],
-          preferredColors: preferences?.preferred_colors ?? [],
-          avoidedColors: preferences?.avoided_colors ?? [],
-          saveBodyInformation: preferences?.save_body_information ?? false,
-        }}
-      />
-    </>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="border-b border-line pb-6">
+        <div className="inline-flex items-center gap-2 text-xs font-mono text-muted uppercase">
+          <UserCheck className="w-4 h-4 text-olive" />
+          <span>Customer Style & Fit Profile</span>
+        </div>
+        <h1 className="font-serif text-3xl sm:text-4xl font-normal text-charcoal mt-1">
+          โปรไฟล์สัดส่วนและความชอบ
+        </h1>
+        <p className="text-sm text-muted mt-1">
+          กรอกข้อมูลสัดส่วนแบบสมบูรณ์และตั้งค่าการยินยอมเรื่องความเป็นส่วนตัว
+        </p>
+      </div>
+
+      {/* Guided Fit Profile Form */}
+      <FitProfileForm initialProfile={fitProfile} />
+    </div>
   );
 }
-

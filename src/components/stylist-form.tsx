@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Info, Check, AlertCircle, RefreshCw, Shirt, Sparkles, Plus, AlertTriangle } from "lucide-react";
+import { SponsoredAdSection } from "@/components/sponsored-ad-section";
 import type { OutfitResponse, WardrobeItem, WardrobeOutfitResponse } from "@/lib/types";
 
 type StylistFields = {
@@ -479,6 +480,21 @@ export function StylistForm({ configured, initialMode = "general" }: { configure
                 );
               })}
             </div>
+
+            {generalResult.generalTips?.length > 0 && (
+              <div className="p-8 bg-paper border border-line space-y-4">
+                <h3 className="font-serif text-2xl font-normal">คำแนะนำเพิ่มเติมในการแต่งตัว</h3>
+                <ul className="grid sm:grid-cols-2 gap-3 text-sm text-muted list-disc list-inside">
+                  {generalResult.generalTips.map((tip, idx) => (
+                    <li key={idx}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {generalResult.sponsoredAds && generalResult.sponsoredAds.length > 0 && (
+              <SponsoredAdSection ads={generalResult.sponsoredAds} />
+            )}
           </div>
         ) : null}
 

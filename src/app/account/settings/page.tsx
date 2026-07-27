@@ -1,23 +1,31 @@
 import { requirePageRole } from "@/lib/auth";
-import { AccountDeletionForm } from "@/components/account-deletion-form";
+import { getFitProfile } from "@/lib/fit-profile";
+import { PrivacySettingsForm } from "@/components/account/privacy-settings-form";
+import { Settings } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function AccountSettingsPage() {
   const user = await requirePageRole(["customer"], "/login/customer");
+  const fitProfile = await getFitProfile(user.id);
+
   return (
-    <>
-      <header className="dashboard-heading">
-        <p className="eyebrow">Settings</p>
-        <h1>การตั้งค่าบัญชี</h1>
-        <p>{user.email}</p>
-      </header>
-      <section className="content-card danger-zone">
-        <h2>ลบบัญชี</h2>
-        <p>
-          การลบบัญชีจะลบโปรไฟล์ ความชอบ ประวัติคำแนะนำ และรายการถูกใจ
-          ขั้นตอนนี้ไม่สามารถย้อนกลับได้
+    <div className="space-y-8 max-w-3xl">
+      {/* Header */}
+      <div className="border-b border-line pb-6">
+        <div className="inline-flex items-center gap-2 text-xs font-mono text-muted uppercase">
+          <Settings className="w-4 h-4 text-olive" />
+          <span>Account Settings & Privacy</span>
+        </div>
+        <h1 className="font-serif text-3xl sm:text-4xl font-normal text-charcoal mt-1">
+          การตั้งค่าบัญชีและความเป็นส่วนตัว
+        </h1>
+        <p className="text-sm text-muted mt-1">
+          จัดการสิทธิ์การปรับแต่งโฆษณา ความเป็นส่วนตัว และสิทธิ์การใช้ข้อมูลตู้เสื้อผ้า
         </p>
-        <AccountDeletionForm />
-      </section>
-    </>
+      </div>
+
+      <PrivacySettingsForm initialProfile={fitProfile} />
+    </div>
   );
 }

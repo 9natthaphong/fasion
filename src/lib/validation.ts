@@ -44,6 +44,59 @@ export const preferencesSchema = z
       : { ...value, heightCm: null, weightKg: null },
   );
 
+export const bodyShapeEnum = z.enum([
+  "straight",
+  "triangle",
+  "inverted_triangle",
+  "oval",
+  "hourglass",
+  "unsure",
+  "prefer_not_to_say",
+]);
+
+export const skinUndertoneEnum = z.enum([
+  "warm",
+  "cool",
+  "neutral",
+  "olive",
+  "unsure",
+  "prefer_not_to_say",
+]);
+
+export const skinDepthEnum = z.enum([
+  "very_light",
+  "light",
+  "medium",
+  "tan",
+  "deep",
+  "very_deep",
+  "prefer_not_to_say",
+]);
+
+export const customerFitProfileSchema = z.object({
+  heightCm: z.coerce.number().min(50).max(250).nullable().optional(),
+  weightKg: z.coerce.number().min(20).max(300).nullable().optional(),
+  chestCm: z.coerce.number().min(40).max(200).nullable().optional(),
+  bustCm: z.coerce.number().min(40).max(200).nullable().optional(),
+  waistCm: z.coerce.number().min(30).max(200).nullable().optional(),
+  hipsCm: z.coerce.number().min(40).max(200).nullable().optional(),
+  shoulderWidthCm: z.coerce.number().min(20).max(100).nullable().optional(),
+  inseamCm: z.coerce.number().min(30).max(150).nullable().optional(),
+  sleeveLengthCm: z.coerce.number().min(20).max(120).nullable().optional(),
+  shoeLengthCm: z.coerce.number().min(10).max(50).nullable().optional(),
+  usualTopSize: z.string().trim().max(40).nullable().optional(),
+  usualBottomSize: z.string().trim().max(40).nullable().optional(),
+  usualShoeSize: z.string().trim().max(40).nullable().optional(),
+  selfDescribedBodyShape: bodyShapeEnum.nullable().optional(),
+  skinUndertone: skinUndertoneEnum.nullable().optional(),
+  skinDepth: skinDepthEnum.nullable().optional(),
+  colorContrastPreference: z.string().trim().max(100).nullable().optional(),
+  fitNotes: z.string().trim().max(800).nullable().optional(),
+  useForAiStyling: z.boolean().default(false),
+  useWardrobeForPersonalization: z.boolean().default(false),
+  enablePersonalizedAds: z.boolean().default(true),
+});
+
 export const shopSchema = z.object({
   name: z.string().trim().min(2).max(100),
   slug: z
@@ -61,6 +114,7 @@ export const shopSchema = z.object({
       .url("ลิงก์ Instagram ไม่ถูกต้อง")
       .refine((value) => new URL(value).protocol === "https:", "ต้องใช้ HTTPS"),
   ]).optional(),
+  tagIds: z.array(z.string().uuid()).max(20).optional(),
 });
 
 export const adSchema = z
@@ -84,6 +138,7 @@ export const adSchema = z
     destinationUrl: shopeeUrlSchema,
     coverImagePath: z.string().trim().max(500).nullable(),
     categoryIds: z.array(z.string().uuid()).min(1).max(5),
+    tagIds: z.array(z.string().uuid()).max(20).optional(),
     images: z
       .array(
         z.object({
@@ -335,3 +390,41 @@ export const wardrobeOutfitInputSchema = outfitInputSchema.extend({
   excludedItemIds: z.array(z.string().uuid()).max(50).default([]),
 });
 
+export const savedOutfitSchema = z.object({
+  outfitResultId: z.string().uuid().nullable().optional(),
+  name: z.string().trim().min(1, "กรุณากรอกชื่อชุด").max(100),
+  direction: z.enum(["safe", "elevated", "comfortable", "custom"]),
+  notes: z.string().trim().max(800).nullable().optional(),
+  isFavorite: z.boolean().default(false),
+  items: z
+    .array(
+      z.object({
+        wardrobeItemId: z.string().uuid().nullable().optional(),
+        itemRole: z.string().trim().min(1).max(100),
+        itemDescription: z.string().trim().max(500).nullable().optional(),
+        stylingInstruction: z.string().trim().max(500).nullable().optional(),
+        sortOrder: z.number().int().min(0).default(0),
+      }),
+    )
+    .max(10)
+    .default([]),
+});
+
+export const wearLogSchema = z.object({
+  savedOutfitId: z.string().uuid().nullable().optional(),
+  outfitResultId: z.string().uuid().nullable().optional(),
+  wornOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "รูปแบบวันที่ไม่ถูกต้อง"),
+  occasion: z.string().trim().max(100).nullable().optional(),
+  weatherNote: z.string().trim().max(200).nullable().optional(),
+  comfortRating: z.number().int().min(1).max(5).nullable().optional(),
+  confidenceRating: z.number().int().min(1).max(5).nullable().optional(),
+  notes: z.string().trim().max(800).nullable().optional(),
+});
+
+export const outfitFeedbackSchema = z.object({
+  outfitResultId: z.string().uuid(),
+  outfitIndex: z.number().int().min(0).max(2),
+  rating: z.enum(["liked", "neutral", "disliked"]),
+  feedbackTags: z.array(z.string().trim().max(60)).max(10).default([]),
+  comment: z.string().trim().max(800).nullable().optional(),
+});

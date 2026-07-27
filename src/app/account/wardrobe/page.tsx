@@ -3,6 +3,7 @@ import { Plus, Filter, Heart, Shirt, Sparkles } from "lucide-react";
 import { requirePageRole } from "@/lib/auth";
 import { getWardrobeItems } from "@/lib/wardrobe";
 import { WardrobeItemCard } from "@/components/wardrobe/wardrobe-item-card";
+import { WardrobeInsightsPanel } from "@/components/wardrobe/wardrobe-insights-panel";
 import type { WardrobeItemType, WardrobeAvailabilityStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
   const currentStatus = (params.status as WardrobeAvailabilityStatus | "all") || "all";
   const favoriteOnly = params.favorite === "true";
 
+  const allItems = await getWardrobeItems(user.id, {});
   const items = await getWardrobeItems(user.id, {
     type: currentType,
     status: currentStatus,
@@ -82,6 +84,9 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           </Link>
         </div>
       </div>
+
+      {/* Wardrobe Insights Intelligence Panel */}
+      <WardrobeInsightsPanel items={allItems} />
 
       {/* Filter Toolbar */}
       <div className="space-y-4 bg-paper border border-line p-4 sm:p-5">

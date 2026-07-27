@@ -1,0 +1,42 @@
+import { describe, expect, it } from "vitest";
+import { adSchema } from "@/lib/validation";
+
+describe("ad relevance and privacy invariants", () => {
+  it("validates ad schema with optional taxonomy tagIds", () => {
+    const shopId = "123e4567-e89b-12d3-a456-426614174000";
+    const validAd = {
+      shopId,
+      title: "เสื้อเชิ้ตผ้าลินินทรงหลวม",
+      slug: "linen-loose-shirt",
+      description: "เสื้อเชิ้ตลินินใส่สบาย ระบายอากาศได้ดี",
+      adType: "single_product",
+      priceText: "790 THB",
+      destinationUrl: "https://shopee.co.th/product/123",
+      coverImagePath: `${shopId}/123e4567-e89b-12d3-a456-426614174001.jpg`,
+      categoryIds: ["123e4567-e89b-12d3-a456-426614174001"],
+      tagIds: ["123e4567-e89b-12d3-a456-426614174002"],
+      images: [
+        {
+          storagePath: `${shopId}/123e4567-e89b-12d3-a456-426614174001.jpg`,
+          altText: "เสื้อเชิ้ตลินิน",
+          sortOrder: 0,
+        },
+      ],
+      startsAt: null,
+      endsAt: null,
+      intent: "submit",
+    };
+
+    const res = adSchema.safeParse(validAd);
+    expect(res.success).toBe(true);
+  });
+
+  it("prohibits sensitive fit profile fields from entering ad relevance schema", () => {
+    const keys = Object.keys(adSchema.shape);
+    expect(keys).not.toContain("heightCm");
+    expect(keys).not.toContain("weightKg");
+    expect(keys).not.toContain("chestCm");
+    expect(keys).not.toContain("bodyShape");
+    expect(keys).not.toContain("skinUndertone");
+  });
+});

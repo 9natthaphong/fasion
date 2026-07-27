@@ -36,6 +36,7 @@ export interface Shop {
   subscription_status: "inactive" | "active" | "expired";
   subscription_ends_at: string | null;
   is_demo?: boolean;
+  fashion_tags?: FashionTag[];
 }
 
 export interface Ad {
@@ -54,6 +55,7 @@ export interface Ad {
   created_at: string;
   shop?: Shop;
   categories?: Category[];
+  fashion_tags?: FashionTag[];
   impressions?: number;
   likes?: number;
   clicks?: number;
@@ -81,6 +83,7 @@ export interface OutfitResponse {
   outfits: OutfitSuggestion[];
   generalTips: string[];
   isDemo?: boolean;
+  sponsoredAds?: PersonalizedAd[];
 }
 
 export type WardrobeItemType =
@@ -185,5 +188,136 @@ export interface WardrobeOutfitResponse {
   summary: string;
   outfits: WardrobeOutfitSuggestion[];
   generalTips: string[];
+  sponsoredAds?: PersonalizedAd[];
 }
 
+export type BodyShapeOption =
+  | "straight"
+  | "triangle"
+  | "inverted_triangle"
+  | "oval"
+  | "hourglass"
+  | "unsure"
+  | "prefer_not_to_say";
+
+export type SkinUndertoneOption =
+  | "warm"
+  | "cool"
+  | "neutral"
+  | "olive"
+  | "unsure"
+  | "prefer_not_to_say";
+
+export type SkinDepthOption =
+  | "very_light"
+  | "light"
+  | "medium"
+  | "tan"
+  | "deep"
+  | "very_deep"
+  | "prefer_not_to_say";
+
+export interface CustomerFitProfile {
+  user_id: string;
+  height_cm: number | null;
+  weight_kg: number | null;
+  chest_cm: number | null;
+  bust_cm: number | null;
+  waist_cm: number | null;
+  hips_cm: number | null;
+  shoulder_width_cm: number | null;
+  inseam_cm: number | null;
+  sleeve_length_cm: number | null;
+  shoe_length_cm: number | null;
+  usual_top_size: string | null;
+  usual_bottom_size: string | null;
+  usual_shoe_size: string | null;
+  self_described_body_shape: BodyShapeOption | null;
+  skin_undertone: SkinUndertoneOption | null;
+  skin_depth: SkinDepthOption | null;
+  color_contrast_preference: string | null;
+  fit_notes: string | null;
+  use_for_ai_styling: boolean;
+  use_wardrobe_for_personalization: boolean;
+  enable_personalized_ads: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FashionTagType =
+  | "style"
+  | "color"
+  | "occasion"
+  | "formality"
+  | "fit"
+  | "weather"
+  | "season"
+  | "item_type"
+  | "audience";
+
+export interface FashionTag {
+  id: string;
+  tag_type: FashionTagType;
+  name_th: string;
+  name_en: string;
+  slug: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PersonalizedAd extends Ad {
+  relevanceScore: number;
+  explanations: string[];
+}
+
+export interface SavedOutfit {
+  id: string;
+  user_id: string;
+  outfit_result_id: string | null;
+  name: string;
+  direction: "safe" | "elevated" | "comfortable" | "custom";
+  notes: string | null;
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  items?: SavedOutfitItem[];
+}
+
+export interface SavedOutfitItem {
+  id: string;
+  saved_outfit_id: string;
+  wardrobe_item_id: string | null;
+  item_role: string;
+  item_description: string | null;
+  styling_instruction: string | null;
+  sort_order: number;
+  wardrobeItem?: WardrobeItem | null;
+}
+
+export interface WearLog {
+  id: string;
+  user_id: string;
+  saved_outfit_id: string | null;
+  outfit_result_id: string | null;
+  worn_on: string;
+  occasion: string | null;
+  weather_note: string | null;
+  comfort_rating: number | null;
+  confidence_rating: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface OutfitFeedback {
+  id: string;
+  user_id: string;
+  outfit_result_id: string;
+  outfit_index: number;
+  rating: "liked" | "neutral" | "disliked";
+  feedback_tags: string[];
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
+}

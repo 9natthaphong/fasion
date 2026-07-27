@@ -1,9 +1,17 @@
 "use client";
 
+import { useState, useMemo, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState, type ChangeEvent } from "react";
+import { ControlledTagSelector } from "@/components/merchant/controlled-tag-selector";
+import type { FashionTag } from "@/lib/types";
+
+function toLocalValue(date: string | null | undefined) {
+  if (!date) return "";
+  const d = new Date(date);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
 
 type EditorAd = {
   id: string;
@@ -18,17 +26,20 @@ type EditorAd = {
   ends_at: string | null;
   status: string;
   ad_categories?: { category_id: string }[];
+  ad_fashion_tags?: { tag_id: string }[];
   ad_images?: { storage_path: string; alt_text: string; sort_order: number }[];
 };
 
 export function AdEditor({
   shopId,
   categories,
+  allTags = [],
   ad,
   canSubmit,
 }: {
   shopId: string;
   categories: { id: string; name_th: string }[];
+  allTags?: FashionTag[];
   ad?: EditorAd | null;
   canSubmit: boolean;
 }) {
@@ -40,6 +51,9 @@ export function AdEditor({
     ad?.ad_images?.sort((a, b) => a.sort_order - b.sort_order) ?? [],
   );
   const [coverPath, setCoverPath] = useState(ad?.cover_image_path ?? "");
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    ad?.ad_fashion_tags?.map((t) => t.tag_id) ?? [],
+  );
   const selectedCategories = useMemo(
     () => new Set(ad?.ad_categories?.map((item) => item.category_id) ?? []),
     [ad],
@@ -120,6 +134,7 @@ export function AdEditor({
       destinationUrl: form.get("destinationUrl"),
       coverImagePath: coverPath || null,
       categoryIds: form.getAll("categoryIds"),
+      tagIds: selectedTagIds,
       images: uploaded.map((item, sortOrder) => ({
         storagePath: item.storage_path,
         altText: item.alt_text,
@@ -135,6 +150,15 @@ export function AdEditor({
       body: JSON.stringify(body),
     });
     const result = await response.json();
+
+    if (response.ok && result.ad?.id) {
+      await fetch(`/api/merchant/ads/${result.ad.id}/tags`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tagIds: selectedTagIds }),
+      });
+    }
+
     setPending(false);
     if (!response.ok) {
       setMessage(result.error ?? "บันทึกโฆษณาไม่สำเร็จ");
@@ -175,6 +199,13 @@ export function AdEditor({
           </label>
         ))}
       </fieldset>
+
+      <ControlledTagSelector
+        allTags={allTags}
+        selectedTagIds={selectedTagIds}
+        onChange={setSelectedTagIds}
+        label="แท็กแฟชั่นของโฆษณา (สไตล์, สี, โอกาส, ความเป็นทางการ)"
+      />
       <div className="form-grid">
         <label>เริ่มเผยแพร่<input name="startsAt" type="datetime-local" defaultValue={toLocalValue(ad?.starts_at)} /></label>
         <label>สิ้นสุด<input name="endsAt" type="datetime-local" defaultValue={toLocalValue(ad?.ends_at)} /></label>
@@ -245,10 +276,6 @@ export function AdEditor({
       {!canSubmit ? <p className="muted">ส่งตรวจได้เมื่อร้านอนุมัติและ subscription active แล้ว แต่ยังบันทึกร่างได้</p> : null}
     </form>
   );
-}
-
-function toLocalValue(value?: string | null) {
-  return value ? new Date(value).toISOString().slice(0, 16) : "";
 }
 
 function move<T>(items: T[], from: number, to: number) {
