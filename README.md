@@ -39,7 +39,7 @@ npm run dev
 | `NEXT_PUBLIC_SITE_URL` | ใช่ | canonical URL และ Auth callback |
 | `SUPABASE_SECRET_KEY` | ไม่ | server-only events, admin และ signed assets |
 | `OPENAI_API_KEY` | ไม่ | OpenAI Responses API |
-| `OPENAI_MODEL` | ไม่ | ค่าเริ่มต้น `gpt-5.6-luna` |
+| `OPENAI_MODEL` | ไม่ | ค่าเริ่มต้น `gpt-4o-mini` |
 | `ADMIN_EMAILS` | ไม่ | allowlist อีเมล admin คั่นด้วยจุลภาค |
 
 ห้ามใช้ service-role/secret key ในตัวแปรที่ขึ้นต้นด้วย `NEXT_PUBLIC_` และห้าม commit `.env.local`

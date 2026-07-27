@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   for (let attempt = 0; attempt < 2 && !result; attempt += 1) {
     try {
       const response = await client.responses.parse({
-        model: process.env.OPENAI_MODEL || "gpt-5.6-luna",
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         store: false,
         input: [
           { role: "system", content: systemPrompt },
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const admin = getAdminClient();
     const storedInput = parsed.data.saveForNextTime ? parsed.data : { ...parsed.data, heightCm: null, weightKg: null };
     const { data: saved } = await admin.from("outfit_requests").insert({ user_id: user?.id ?? null, input_data: storedInput }).select("id").single();
-    if (saved) await admin.from("outfit_results").insert({ request_id: saved.id, model_name: process.env.OPENAI_MODEL || "gpt-5.6-luna", result_data: result });
+    if (saved) await admin.from("outfit_results").insert({ request_id: saved.id, model_name: process.env.OPENAI_MODEL || "gpt-4o-mini", result_data: result });
     if (user?.role === "customer" && parsed.data.saveForNextTime) {
       await admin.from("customer_preferences").upsert({
         user_id: user.id,
