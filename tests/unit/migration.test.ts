@@ -5,6 +5,13 @@ const migration = readFileSync(
   new URL("../../supabase/migrations/20260727000100_initial_schema.sql", import.meta.url),
   "utf8",
 ).toLowerCase();
+const hardeningMigration = readFileSync(
+  new URL(
+    "../../supabase/migrations/20260727145323_harden_merchant_ad_assets.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
 
 const exposedTables = [
   "profiles",
@@ -52,5 +59,12 @@ describe("database migration security invariants", () => {
       expect(migration).toContain(`('${bucket}', '${bucket}', false`);
     }
     expect(migration).toContain("array['image/jpeg', 'image/png', 'image/webp']");
+  });
+
+  it("hardens merchant ad transitions and asset ownership", () => {
+    expect(hardeningMigration).toContain("merchant ads must be created as draft");
+    expect(hardeningMigration).toContain("active ads may only be paused by merchants");
+    expect(hardeningMigration).toContain("private.is_owned_ad_asset_path");
+    expect(hardeningMigration).toContain("ads under review cannot be changed by merchants");
   });
 });

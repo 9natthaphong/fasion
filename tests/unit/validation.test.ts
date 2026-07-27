@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adSchema, outfitInputSchema, outfitResponseSchema, preferencesSchema } from "@/lib/validation";
+import { adSchema, outfitInputSchema, outfitResponseSchema, preferencesSchema, shopSchema } from "@/lib/validation";
 
 const validOutfit = {
   summary: "เหมาะกับวันที่อากาศร้อน",
@@ -73,6 +73,36 @@ describe("input validation", () => {
       intent: "draft",
     });
     expect(parsed.destinationUrl).toBe("https://shopee.co.th/item");
+  });
+  it("rejects ad assets outside the owning shop prefix", () => {
+    const result = adSchema.safeParse({
+      shopId: "00000000-0000-4000-8000-000000000001",
+      title: "ลุคประจำวัน",
+      slug: "daily-look",
+      description: "",
+      adType: "outfit_set",
+      priceText: null,
+      destinationUrl: "https://shopee.co.th/item",
+      coverImagePath:
+        "00000000-0000-4000-8000-000000000099/10000000-0000-4000-8000-000000000001.webp",
+      categoryIds: ["00000000-0000-4000-8000-000000000002"],
+      images: [],
+      startsAt: null,
+      endsAt: null,
+      intent: "draft",
+    });
+    expect(result.success).toBe(false);
+  });
+  it("accepts an empty optional Instagram URL without throwing", () => {
+    expect(
+      shopSchema.safeParse({
+        name: "FitToday Shop",
+        slug: "fittoday-shop",
+        description: "",
+        shopeeUrl: "https://shopee.co.th/fittoday",
+        instagramUrl: "",
+      }).success,
+    ).toBe(true);
   });
 });
 
