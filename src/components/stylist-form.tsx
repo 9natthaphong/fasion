@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Sparkles, ShieldCheck, Info, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { ShieldCheck, Info, Check, AlertCircle, RefreshCw } from "lucide-react";
 import type { OutfitResponse } from "@/lib/types";
 
 type StylistFields = {
@@ -73,28 +73,25 @@ export function StylistForm({ configured }: { configured: boolean }) {
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-10 items-start">
         {/* Main 6-Step Guided Form */}
-        <form className="space-y-8" onSubmit={handleSubmit(submit)}>
+        <form className="space-y-6" onSubmit={handleSubmit(submit)}>
           {/* Step 1: วันนี้ไปไหน */}
-          <div className="p-6 md:p-8 bg-paper border border-line rounded-xl space-y-5">
-            <div className="flex items-center gap-3 border-b border-line pb-4">
-              <span className="w-7 h-7 rounded-full bg-olive text-white font-mono text-xs flex items-center justify-center font-medium">1</span>
-              <div>
-                <h2 className="font-medium text-lg">วันนี้ไปไหน?</h2>
-                <p className="text-xs text-muted">เลือกลักษณะกิจกรรมและระดับความเป็นทางการ</p>
-              </div>
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
+            <div className="flex items-center gap-3 border-b border-line pb-3">
+              <span className="font-mono text-xs text-muted">01 / OCCASION</span>
+              <h2 className="font-serif text-xl text-charcoal">วันนี้ไปไหน?</h2>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">กิจกรรมวันนี้ *</label>
-                <select className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" {...register("activity", { required: "กรุณาเลือกกิจกรรม" })}>
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">กิจกรรมวันนี้ *</label>
+                <select className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" {...register("activity", { required: "กรุณาเลือกกิจกรรม" })}>
                   <option value="">เลือกกิจกรรม</option>
                   {activities.map((act) => <option key={act} value={act}>{act}</option>)}
                 </select>
                 {errors.activity ? <small className="text-xs text-danger mt-1 block">{errors.activity.message}</small> : null}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">ระดับความเป็นทางการ</label>
-                <select className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" {...register("formality")}>
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">ระดับความเป็นทางการ</label>
+                <select className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" {...register("formality")}>
                   <option value="casual">ลำลอง (Casual)</option>
                   <option value="smart_casual">Smart Casual</option>
                   <option value="formal">ทางการ (Formal)</option>
@@ -104,23 +101,20 @@ export function StylistForm({ configured }: { configured: boolean }) {
           </div>
 
           {/* Step 2: อากาศและช่วงเวลา */}
-          <div className="p-6 md:p-8 bg-paper border border-line rounded-xl space-y-5">
-            <div className="flex items-center gap-3 border-b border-line pb-4">
-              <span className="w-7 h-7 rounded-full bg-olive text-white font-mono text-xs flex items-center justify-center font-medium">2</span>
-              <div>
-                <h2 className="font-medium text-lg">อากาศและช่วงเวลา</h2>
-                <p className="text-xs text-muted">ระบุอุณหภูมิ สภาพอากาศ และเวลาที่จะไป</p>
-              </div>
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
+            <div className="flex items-center gap-3 border-b border-line pb-3">
+              <span className="font-mono text-xs text-muted">02 / ENVIRONMENT</span>
+              <h2 className="font-serif text-xl text-charcoal">อากาศและช่วงเวลา</h2>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">สภาพอากาศ / อุณหภูมิ *</label>
-                <input className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="เช่น 32°C ร้อนชื้น มีแดด" {...register("weather", { required: "กรุณาระบุสภาพอากาศ" })} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">สภาพอากาศ / อุณหภูมิ *</label>
+                <input className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="เช่น 32°C ร้อนชื้น มีแดด" {...register("weather", { required: "กรุณาระบุสภาพอากาศ" })} />
                 {errors.weather ? <small className="text-xs text-danger mt-1 block">{errors.weather.message}</small> : null}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">ช่วงเวลา</label>
-                <select className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" {...register("timeOfDay")}>
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">ช่วงเวลา</label>
+                <select className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" {...register("timeOfDay")}>
                   <option value="all_day">ทั้งวัน (All Day)</option>
                   <option value="morning">ช่วงเช้า</option>
                   <option value="afternoon">ช่วงบ่าย</option>
@@ -131,53 +125,47 @@ export function StylistForm({ configured }: { configured: boolean }) {
           </div>
 
           {/* Step 3: สไตล์และสี */}
-          <div className="p-6 md:p-8 bg-paper border border-line rounded-xl space-y-5">
-            <div className="flex items-center gap-3 border-b border-line pb-4">
-              <span className="w-7 h-7 rounded-full bg-olive text-white font-mono text-xs flex items-center justify-center font-medium">3</span>
-              <div>
-                <h2 className="font-medium text-lg">สไตล์และโทนสี</h2>
-                <p className="text-xs text-muted">บอกแนวเสื้อผ้าและสีที่อยากใส่หรืออยากหลีกเลี่ยง</p>
-              </div>
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
+            <div className="flex items-center gap-3 border-b border-line pb-3">
+              <span className="font-mono text-xs text-muted">03 / PALETTE & STYLE</span>
+              <h2 className="font-serif text-xl text-charcoal">สไตล์และโทนสี</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">สไตล์ที่ชอบ (คั่นด้วยจุลภาค)</label>
-                <input className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="เช่น Minimal, Streetwear, Workwear" {...register("preferredStyles")} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">สไตล์ที่ชอบ (คั่นด้วยจุลภาค)</label>
+                <input className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="เช่น Minimal, Workwear, Relaxed" {...register("preferredStyles")} />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">สีที่ชอบ</label>
-                  <input className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="เช่น ขาว, เขียวมะกอก, กรมท่า" {...register("preferredColors")} />
+                  <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">สีที่ชอบ</label>
+                  <input className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="เช่น ขาว, เขียวมะกอก, กรมท่า" {...register("preferredColors")} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">สีที่ไม่อยากใส่</label>
-                  <input className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="เช่น ส้มสด, นีออน" {...register("avoidedColors")} />
+                  <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">สีที่ไม่อยากใส่</label>
+                  <input className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="เช่น ส้มสด, นีออน" {...register("avoidedColors")} />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Step 4: รูปร่างและทรงเสื้อผ้า */}
-          <div className="p-6 md:p-8 bg-paper border border-line rounded-xl space-y-5">
-            <div className="flex items-center gap-3 border-b border-line pb-4">
-              <span className="w-7 h-7 rounded-full bg-olive text-white font-mono text-xs flex items-center justify-center font-medium">4</span>
-              <div>
-                <h2 className="font-medium text-lg">รูปร่างและทรงเสื้อผ้า</h2>
-                <p className="text-xs text-muted">ใส่สัดส่วนคร่าวๆ หรือทรงเสื้อผ้าที่ใส่สบาย</p>
-              </div>
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
+            <div className="flex items-center gap-3 border-b border-line pb-3">
+              <span className="font-mono text-xs text-muted">04 / PROPORTION & FIT</span>
+              <h2 className="font-serif text-xl text-charcoal">รูปร่างและทรงเสื้อผ้า</h2>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">ส่วนสูง (ซม.)</label>
-                <input type="number" min={80} max={260} className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="170" {...register("heightCm")} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">ส่วนสูง (ซม.)</label>
+                <input type="number" min={80} max={260} className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="170" {...register("heightCm")} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">น้ำหนัก (กก.)</label>
-                <input type="number" min={20} max={350} step="0.1" className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="62" {...register("weightKg")} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">น้ำหนัก (กก.)</label>
+                <input type="number" min={20} max={350} step="0.1" className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="62" {...register("weightKg")} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">ทรงที่ชอบ</label>
-                <select className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" {...register("preferredFit")}>
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">ทรงที่ชอบ</label>
+                <select className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" {...register("preferredFit")}>
                   <option value="unspecified">ไม่ระบุ</option>
                   <option value="fitted">พอดีตัว (Fitted)</option>
                   <option value="relaxed">ทรงสบาย (Relaxed / Oversized)</option>
@@ -185,8 +173,8 @@ export function StylistForm({ configured }: { configured: boolean }) {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">แนวการแต่งตัวที่สนใจ</label>
-              <select className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" {...register("clothingPresentation")}>
+              <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">แนวการแต่งตัวที่สนใจ</label>
+              <select className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" {...register("clothingPresentation")}>
                 <option value="unspecified">ไม่ระบุ (แต่งตามสไตล์ทั่วไป)</option>
                 <option value="menswear">เสื้อผ้าผู้ชาย (Menswear)</option>
                 <option value="womenswear">เสื้อผ้าผู้หญิง (Womenswear)</option>
@@ -196,63 +184,57 @@ export function StylistForm({ configured }: { configured: boolean }) {
           </div>
 
           {/* Step 5: งบประมาณและเสื้อผ้าชิ้นหลัก */}
-          <div className="p-6 md:p-8 bg-paper border border-line rounded-xl space-y-5">
-            <div className="flex items-center gap-3 border-b border-line pb-4">
-              <span className="w-7 h-7 rounded-full bg-olive text-white font-mono text-xs flex items-center justify-center font-medium">5</span>
-              <div>
-                <h2 className="font-medium text-lg">งบประมาณ & ชิ้นหลักที่มีอยู่</h2>
-                <p className="text-xs text-muted">งบประมาณและเสื้อผ้าเดิมที่อยากแมตช์</p>
-              </div>
+          <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
+            <div className="flex items-center gap-3 border-b border-line pb-3">
+              <span className="font-mono text-xs text-muted">05 / ANCHOR & BUDGET</span>
+              <h2 className="font-serif text-xl text-charcoal">งบประมาณ & ชิ้นหลักที่มีอยู่</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">งบประมาณโดยประมาณ (บาท)</label>
-                <input type="number" min={0} max={1000000} className="w-full p-2.5 bg-background border border-line rounded-lg text-sm" placeholder="เช่น 1500" {...register("budget")} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">งบประมาณโดยประมาณ (บาท)</label>
+                <input type="number" min={0} max={1000000} className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="เช่น 1500" {...register("budget")} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">ชิ้นที่อยากใช้เป็นหลัก (Anchor Item)</label>
-                <textarea rows={2} className="w-full p-2.5 bg-background border border-line rounded-lg text-sm resize-none" placeholder="เช่น กางเกงยีนส์สีเข้มที่มีอยู่แล้ว หรือรองเท้าผ้าใบสีขาว" {...register("anchorItem")} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">ชิ้นที่อยากใช้เป็นหลัก (Anchor Item)</label>
+                <textarea rows={2} className="w-full p-3 bg-background border border-line text-sm resize-none focus:border-charcoal focus:outline-none" placeholder="เช่น กางเกงยีนส์สีเข้มที่มีอยู่แล้ว หรือรองเท้าผ้าใบสีขาว" {...register("anchorItem")} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">หมายเหตุเพิ่มเติม</label>
-                <textarea rows={2} className="w-full p-2.5 bg-background border border-line rounded-lg text-sm resize-none" placeholder="ข้อจำกัดหรือบริบทอื่น เช่น ต้องเดินเยอะ อยู่ในห้องแอร์เย็น" {...register("notes")} />
+                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">หมายเหตุเพิ่มเติม</label>
+                <textarea rows={2} className="w-full p-3 bg-background border border-line text-sm resize-none focus:border-charcoal focus:outline-none" placeholder="ข้อจำกัดหรือบริบทอื่น เช่น ต้องเดินเยอะ อยู่ในห้องแอร์เย็น" {...register("notes")} />
               </div>
             </div>
           </div>
 
           {/* Step 6: การบันทึกข้อมูล */}
-          <div className="p-6 bg-paper border border-line rounded-xl space-y-3">
+          <div className="p-6 bg-paper border border-line space-y-3">
             <label className="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" className="mt-1 rounded border-line text-olive focus:ring-olive" {...register("saveForNextTime")} />
+              <input type="checkbox" className="mt-1 border-line text-charcoal focus:ring-charcoal" {...register("saveForNextTime")} />
               <div>
-                <strong className="block text-sm font-medium">บันทึกสัดส่วนและความชอบไว้ใช้ครั้งหน้า</strong>
+                <strong className="block text-sm font-medium text-charcoal">บันทึกสัดส่วนและความชอบไว้ใช้ครั้งหน้า</strong>
                 <span className="text-xs text-muted block">หากไม่ติ๊ก ระบบจะไม่บันทึกส่วนสูงและน้ำหนักลงใน customer preferences เพื่อความเป็นส่วนตัว</span>
               </div>
             </label>
           </div>
 
           {error ? (
-            <div className="p-4 bg-danger/10 border border-danger/30 rounded-xl text-danger text-sm flex items-center gap-2" role="alert">
+            <div className="p-4 bg-danger/10 border border-danger/30 text-danger text-sm flex items-center gap-2" role="alert">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{error}</span>
             </div>
           ) : null}
 
           <button
-            className="w-full button button-solid py-3 text-base flex items-center justify-center gap-2 shadow-sm"
+            className="w-full py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors flex items-center justify-center gap-2"
             disabled={isSubmitting || !configured}
             type="submit"
           >
             {isSubmitting ? (
               <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin" />
                 <span>AI กำลังประมวลผลจัดลุค 3 ทางเลือก…</span>
               </>
             ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                <span>สร้างคำแนะนำ 3 ชุดสำหรับวันนี้</span>
-              </>
+              <span>สร้างคำแนะนำ 3 ชุดสำหรับวันนี้</span>
             )}
           </button>
         </form>
