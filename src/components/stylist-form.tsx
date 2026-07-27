@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { ShieldCheck, Info, Check, AlertCircle, RefreshCw, Ruler } from "lucide-react";
-import type { OutfitResponse } from "@/lib/types";
+import Image from "next/image";
+import Link from "next/link";
+import { ShieldCheck, Info, Check, AlertCircle, RefreshCw, Shirt, Sparkles, Plus, AlertTriangle } from "lucide-react";
+import type { OutfitResponse, WardrobeItem, WardrobeOutfitResponse } from "@/lib/types";
 
 type StylistFields = {
+  mode: "general" | "wardrobe";
   heightCm: string;
   weightKg: string;
   clothingPresentation: "menswear" | "womenswear" | "unisex" | "unspecified";
@@ -25,35 +28,121 @@ type StylistFields = {
 
 const activities = ["ไปทำงาน", "ไปมหาวิทยาลัย", "ไปคาเฟ่", "ไปเดต", "ไปงานแต่ง", "ไปวัด", "ไปเที่ยวทะเล", "ออกกำลังกาย", "เดินทาง", "อยู่บ้าน", "อื่นๆ"];
 
-export function StylistForm({ configured }: { configured: boolean }) {
+export function StylistForm({ configured, initialMode = "general" }: { configured: boolean; initialMode?: "general" | "wardrobe" }) {
+  const [mode, setMode] = useState<"general" | "wardrobe">(initialMode);
+  const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
+  const [isLoadingWardrobe, setIsLoadingWardrobe] = useState(false);
+  const [wardrobeFetchError, setWardrobeFetchError] = useState<string | null>(null);
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<StylistFields>({
-    defaultValues: { clothingPresentation: "unspecified", formality: "casual", timeOfDay: "all_day", preferredFit: "unspecified", saveForNextTime: false },
+    defaultValues: {
+      mode: initialMode,
+      clothingPresentation: "unspecified",
+      formality: "casual",
+      timeOfDay: "all_day",
+      preferredFit: "unspecified",
+      saveForNextTime: false,
+    },
   });
-  const [result, setResult] = useState<OutfitResponse | null>(null);
+
+  const [generalResult, setGeneralResult] = useState<OutfitResponse | null>(null);
+  const [wardrobeResult, setWardrobeResult] = useState<WardrobeOutfitResponse | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isSubscribed = true;
+    let timer: NodeJS.Timeout;
+
+    if (mode === "wardrobe") {
+      timer = setTimeout(() => {
+        if (!isSubscribed) return;
+        setIsLoadingWardrobe(true);
+        setWardrobeFetchError(null);
+
+        fetch("/api/wardrobe?status=available")
+          .then((res) => {
+            if (res.status === 401) {
+              if (isSubscribed) {
+                setWardrobeFetchError("กรุณาเข้าสู่ระบบก่อนใช้งานโหมดตู้เสื้อผ้าส่วนตัว");
+                setWardrobeItems([]);
+              }
+              return null;
+            }
+            return res.json();
+          })
+          .then((data) => {
+            if (data && isSubscribed) {
+              setWardrobeItems(data.items || []);
+            }
+          })
+          .catch((err) => {
+            if (isSubscribed) {
+              setWardrobeFetchError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+            }
+          })
+          .finally(() => {
+            if (isSubscribed) {
+              setIsLoadingWardrobe(false);
+            }
+          });
+      }, 0);
+    }
+
+    return () => {
+      isSubscribed = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [mode]);
+
+  const toggleExcludeItem = (id: string) => {
+    setExcludedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   async function submit(values: StylistFields) {
     setError("");
-    setResult(null);
+    setGeneralResult(null);
+    setWardrobeResult(null);
+
+    const payload = {
+      ...values,
+      mode,
+      excludedItemIds: Array.from(excludedIds),
+      heightCm: values.heightCm ? Number(values.heightCm) : null,
+      weightKg: values.weightKg ? Number(values.weightKg) : null,
+      budget: values.budget ? Number(values.budget) : null,
+      preferredStyles: splitList(values.preferredStyles),
+      preferredColors: splitList(values.preferredColors),
+      avoidedColors: splitList(values.avoidedColors),
+    };
+
     const response = await fetch("/api/ai-stylist", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        ...values,
-        heightCm: values.heightCm ? Number(values.heightCm) : null,
-        weightKg: values.weightKg ? Number(values.weightKg) : null,
-        budget: values.budget ? Number(values.budget) : null,
-        preferredStyles: splitList(values.preferredStyles),
-        preferredColors: splitList(values.preferredColors),
-        avoidedColors: splitList(values.avoidedColors),
-      }),
+      body: JSON.stringify(payload),
     });
+
     const body = await response.json();
     if (!response.ok) {
-      setError(body.code === "configuration_missing" ? "ยังไม่ได้ตั้งค่า OpenAI API สำหรับ environment นี้" : body.error ?? "สร้างคำแนะนำไม่สำเร็จ กรุณาลองใหม่");
+      setError(
+        body.code === "configuration_missing"
+          ? "ยังไม่ได้ตั้งค่า OpenAI API สำหรับ environment นี้"
+          : body.error ?? "สร้างคำแนะนำไม่สำเร็จ กรุณาลองใหม่",
+      );
       return;
     }
-    setResult(body);
+
+    if (mode === "wardrobe") {
+      setWardrobeResult(body);
+    } else {
+      setGeneralResult(body);
+    }
+
     setTimeout(() => {
       document.querySelector("#stylist-results")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -61,15 +150,105 @@ export function StylistForm({ configured }: { configured: boolean }) {
 
   return (
     <>
+      {/* Mode Switcher Tabs */}
+      <div className="flex border border-line bg-paper p-1 max-w-xl mb-8">
+        <button
+          type="button"
+          onClick={() => setMode("general")}
+          className={`flex-1 py-3 px-4 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            mode === "general"
+              ? "bg-charcoal text-white shadow-sm"
+              : "text-muted hover:text-charcoal"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>ไอเดียชุดทั่วไป</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode("wardrobe")}
+          className={`flex-1 py-3 px-4 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            mode === "wardrobe"
+              ? "bg-charcoal text-white shadow-sm"
+              : "text-muted hover:text-charcoal"
+          }`}
+        >
+          <Shirt className="w-4 h-4 text-olive" />
+          <span>จากตู้เสื้อผ้าของฉัน</span>
+        </button>
+      </div>
+
       {!configured ? (
-        <div className="p-4 mb-8 border border-warning/40 bg-warning/10 rounded-xl flex items-start gap-3 text-sm" role="status">
+        <div className="p-4 mb-8 border border-warning/40 bg-warning/10 text-sm flex items-start gap-3" role="status">
           <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div>
             <strong className="block font-medium text-warning mb-0.5">Development configuration missing</strong>
-            <p className="text-muted">ฟอร์มและ validation พร้อมแล้ว แต่ต้องเพิ่ม OPENAI_API_KEY บน server จึงจะเรียก AI จริงได้ ระบบจะไม่แสดง mock แบบเงียบๆ</p>
+            <p className="text-muted">ฟอร์มพร้อมใช้งานแล้ว แต่ต้องตั้งค่า OPENAI_API_KEY บน server เพื่อเรียก AI จริง</p>
           </div>
         </div>
       ) : null}
+
+      {/* Wardrobe Mode Active Banner */}
+      {mode === "wardrobe" && (
+        <div className="p-5 mb-8 border border-olive/30 bg-olive-pale/30 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shirt className="w-5 h-5 text-olive" />
+              <h3 className="font-serif text-lg font-normal text-charcoal">ตู้เสื้อผ้าส่วนตัวของคุณ</h3>
+            </div>
+            <Link href="/account/wardrobe/new" className="text-xs text-olive font-medium hover:underline inline-flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5" />
+              <span>เพิ่มเสื้อผ้า</span>
+            </Link>
+          </div>
+
+          {isLoadingWardrobe ? (
+            <div className="flex items-center gap-2 text-xs text-muted">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              <span>กำลังโหลดข้อมูลตู้เสื้อผ้า...</span>
+            </div>
+          ) : wardrobeFetchError ? (
+            <div className="text-xs text-danger font-medium flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4" />
+              <span>{wardrobeFetchError}</span>
+            </div>
+          ) : wardrobeItems.length === 0 ? (
+            <div className="text-xs text-muted space-y-2">
+              <p>ยังไม่มีรายการเสื้อผ้าในตู้ส่วนตัว หรือเสื้อผ้าทั้งหมดถูกส่งซัก/เก็บไว้</p>
+              <Link href="/account/wardrobe/new" className="inline-block px-4 py-2 bg-charcoal text-white text-xs font-medium">
+                + เพิ่มเสื้อผ้าชิ้นแรก
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted">
+                พบเสื้อผ้าพร้อมใส่ {wardrobeItems.length} ชิ้น (คลิกเพื่อยกเว้นชิ้นที่ไม่ต้องการใส่ในวันนี้):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {wardrobeItems.map((item) => {
+                  const isExcluded = excludedIds.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleExcludeItem(item.id)}
+                      className={`px-2.5 py-1 text-xs border transition-colors flex items-center gap-1.5 ${
+                        isExcluded
+                          ? "bg-background text-muted border-line line-through opacity-60"
+                          : "bg-paper text-charcoal border-olive/40 hover:border-charcoal"
+                      }`}
+                    >
+                      <span>{item.name || item.item_type}</span>
+                      {isExcluded ? <span className="text-[10px] text-danger">(เว้น)</span> : <Check className="w-3 h-3 text-olive" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-10 items-start">
         {/* Main 6-Step Guided Form */}
@@ -172,48 +351,24 @@ export function StylistForm({ configured }: { configured: boolean }) {
                 </select>
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">แนวการแต่งตัวที่สนใจ</label>
-              <select className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" {...register("clothingPresentation")}>
-                <option value="unspecified">ไม่ระบุ (แต่งตามสไตล์ทั่วไป)</option>
-                <option value="menswear">เสื้อผ้าผู้ชาย (Menswear)</option>
-                <option value="womenswear">เสื้อผ้าผู้หญิง (Womenswear)</option>
-                <option value="unisex">ไร้เพศ (Unisex)</option>
-              </select>
-            </div>
           </div>
 
-          {/* Step 5: งบประมาณและเสื้อผ้าชิ้นหลัก */}
+          {/* Step 5: ชิ้นหลักและหมายเหตุ */}
           <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
             <div className="flex items-center gap-3 border-b border-line pb-3">
               <span className="font-mono text-xs text-muted">05 / ANCHOR & BUDGET</span>
-              <h2 className="font-serif text-xl text-charcoal">งบประมาณ & ชิ้นหลักที่มีอยู่</h2>
+              <h2 className="font-serif text-xl text-charcoal">ชิ้นหลักที่มีอยู่ & หมายเหตุ</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">งบประมาณโดยประมาณ (บาท)</label>
-                <input type="number" min={0} max={1000000} className="w-full p-3 bg-background border border-line text-sm focus:border-charcoal focus:outline-none" placeholder="เช่น 1500" {...register("budget")} />
-              </div>
-              <div>
                 <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">ชิ้นที่อยากใช้เป็นหลัก (Anchor Item)</label>
-                <textarea rows={2} className="w-full p-3 bg-background border border-line text-sm resize-none focus:border-charcoal focus:outline-none" placeholder="เช่น กางเกงยีนส์สีเข้มที่มีอยู่แล้ว หรือรองเท้าผ้าใบสีขาว" {...register("anchorItem")} />
+                <textarea rows={2} className="w-full p-3 bg-background border border-line text-sm resize-none focus:border-charcoal focus:outline-none" placeholder="เช่น อยากใส่กางเกงยีนส์ตัวโปรดเป็นหลัก" {...register("anchorItem")} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted uppercase tracking-wider mb-1">หมายเหตุเพิ่มเติม</label>
-                <textarea rows={2} className="w-full p-3 bg-background border border-line text-sm resize-none focus:border-charcoal focus:outline-none" placeholder="ข้อจำกัดหรือบริบทอื่น เช่น ต้องเดินเยอะ อยู่ในห้องแอร์เย็น" {...register("notes")} />
+                <textarea rows={2} className="w-full p-3 bg-background border border-line text-sm resize-none focus:border-charcoal focus:outline-none" placeholder="เช่น เดินทางไกล, ต้องอยู่ในห้องแอร์เย็น" {...register("notes")} />
               </div>
             </div>
-          </div>
-
-          {/* Step 6: การบันทึกข้อมูล */}
-          <div className="p-6 bg-paper border border-line space-y-3">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" className="mt-1 border-line text-charcoal focus:ring-charcoal" {...register("saveForNextTime")} />
-              <div>
-                <strong className="block text-sm font-medium text-charcoal">บันทึกสัดส่วนและความชอบไว้ใช้ครั้งหน้า</strong>
-                <span className="text-xs text-muted block">หากไม่ติ๊ก ระบบจะไม่บันทึกส่วนสูงและน้ำหนักลงใน customer preferences เพื่อความเป็นส่วนตัว</span>
-              </div>
-            </label>
           </div>
 
           {error ? (
@@ -225,7 +380,7 @@ export function StylistForm({ configured }: { configured: boolean }) {
 
           <button
             className="w-full py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors flex items-center justify-center gap-2"
-            disabled={isSubmitting || !configured}
+            disabled={isSubmitting || !configured || (mode === "wardrobe" && wardrobeItems.length < 2)}
             type="submit"
           >
             {isSubmitting ? (
@@ -234,14 +389,16 @@ export function StylistForm({ configured }: { configured: boolean }) {
                 <span>AI กำลังประมวลผลจัดลุค 3 ทางเลือก…</span>
               </>
             ) : (
-              <span>สร้างคำแนะนำ 3 ชุดสำหรับวันนี้</span>
+              <span>
+                {mode === "wardrobe" ? "จัดชุดจากตู้เสื้อผ้า 3 ทางเลือก" : "สร้างคำแนะนำ 3 ชุดสำหรับวันนี้"}
+              </span>
             )}
           </button>
         </form>
 
-        {/* Desktop Contextual Side Panel */}
+        {/* Side panel */}
         <aside className="space-y-6 sticky top-24">
-          <div className="p-6 bg-paper border border-line rounded-xl space-y-4 text-sm">
+          <div className="p-6 bg-paper border border-line space-y-4 text-sm">
             <h3 className="font-serif text-xl font-normal border-b border-line pb-3 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-olive" />
               <span>หลักการของ AI Stylist</span>
@@ -249,27 +406,17 @@ export function StylistForm({ configured }: { configured: boolean }) {
             <div className="space-y-3 text-xs text-muted leading-relaxed">
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-olive shrink-0 mt-0.5" />
-                <span><strong>เป็นกลาง 100%:</strong> ไม่มีสินค้าสปอนเซอร์แอบแฝงในคำแนะนำ</span>
+                <span><strong>เป็นกลาง 100%:</strong> ไม่มีโฆษณาแอบแฝงในคำแนะนำ</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-olive shrink-0 mt-0.5" />
-                <span><strong>ไร้การตัดสิน:</strong> ให้เกียรติรูปร่างและสไตล์ของผู้แต่งตัวทุกคน</span>
+                <span><strong>ใช้เสื้อผ้าที่คุณมีจริง:</strong> ในโหมดตู้เสื้อผ้า ระบบจะเลือกจากชุดที่คุณเป็นเจ้าของเท่านั้น</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-olive shrink-0 mt-0.5" />
                 <span><strong>3 ทิศทางชัดเจน:</strong> ใส่ง่าย (Safe), แต่งขึ้น (Elevated), สบาย (Comfortable)</span>
               </div>
             </div>
-          </div>
-
-          <div className="p-6 border border-line rounded-xl bg-olive-pale/30 space-y-2 text-xs">
-            <strong className="block font-medium text-charcoal flex items-center gap-1.5">
-              <Info className="w-4 h-4 text-olive" />
-              <span>ข้อแนะนำสำคัญเกี่ยวกับไซซ์</span>
-            </strong>
-            <p className="text-muted leading-relaxed">
-              ไซซ์และสัดส่วนในคำแนะนำเป็นเพียงการประมาณการเชิงสไตล์เท่านั้น กรุณาตรวจสอบตารางไซซ์จริงของร้านค้าก่อนสั่งซื้อ
-            </p>
           </div>
         </aside>
       </div>
@@ -279,33 +426,32 @@ export function StylistForm({ configured }: { configured: boolean }) {
         {isSubmitting ? (
           <div className="space-y-6 animate-pulse">
             <div className="h-8 bg-line/40 rounded w-1/3"></div>
-            <div className="h-4 bg-line/30 rounded w-2/3"></div>
             <div className="grid md:grid-cols-3 gap-6 mt-8">
-              <div className="h-96 bg-paper border border-line rounded-xl p-6"></div>
-              <div className="h-96 bg-paper border border-line rounded-xl p-6"></div>
-              <div className="h-96 bg-paper border border-line rounded-xl p-6"></div>
+              <div className="h-96 bg-paper border border-line p-6"></div>
+              <div className="h-96 bg-paper border border-line p-6"></div>
+              <div className="h-96 bg-paper border border-line p-6"></div>
             </div>
           </div>
         ) : null}
 
-        {result ? (
+        {/* Render General Results */}
+        {generalResult ? (
           <div className="space-y-10">
-            <div className="bg-paper border border-line p-8 rounded-xl space-y-3">
+            <div className="bg-paper border border-line p-8 space-y-3">
               <p className="eyebrow">Your Custom Edit</p>
               <h2 className="font-serif text-3xl md:text-4xl font-normal">คำแนะนำชุดสำหรับวันนี้</h2>
-              <p className="text-muted leading-relaxed text-base">{result.summary}</p>
-              {result.isDemo ? <span className="inline-block text-xs font-mono text-olive bg-olive-pale px-2.5 py-1 rounded">Demo Mode</span> : null}
+              <p className="text-muted leading-relaxed text-base">{generalResult.summary}</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {result.outfits.map((outfit, index) => {
+              {generalResult.outfits.map((outfit, index) => {
                 const badge = getDirectionBadge(outfit.direction);
                 return (
-                  <article className="bg-paper border border-line p-6 rounded-xl space-y-5 flex flex-col justify-between" key={outfit.direction}>
+                  <article className="bg-paper border border-line p-6 space-y-5 flex flex-col justify-between" key={outfit.direction}>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between border-b border-line pb-3">
                         <span className="font-mono text-xs text-muted">0{index + 1}</span>
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.bg} ${badge.color}`}>
+                        <span className={`text-xs px-2.5 py-1 font-medium ${badge.bg} ${badge.color}`}>
                           {badge.label}
                         </span>
                       </div>
@@ -323,44 +469,94 @@ export function StylistForm({ configured }: { configured: boolean }) {
                           <span className="text-xs text-muted block">ท่อนล่าง / เดรส</span>
                           <span className="font-medium text-charcoal">{outfit.bottom}</span>
                         </div>
-                        {outfit.outerwear ? (
-                          <div className="border-b border-line/60 pb-2">
-                            <span className="text-xs text-muted block">เสื้อคลุม / เลเยอร์</span>
-                            <span className="font-medium text-charcoal">{outfit.outerwear}</span>
-                          </div>
-                        ) : null}
                         <div className="border-b border-line/60 pb-2">
                           <span className="text-xs text-muted block">รองเท้า</span>
                           <span className="font-medium text-charcoal">{outfit.shoes}</span>
                         </div>
-                        <div className="border-b border-line/60 pb-2">
-                          <span className="text-xs text-muted block">เครื่องประดับ</span>
-                          <span className="font-medium text-charcoal">{outfit.accessories.join(", ") || "ไม่จำเป็น"}</span>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Render Wardrobe Mode Results */}
+        {wardrobeResult ? (
+          <div className="space-y-10">
+            <div className="bg-paper border border-line p-8 space-y-3">
+              <div className="inline-flex items-center gap-2 text-xs font-mono text-olive uppercase">
+                <Shirt className="w-4 h-4" />
+                <span>My Wardrobe Edit</span>
+              </div>
+              <h2 className="font-serif text-3xl md:text-4xl font-normal">ชุดแนะนำจากตู้เสื้อผ้าของคุณ</h2>
+              <p className="text-muted leading-relaxed text-base">{wardrobeResult.summary}</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {wardrobeResult.outfits.map((outfit, index) => {
+                const badge = getDirectionBadge(outfit.direction);
+                return (
+                  <article className="bg-paper border border-line p-6 space-y-5 flex flex-col justify-between" key={outfit.direction}>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-line pb-3">
+                        <span className="font-mono text-xs text-muted">0{index + 1}</span>
+                        <span className={`text-xs px-2.5 py-1 font-medium ${badge.bg} ${badge.color}`}>
+                          {badge.label}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-2xl font-normal mb-1">{outfit.name}</h3>
+                        <p className="text-xs font-mono text-olive">{outfit.style}</p>
+                      </div>
+
+                      {/* Items Grid with Private Images */}
+                      <div className="space-y-3 pt-2">
+                        <span className="text-xs font-mono text-muted uppercase block">ชิ้นที่เลือกใช้จากตู้เสื้อผ้า:</span>
+                        <div className="grid grid-cols-2 gap-3">
+                          {outfit.items.map((itemRef) => {
+                            const details = itemRef.itemDetails;
+                            const imageSrc = details?.signed_image_url || "/demo-assets/ad-linen-shirt.jpg";
+                            return (
+                              <div key={itemRef.wardrobeItemId} className="border border-line bg-background p-2 space-y-1">
+                                <div className="aspect-square relative bg-paper border border-line overflow-hidden">
+                                  <Image
+                                    src={imageSrc}
+                                    alt={details?.name || itemRef.role}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                                <span className="text-[10px] font-mono text-muted uppercase block truncate">{itemRef.role}</span>
+                                <strong className="text-xs font-medium text-charcoal block truncate">
+                                  {details?.name || "เสื้อผ้าส่วนตัว"}
+                                </strong>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      <div className="pt-2">
-                        <span className="text-xs text-muted block mb-1.5">พาเลตต์สีแนะนำ</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {outfit.colorPalette.map((color) => (
-                            <span className="text-xs bg-background border border-line px-2 py-0.5 rounded text-charcoal" key={color}>
-                              {color}
-                            </span>
+                      {/* Missing Items if any */}
+                      {outfit.missingItems?.length > 0 && (
+                        <div className="p-3 border border-warning/30 bg-warning/10 text-xs space-y-1">
+                          <span className="font-medium text-warning block">ชิ้นที่แนะนำเพิ่ม (ไม่มีในตู้):</span>
+                          {outfit.missingItems.map((m, mIdx) => (
+                            <div key={mIdx} className="text-muted">
+                              • {m.role}: {m.description}
+                            </div>
                           ))}
                         </div>
-                      </div>
+                      )}
 
                       <p className="text-xs text-muted leading-relaxed pt-2">{outfit.reason}</p>
                     </div>
 
                     <div className="pt-4 border-t border-line space-y-2 text-xs">
                       <p className="text-muted flex items-start gap-2">
-                        <Info className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <Info className="w-4 h-4 shrink-0 mt-0.5" />
                         <span>{outfit.comfortNote}</span>
-                      </p>
-                      <p className="text-muted flex items-start gap-2">
-                        <Ruler className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-                        <span>{outfit.sizeNote}</span>
                       </p>
                       <strong className="block text-sm text-charcoal font-medium pt-1">{outfit.estimatedBudgetText}</strong>
                     </div>
@@ -369,19 +565,16 @@ export function StylistForm({ configured }: { configured: boolean }) {
               })}
             </div>
 
-            <div className="p-8 bg-paper border border-line rounded-xl space-y-4">
-              <h3 className="font-serif text-2xl font-normal">คำแนะนำเพิ่มเติมในการแต่งตัว</h3>
-              <ul className="grid sm:grid-cols-2 gap-3 text-sm text-muted list-disc list-inside">
-                {result.generalTips.map((tip) => (
-                  <li key={tip}>{tip}</li>
-                ))}
-              </ul>
-              <div className="pt-4 border-t border-line">
-                <p className="text-xs font-medium text-olive bg-olive-pale/60 p-3 rounded-lg text-center">
-                  คำแนะนำไซซ์เป็นเพียงการประมาณ กรุณาตรวจสอบตารางไซซ์ของร้านก่อนสั่งซื้อ
-                </p>
+            {wardrobeResult.generalTips?.length > 0 && (
+              <div className="p-8 bg-paper border border-line space-y-4">
+                <h3 className="font-serif text-2xl font-normal">คำแนะนำเพิ่มเติมในการแมตช์ชุด</h3>
+                <ul className="grid sm:grid-cols-2 gap-3 text-sm text-muted list-disc list-inside">
+                  {wardrobeResult.generalTips.map((tip, idx) => (
+                    <li key={idx}>{tip}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
           </div>
         ) : null}
       </section>

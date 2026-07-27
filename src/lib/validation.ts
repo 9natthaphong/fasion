@@ -211,3 +211,127 @@ export const outfitResponseSchema = z
       }
     }
   });
+
+export function isOwnedWardrobeAssetPath(path: string, userId: string): boolean {
+  const prefix = `${userId}/`;
+  if (!path.startsWith(prefix)) return false;
+  const rest = path.slice(prefix.length);
+  const parts = rest.split("/");
+  if (parts.length !== 2) return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const filenameRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/i;
+  return uuidRegex.test(parts[0]) && filenameRegex.test(parts[1]);
+}
+
+export const wardrobeItemTypeEnum = z.enum([
+  "top",
+  "bottom",
+  "skirt",
+  "dress",
+  "outerwear",
+  "shoes",
+  "bag",
+  "accessory",
+]);
+
+export const wardrobePreferredFitEnum = z.enum([
+  "fitted",
+  "regular",
+  "relaxed",
+  "oversized",
+  "unknown",
+]);
+
+export const wardrobeFormalityEnum = z.enum([
+  "casual",
+  "smart_casual",
+  "business",
+  "formal",
+  "sport",
+  "unknown",
+]);
+
+export const wardrobeAvailabilityStatusEnum = z.enum([
+  "available",
+  "laundry",
+  "archived",
+]);
+
+export const wardrobeItemSchema = z.object({
+  imagePath: z.string().trim().min(1).max(500),
+  itemType: wardrobeItemTypeEnum,
+  subcategory: z.string().trim().max(100).nullable().optional(),
+  name: z.string().trim().min(1, "กรุณากรอกชื่อเสื้อผ้า").max(120),
+  primaryColors: z.array(z.string().trim().max(40)).min(1, "เลือกสีอย่างน้อย 1 สี").max(8),
+  styles: z.array(z.string().trim().max(40)).max(8),
+  material: z.string().trim().max(100).nullable().optional(),
+  preferredFit: wardrobePreferredFitEnum.nullable().optional(),
+  formality: wardrobeFormalityEnum.nullable().optional(),
+  weatherSuitability: z.array(z.string().trim().max(40)).max(8),
+  aiDescription: z.string().trim().max(1000).nullable().optional(),
+  availabilityStatus: wardrobeAvailabilityStatusEnum.default("available"),
+  isFavorite: z.boolean().default(false),
+});
+
+export const wardrobeAnalysisOutputSchema = z.object({
+  itemType: wardrobeItemTypeEnum,
+  subcategory: z.string().trim().max(100).nullable(),
+  suggestedName: z.string().trim().min(1).max(120),
+  primaryColors: z.array(z.string().trim().max(40)).min(1).max(8),
+  styles: z.array(z.string().trim().max(40)).max(8),
+  material: z.string().trim().max(100).nullable(),
+  preferredFit: wardrobePreferredFitEnum,
+  formality: wardrobeFormalityEnum,
+  weatherSuitability: z.array(z.string().trim().max(40)).max(8),
+  description: z.string().trim().max(1000),
+  confidence: z.number().min(0).max(1),
+});
+
+export const wardrobeOutfitItemRefSchema = z.object({
+  wardrobeItemId: z.string().uuid(),
+  role: z.string().min(1).max(100),
+  stylingInstruction: z.string().min(1).max(500),
+});
+
+export const wardrobeMissingItemSchema = z.object({
+  role: z.string().min(1).max(100),
+  description: z.string().min(1).max(500),
+  optional: z.boolean(),
+});
+
+export const wardrobeOutfitSuggestionSchema = z.object({
+  name: z.string().min(1).max(100),
+  direction: z.enum(["safe", "elevated", "comfortable"]),
+  style: z.string().min(1).max(100),
+  items: z.array(wardrobeOutfitItemRefSchema).min(1).max(10),
+  missingItems: z.array(wardrobeMissingItemSchema).max(8),
+  reason: z.string().min(1).max(800),
+  comfortNote: z.string().min(1).max(500),
+  sizeNote: z.string().min(1).max(500),
+  estimatedBudgetText: z.string().min(1).max(160),
+});
+
+export const wardrobeOutfitResponseSchema = z
+  .object({
+    summary: z.string().min(1).max(1000),
+    outfits: z.array(wardrobeOutfitSuggestionSchema).length(3),
+    generalTips: z.array(z.string().max(400)).min(1).max(8),
+  })
+  .superRefine((value, context) => {
+    const directions = value.outfits.map((outfit) => outfit.direction);
+    for (const expected of ["safe", "elevated", "comfortable"] as const) {
+      if (!directions.includes(expected)) {
+        context.addIssue({
+          code: "custom",
+          path: ["outfits"],
+          message: `ผลลัพธ์ต้องมี direction ${expected}`,
+        });
+      }
+    }
+  });
+
+export const wardrobeOutfitInputSchema = outfitInputSchema.extend({
+  mode: z.enum(["general", "wardrobe"]).default("general"),
+  excludedItemIds: z.array(z.string().uuid()).max(50).default([]),
+});
+
