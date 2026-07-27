@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="t d">
+  <title id="t">สตรีทแวร์โทนดิน</title><desc id="d">ภาพประกอบนามธรรมของเสื้อโอเวอร์ไซซ์และกางเกงโทนดิน</desc>
+  <rect width="800" height="1000" fill="#D9CFC4"/><path d="M0 765 800 545v455H0z" fill="#B8A89A"/>
+  <path d="m181 319 151-106h136l151 106 81 178-117 53-57-117-25 302H299l-25-302-57 117-117-53z" fill="#8A6654"/>
+  <path d="M332 213c10 56 126 56 136 0" fill="none" stroke="#E6D9CC" stroke-width="18"/>
+  <path d="M304 720h93l-26 239H202zM403 720h93l102 239H429z" fill="#4D433E"/>
+  <text x="100" y="908" font-family="Arial" font-size="18" letter-spacing="5" fill="#453B36">FITTODAY / 03</text>
+</svg>

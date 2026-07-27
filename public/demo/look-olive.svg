@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="t d">
+  <title id="t">แฟชั่นมินิมอลโทนมะกอก</title><desc id="d">ภาพประกอบนามธรรมของเสื้อเชิ้ตและกางเกงโทนมะกอกบนพื้นสีอ่อน</desc>
+  <rect width="800" height="1000" fill="#D9DCCE"/><circle cx="180" cy="160" r="240" fill="#EDF0E8"/>
+  <path d="M236 258 342 203h116l106 55 70 157-96 44-39-88v391H301V371l-39 88-96-44z" fill="#657158"/>
+  <path d="M342 203c19 47 97 47 116 0" fill="none" stroke="#F3F0E7" stroke-width="17"/>
+  <path d="M326 748h74l-22 205H226zM400 748h74l100 205H422z" fill="#30372D"/>
+  <path d="M122 882h556" stroke="#A7AB9D" stroke-width="2"/><text x="122" y="919" font-family="Arial" font-size="18" letter-spacing="5" fill="#4B5344">FITTODAY / 01</text>
+</svg>

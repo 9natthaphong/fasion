@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import { AuthPage } from "@/components/auth-page";
+export const metadata: Metadata = { title: "สมัครบัญชีลูกค้า" };
+export default function Page() {
+  return <AuthPage mode="register" role="customer" />;
+}
+

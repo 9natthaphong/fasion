@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/env";
+import { loginSchema } from "@/lib/validation";
+import { requireSameOrigin } from "@/lib/request-security";
+
+export async function POST(request: Request) {
+  if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ error: "ระบบบัญชียังไม่ได้ตั้งค่า Supabase" }, { status: 503 });
+  }
+  const body = await request.json().catch(() => null);
+  const parsed = loginSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
+  }
+  const requestedRole =
+    body && typeof body === "object" && "role" in body ? String(body.role) : null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
+  if (error || !data.user) {
+    return NextResponse.json({ error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+  if (requestedRole && profile?.role !== requestedRole) {
+    await supabase.auth.signOut();
+    return NextResponse.json(
+      { error: `บัญชีนี้เป็นประเภท ${profile?.role ?? "อื่น"} กรุณาใช้หน้าเข้าสู่ระบบที่ถูกต้อง` },
+      { status: 403 },
+    );
+  }
+  return NextResponse.json({
+    redirectTo: profile?.role === "merchant" ? "/merchant" : "/account",
+  });
+}

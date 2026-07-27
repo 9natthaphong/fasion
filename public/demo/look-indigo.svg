@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-labelledby="t d">
+  <title id="t">ชุดทำงานโทนคราม</title><desc id="d">ภาพประกอบนามธรรมของแจ็กเก็ตและกางเกงโทนคราม</desc>
+  <rect width="800" height="1000" fill="#D6D8DC"/><rect x="72" y="70" width="656" height="860" fill="#ECEBE6"/>
+  <path d="M240 256 343 205h114l103 51 68 258-111 24-29-150-29 362H341l-29-362-29 150-111-24z" fill="#454B63"/>
+  <path d="m343 205 57 121 57-121-4 285-53 40-53-40z" fill="#F7F4ED"/>
+  <path d="M338 741h60l-24 212H242zM402 741h60l96 212H426z" fill="#2E3140"/>
+  <text x="112" y="890" font-family="Arial" font-size="18" letter-spacing="5" fill="#51556B">FITTODAY / 02</text>
+</svg>
