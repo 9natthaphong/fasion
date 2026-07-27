@@ -1,9 +1,13 @@
 import { notFound } from "next/navigation";
 import { AdminActionForm } from "@/components/admin-action-form";
 import { StatusBadge } from "@/components/ui";
+import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export default async function AdminShopDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  if (!isSupabaseAdminConfigured()) {
+    return <section className="dashboard-section narrow"><p className="eyebrow">Review shop</p><h1>รายละเอียดร้านค้า</h1><div className="config-notice" role="status"><strong>Configuration missing</strong><p>ต้องตั้งค่า SUPABASE_SECRET_KEY บน server เพื่ออนุมัติหรือตรวจสอบร้านค้า</p></div></section>;
+  }
   const { id } = await params;
   const { data: shop } = await getAdminClient().from("shops").select("*, profiles!shops_owner_id_fkey(display_name)").eq("id", id).maybeSingle();
   if (!shop) notFound();

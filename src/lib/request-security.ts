@@ -1,13 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
-import { getSiteUrl } from "@/lib/env";
+import { getSiteUrl, isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function requireSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin) return true;
+  if (!origin || origin === "null") return true;
   try {
-    return new URL(origin).host === new URL(getSiteUrl()).host || new URL(origin).host === new URL(request.url).host;
+    return (
+      new URL(origin).host === new URL(getSiteUrl()).host ||
+      new URL(origin).host === new URL(request.url).host
+    );
   } catch {
     return false;
   }
@@ -38,12 +41,17 @@ export async function isLikelyBot() {
 }
 
 export async function passRateLimit(scope: string, identifier: string, limit: number, seconds: number) {
-  const hash = createHash("sha256").update(identifier).digest("hex");
-  const { data, error } = await getAdminClient().rpc("consume_rate_limit", {
-    p_scope: scope,
-    p_identifier_hash: hash,
-    p_limit: limit,
-    p_window_seconds: seconds,
-  });
-  return !error && data === true;
+  if (!isSupabaseAdminConfigured()) return true;
+  try {
+    const hash = createHash("sha256").update(identifier).digest("hex");
+    const { data, error } = await getAdminClient().rpc("consume_rate_limit", {
+      p_scope: scope,
+      p_identifier_hash: hash,
+      p_limit: limit,
+      p_window_seconds: seconds,
+    });
+    return !error && data === true;
+  } catch {
+    return true;
+  }
 }

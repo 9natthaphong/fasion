@@ -150,6 +150,8 @@ npx playwright install chromium
 6. เพิ่ม `OPENAI_API_KEY` ผ่าน Vercel Environment Variables เมื่อพร้อม แล้ว redeploy
 7. ตรวจ Preview ก่อน merge เข้า default branch ซึ่งเป็น Production source
 
+> **หมายเหตุ:** ในรอบการทำงานปัจจุบัน ได้ทำการตรวจสอบความถูกต้องของโค้ด สคีมา RLS และ build สำเร็จเรียบร้อยแล้ว โดยยังไม่ได้ทำการ Deploy บน Vercel ขั้นตอนถัดไปคือให้ Codex รีวิว PR (`agent/complete-fittoday-predeploy`) และปรับปรุงการออกแบบอินเทอร์เฟซ (design refinement) ก่อนดำเนินการ Deploy ต่อไป
+
 ## ขอบเขต MVP
 
 - Subscription เป็น mock ที่ admin เปิด/ปิด ไม่มี payment gateway
@@ -159,3 +161,4 @@ npx playwright install chromium
 - Analytics ป้องกันซ้ำและ bot ระดับพื้นฐาน ไม่ใช่ระบบ anti-fraud เต็มรูปแบบ
 - ไม่มี automated image moderation เต็มรูปแบบ
 - สมาชิกหลายคนต่อร้านมี schema เตรียมไว้ แต่ UI เปิดเฉพาะ owner
+
