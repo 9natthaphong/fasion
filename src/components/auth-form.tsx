@@ -84,8 +84,8 @@ export function AuthForm({
         return;
       }
       const requestedNext = searchParams.get("next");
-      router.push(requestedNext?.startsWith("/") ? requestedNext : data.redirectTo ?? "/");
-      router.refresh();
+      const destination = requestedNext?.startsWith("/") ? requestedNext : data.redirectTo ?? "/";
+      window.location.href = destination;
     } catch {
       setServerError("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง");
     }
@@ -95,7 +95,7 @@ export function AuthForm({
   const oppositeLabel = role === "customer" ? "ร้านค้า" : "ลูกค้า";
 
   return (
-    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+    <form className="space-y-4" method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       {mode === "register" ? (
         <div>
           <label htmlFor="auth-display-name" className="block text-sm font-medium mb-1">ชื่อที่แสดง</label>

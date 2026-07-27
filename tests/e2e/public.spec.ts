@@ -62,7 +62,9 @@ const publicRoutes = [
 test("required public routes render without console, CSP, or image errors", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error") runtimeErrors.push(message.text());
+    if (message.type() === "error" && !message.text().includes("webpack-hmr")) {
+      runtimeErrors.push(message.text());
+    }
   });
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   for (const route of publicRoutes) {

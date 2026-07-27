@@ -254,8 +254,9 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-charcoal mb-1">ชื่อที่แสดง (Display Name) *</label>
+              <label htmlFor="display-name" className="block text-xs font-medium text-charcoal mb-1">ชื่อที่แสดง (Display Name) *</label>
               <input
+                id="display-name"
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
@@ -393,8 +394,9 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">ส่วนสูง (ซม.)</label>
+                <label htmlFor="height-cm" className="block text-xs font-medium text-charcoal mb-1">ส่วนสูง (ซม.)</label>
                 <input
+                  id="height-cm"
                   type="number"
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value)}
@@ -404,8 +406,9 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-charcoal mb-1">น้ำหนัก (กก.)</label>
+                <label htmlFor="weight-kg" className="block text-xs font-medium text-charcoal mb-1">น้ำหนัก (กก.)</label>
                 <input
+                  id="weight-kg"
                   type="number"
                   value={weightKg}
                   onChange={(e) => setWeightKg(e.target.value)}

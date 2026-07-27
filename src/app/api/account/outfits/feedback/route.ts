@@ -15,18 +15,21 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: "รูปแบบข้อมูลไม่ถูกต้อง" }, { status: 400 });
+    }
 
     // Verify outfitResultId ownership if supplied
     if (body.outfitResultId) {
       const supabase = await createClient();
-      const { data: resRow } = await supabase
+      const { data: resRow, error: resErr } = await supabase
         .from("outfit_results")
         .select("id, request_id, outfit_requests!inner(user_id)")
         .eq("id", body.outfitResultId)
         .maybeSingle();
 
-      if (!resRow || (resRow.outfit_requests as unknown as { user_id: string })?.user_id !== auth.user.id) {
+      if (resErr || !resRow || (resRow.outfit_requests as unknown as { user_id: string })?.user_id !== auth.user.id) {
         return NextResponse.json({ error: "ไม่พบผลลัพธ์คำแนะนำหรือไม่มีสิทธิ์อ้างอิง" }, { status: 403 });
       }
     }
@@ -34,8 +37,9 @@ export async function POST(req: Request) {
     const feedback = await saveOutfitFeedback(auth.user.id, body);
     return NextResponse.json({ feedback });
   } catch (err) {
+    console.error("[OUTFIT_FEEDBACK_SAVE_ERROR]", err instanceof Error ? err.name : "UnknownError");
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "ส่งข้อเสนอแนะไม่สำเร็จ" },
+      { error: "ส่งข้อเสนอแนะไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง" },
       { status: 400 },
     );
   }

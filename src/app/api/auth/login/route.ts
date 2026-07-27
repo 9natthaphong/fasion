@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { loginSchema } from "@/lib/validation";
@@ -22,7 +23,8 @@ export async function POST(request: Request) {
   if (error || !data.user) {
     return NextResponse.json({ error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
   }
-  const { data: profile } = await supabase
+  const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
+  const { data: profile } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", data.user.id)
@@ -41,11 +43,16 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  return NextResponse.json({
+  const response = NextResponse.json({
     redirectTo: adminLogin
       ? "/admin"
       : profile?.role === "merchant"
         ? "/merchant"
         : "/account",
   });
+  const cookieStore = await cookies();
+  for (const c of cookieStore.getAll()) {
+    response.cookies.set(c.name, c.value, c);
+  }
+  return response;
 }

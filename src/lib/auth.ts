@@ -27,7 +27,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
 
-  const { data: profile } = await supabase
+  const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
+  const { data: profile } = await adminClient
     .from("profiles")
     .select("role, display_name")
     .eq("id", user.id)

@@ -15,19 +15,22 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: "รูปแบบข้อมูลไม่ถูกต้อง" }, { status: 400 });
+    }
 
     // Verify savedOutfitId ownership if supplied
     if (body.savedOutfitId) {
       const supabase = await createClient();
-      const { data: outfitRow } = await supabase
+      const { data: outfitRow, error: outfitErr } = await supabase
         .from("saved_outfits")
         .select("id, user_id")
         .eq("id", body.savedOutfitId)
         .eq("user_id", auth.user.id)
         .maybeSingle();
 
-      if (!outfitRow) {
+      if (outfitErr || !outfitRow) {
         return NextResponse.json({ error: "ไม่พบชุดที่บันทึกไว้หรือไม่มีสิทธิ์อ้างอิง" }, { status: 403 });
       }
     }
@@ -35,8 +38,9 @@ export async function POST(req: Request) {
     const wearLog = await recordWearLog(auth.user.id, body);
     return NextResponse.json({ wearLog });
   } catch (err) {
+    console.error("[WEAR_LOG_SAVE_ERROR]", err instanceof Error ? err.name : "UnknownError");
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "บันทึกประวัติการใส่ไม่สำเร็จ" },
+      { error: "บันทึกประวัติการใส่ไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง" },
       { status: 400 },
     );
   }

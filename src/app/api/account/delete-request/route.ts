@@ -4,44 +4,59 @@ import { createClient } from "@/lib/supabase/server";
 import { requireSameOrigin } from "@/lib/request-security";
 
 export async function POST(request: Request) {
-  if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
-  const auth = await requireApiRole(["customer", "merchant"]);
-  if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if (!(await requireSameOrigin(request))) {
+    return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
+  }
 
-  const formData = await request.formData();
-  if (formData.get("confirmation") !== "DELETE") {
+  const auth = await requireApiRole(["customer", "merchant"]);
+  if (!auth.user) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  // Merchant account deletion requires manual admin/business review to prevent orphaned shops
+  if (auth.user.role === "merchant") {
+    return NextResponse.json(
+      { error: "บัญชีร้านค้าไม่สามารถส่งคำขอลบอัตโนมัติได้ กรุณาติดต่อแอดมินเพื่อดำเนินการปิดร้านค้าและย้ายสิทธิ์ข้อมูล" },
+      { status: 400 },
+    );
+  }
+
+  const contentType = request.headers.get("content-type") || "";
+  let confirmation = "";
+
+  if (contentType.includes("application/json")) {
+    const body = await request.json().catch(() => null);
+    confirmation = body?.confirmation || "";
+  } else {
+    const formData = await request.formData().catch(() => null);
+    confirmation = (formData?.get("confirmation") as string) || "";
+  }
+
+  if (confirmation !== "DELETE") {
     return NextResponse.json({ error: "คำยืนยันไม่ถูกต้อง พิมพ์ DELETE เพื่อยืนยัน" }, { status: 400 });
   }
 
   const supabase = await createClient();
 
-  // Create pending deletion request
+  // Stage 1: Upsert pending account deletion request
   const { error } = await supabase
     .from("account_deletion_requests")
-    .insert({ user_id: auth.user.id, status: "pending" });
+    .upsert({ user_id: auth.user.id, status: "pending" }, { onConflict: "user_id" });
 
   if (error) {
-    return NextResponse.json({ error: "ส่งคำขอลบบัญชีไม่สำเร็จ" }, { status: 400 });
+    console.error("[ACCOUNT_DELETION_REQUEST_ERROR]", error.code);
+    return NextResponse.json({ error: "ส่งคำขอลบบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" }, { status: 500 });
   }
 
-  // Anonymize user_id in analytics tables (preserve aggregate metric counts)
-  await supabase.from("ad_impressions").update({ user_id: null }).eq("user_id", auth.user.id);
-  await supabase.from("ad_clicks").update({ user_id: null }).eq("user_id", auth.user.id);
-  await supabase.from("shop_views").update({ user_id: null }).eq("user_id", auth.user.id);
-
-  // Soft/hard delete customer data
-  await supabase.from("customer_fit_profiles").delete().eq("user_id", auth.user.id);
-  await supabase.from("customer_preferences").delete().eq("user_id", auth.user.id);
-  await supabase.from("saved_outfits").delete().eq("user_id", auth.user.id);
-  await supabase.from("wear_logs").delete().eq("user_id", auth.user.id);
-  await supabase.from("outfit_feedback").delete().eq("user_id", auth.user.id);
-  await supabase.from("ad_likes").delete().eq("user_id", auth.user.id);
-  await supabase.from("wardrobe_items").update({ deleted_at: new Date().toISOString() }).eq("user_id", auth.user.id);
-
+  // Revoke session & sign out
   await supabase.auth.signOut();
+
+  const message = "รับคำขอลบบัญชีเรียบร้อยแล้ว แอดมินจะดำเนินการลบข้อมูลส่วนตัวของคุณอย่างถาวรในขั้นตอนถัดไป";
   const redirectTo = "/?account-deletion=requested";
-  if (request.headers.get("accept")?.includes("application/json")) {
-    return NextResponse.json({ redirectTo });
+
+  if (request.headers.get("accept")?.includes("application/json") || contentType.includes("application/json")) {
+    return NextResponse.json({ message, redirectTo });
   }
+
   return NextResponse.redirect(new URL(redirectTo, request.url), 303);
 }
