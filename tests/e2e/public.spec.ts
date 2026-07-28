@@ -3,8 +3,10 @@ import { expect, test } from "@playwright/test";
 test("public discovery journey has no overflow", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /วันนี้จะไปไหน/ })).toBeVisible();
-  await page.getByRole("link", { name: "ค้นหาแฟชั่นจากร้านค้า" }).click();
-  await expect(page).toHaveURL(/\/discover/);
+  await Promise.all([
+    page.waitForURL(/\/discover/),
+    page.getByRole("link", { name: /ค้นหาแฟชั่นจากร้านค้า/ }).click(),
+  ]);
   await expect(page.getByRole("heading", { name: "ค้นหาสไตล์จากร้านค้าอิสระ" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
