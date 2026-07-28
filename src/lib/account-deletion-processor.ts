@@ -122,10 +122,12 @@ export async function processAccountDeletion(
       }
     }
     
-    const { data: avFiles } = await supabaseAdmin.storage.from("avatars").list(targetUserId);
+    const { data: avFiles, error: listErr } = await supabaseAdmin.storage.from("avatars").list(targetUserId);
+    if (listErr) throw new Error("Failed to list avatars");
     if (avFiles && avFiles.length > 0) {
       const avPaths = avFiles.map((f: { name: string }) => `${targetUserId}/${f.name}`);
-      await supabaseAdmin.storage.from("avatars").remove(avPaths);
+      const { error: rmErr } = await supabaseAdmin.storage.from("avatars").remove(avPaths);
+      if (rmErr) throw new Error("Failed to remove avatars");
     }
 
     // 6. Delete customer relational data
@@ -183,26 +185,35 @@ export async function processAccountDeletion(
     }
 
     // 8. Verify that the Auth user and profile no longer exist
-    const { data: checkUser } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
+    const { data: checkUser, error: checkAuthErr } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
+    if (checkAuthErr && !checkAuthErr.message.includes("User not found")) {
+      throw new Error("Failed to verify Auth user deletion");
+    }
     if (checkUser && checkUser.user) {
       throw new Error("Auth User still exists after deletion attempt");
     }
-    const { data: checkProfile } = await supabaseAdmin.from("profiles").select("id").eq("id", targetUserId).maybeSingle();
+    const { data: checkProfile, error: checkProfileErr } = await supabaseAdmin.from("profiles").select("id").eq("id", targetUserId).maybeSingle();
+    if (checkProfileErr) {
+      throw new Error("Failed to verify profile deletion");
+    }
     if (checkProfile && checkProfile.id) {
       throw new Error("Profile still exists after deletion attempt");
     }
 
     // Record admin audit
-    await supabaseAdmin.rpc('record_admin_audit', {
+    const { error: auditErr } = await supabaseAdmin.rpc('record_admin_audit', {
       p_actor_id: adminUserId,
       p_action: 'DELETE_ACCOUNT',
       p_entity_type: 'customer',
       p_entity_id: targetUserId,
       p_after_data: { request_id: requestId }
     });
+    if (auditErr) {
+      throw new Error("Failed to record admin audit");
+    }
 
     // 9. Update preserved request to completed
-    await supabaseAdmin
+    const { data: updateData, error: updateErr } = await supabaseAdmin
       .from("account_deletion_requests")
       .update({ 
         status: "completed", 
@@ -210,7 +221,28 @@ export async function processAccountDeletion(
         completed_at: new Date().toISOString(),
         user_id: null
       })
-      .eq("id", requestId);
+      .eq("id", requestId)
+      .select("status, user_id, processed_at, completed_at, processed_by, attempt_count");
+
+    if (updateErr) {
+      throw new Error("Failed to update deletion request to completed");
+    }
+    
+    if (!updateData || updateData.length !== 1) {
+      throw new Error("Failed to confirm exactly one deletion request was updated");
+    }
+    
+    const finalRow = updateData[0];
+    if (
+      finalRow.status !== "completed" || 
+      finalRow.user_id !== null || 
+      !finalRow.processed_at || 
+      !finalRow.completed_at || 
+      !finalRow.processed_by || 
+      finalRow.attempt_count < 1
+    ) {
+      throw new Error("Final request state is invalid");
+    }
 
     return { success: true, requestId, targetUserId };
   } catch (err) {

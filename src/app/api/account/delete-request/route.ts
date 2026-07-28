@@ -3,6 +3,14 @@ import { requireApiRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { requireSameOrigin } from "@/lib/request-security";
 
+import { z } from "zod";
+
+const DeleteRequestSchema = z.object({
+  confirmation: z.literal("DELETE", {
+    errorMap: () => ({ message: "คำยืนยันไม่ถูกต้อง พิมพ์ DELETE เพื่อยืนยัน" })
+  } as any),
+});
+
 export async function POST(request: Request) {
   if (!(await requireSameOrigin(request))) {
     return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
@@ -22,18 +30,20 @@ export async function POST(request: Request) {
   }
 
   const contentType = request.headers.get("content-type") || "";
-  let confirmation = "";
+  let payload: unknown = {};
 
   if (contentType.includes("application/json")) {
-    const body = await request.json().catch(() => null);
-    confirmation = body?.confirmation || "";
+    payload = await request.json().catch(() => ({}));
   } else {
     const formData = await request.formData().catch(() => null);
-    confirmation = (formData?.get("confirmation") as string) || "";
+    if (formData) {
+      payload = { confirmation: formData.get("confirmation") };
+    }
   }
 
-  if (confirmation !== "DELETE") {
-    return NextResponse.json({ error: "คำยืนยันไม่ถูกต้อง พิมพ์ DELETE เพื่อยืนยัน" }, { status: 400 });
+  const parsed = DeleteRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -47,20 +57,21 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (selectErr) {
-    console.error("[ACCOUNT_DELETION_SELECT_ERROR]", selectErr);
+    console.error("[ACCOUNT_DELETION_SELECT_ERROR]", "Database error during select");
   }
 
-  let reqError: { code?: string; message: string } | null = null;
   if (!existing) {
     const { error } = await supabase
       .from("account_deletion_requests")
       .insert({ user_id: auth.user.id, status: "pending" });
-    reqError = error;
-  }
-
-  if (reqError) {
-    console.error("[ACCOUNT_DELETION_INSERT_ERROR]", reqError);
-    return NextResponse.json({ error: "ส่งคำขอลบบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" }, { status: 500 });
+    
+    if (error) {
+      // 23505 is PostgreSQL unique_violation. If it races, treat it as already existing.
+      if (error.code !== "23505") {
+        console.error("[ACCOUNT_DELETION_INSERT_ERROR]", "Database error during insert");
+        return NextResponse.json({ error: "ส่งคำขอลบบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" }, { status: 500 });
+      }
+    }
   }
 
   // Revoke session & sign out
