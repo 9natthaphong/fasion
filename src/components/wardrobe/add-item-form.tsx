@@ -3,8 +3,26 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Camera, Upload, Sparkles, Check, AlertCircle, Loader2, ArrowLeft, Info } from "lucide-react";
+import { Camera, Upload, Sparkles, Check, AlertCircle, Loader2, ArrowLeft, Info, ChevronDown, ChevronUp, Layers } from "lucide-react";
 import type { WardrobeAnalysisOutput, WardrobeItemType, WardrobePreferredFit, WardrobeFormality } from "@/lib/types";
+
+const categoryChips: { type: WardrobeItemType; label: string }[] = [
+  { type: "top", label: "เสื้อ (Top)" },
+  { type: "bottom", label: "กางเกง (Bottom)" },
+  { type: "skirt", label: "กระโปรง (Skirt)" },
+  { type: "dress", label: "ชุดเดรส (Dress)" },
+  { type: "outerwear", label: "เสื้อคลุม / แจ็กเก็ต (Outerwear)" },
+  { type: "shoes", label: "รองเท้า (Shoes)" },
+  { type: "bag", label: "กระเป๋า (Bag)" },
+  { type: "accessory", label: "เครื่องประดับ / หมวก (Accessory)" },
+];
+
+const fitChips: { fit: WardrobePreferredFit; label: string }[] = [
+  { fit: "fitted", label: "เข้ารูป (Fitted)" },
+  { fit: "regular", label: "ทรงปกติ (Regular)" },
+  { fit: "relaxed", label: "หลวมสบาย (Relaxed)" },
+  { fit: "oversized", label: "โอเวอร์ไซซ์ (Oversized)" },
+];
 
 export function AddItemForm() {
   const router = useRouter();
@@ -17,6 +35,7 @@ export function AddItemForm() {
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
@@ -55,7 +74,6 @@ export function AddItemForm() {
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
 
-    // Auto trigger upload & analysis
     uploadAndAnalyze(file);
   };
 
@@ -183,33 +201,41 @@ export function AddItemForm() {
 
   return (
     <form onSubmit={handleSave} className="space-y-8 max-w-3xl">
-      {/* Back button */}
+      {/* Back Link */}
       <div>
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-charcoal transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-charcoal transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>ย้อนกลับไปตู้เสื้อผ้า</span>
         </button>
       </div>
 
-      {/* Photography Tips Banner */}
-      <div className="border border-line bg-paper p-5 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-mono text-charcoal font-semibold uppercase">
-          <Info className="w-4 h-4 text-olive" />
-          <span>คำแนะนำการถ่ายภาพเสื้อผ้า</span>
+      {/* Guidance Banner */}
+      <div className="border border-line bg-paper p-5 grid sm:grid-cols-[1fr_200px] gap-4 items-center">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-mono text-charcoal font-semibold uppercase">
+            <Info className="w-4 h-4 text-olive" />
+            <span>คำแนะนำการถ่ายภาพเพื่อผลลัพธ์ที่ดีที่สุด</span>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-1.5 text-xs text-muted list-disc list-inside">
+            <li>ถ่าย 1 ชิ้นต่อ 1 รูป บนพื้นสีเรียบ</li>
+            <li>จัดแสงธรรมชาติให้เห็นสีเสื้อจริง</li>
+          </ul>
         </div>
-        <ul className="grid sm:grid-cols-2 gap-2 text-xs text-muted list-disc list-inside">
-          <li>ถ่ายเสื้อผ้าทีละ 1 ชิ้นต่อ 1 ภาพ</li>
-          <li>วางบนพื้นหลังสีเรียบสะอาด</li>
-          <li>จัดแสงสว่างให้เห็นสีและรายละเอียดชัดเจน</li>
-          <li>ถ่ายให้เห็นองค์ประกอบเสื้อผ้าครบทั้งชิ้น</li>
-        </ul>
+        <div className="relative aspect-[16/9] hidden sm:block border border-line overflow-hidden bg-background">
+          <Image
+            src="/images/fittoday/wardrobe-capture-guide.jpg"
+            alt="ตัวอย่างการจัดวางเสื้อผ้าถ่ายรูป"
+            fill
+            className="object-cover"
+          />
+        </div>
       </div>
 
-      {/* Error / Notice Alert */}
+      {/* Errors & Notices */}
       {errorMsg && (
         <div className="p-4 border border-danger/30 bg-danger/10 text-danger text-xs font-medium flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -224,19 +250,22 @@ export function AddItemForm() {
         </div>
       )}
 
-      {/* Upload & Image Selector */}
+      {/* Step 1: Capture / Upload */}
       <div className="space-y-4">
-        <label className="block text-sm font-medium text-charcoal">รูปถ่ายเสื้อผ้า *</label>
+        <div className="flex items-center justify-between border-b border-line pb-2">
+          <span className="text-xs font-mono text-muted uppercase">Step 1 / Image Selection</span>
+          <span className="text-xs text-olive font-medium">กล้องมือถือ / คลังภาพ</span>
+        </div>
 
         {previewUrl ? (
           <div className="space-y-3">
-            <div className="aspect-[3/4] max-w-xs relative bg-background border border-line overflow-hidden">
-              <Image src={previewUrl} alt="ตัวอย่างเสื้อผ้า" fill className="object-cover" />
+            <div className="aspect-[3/4] max-w-xs relative bg-background border border-line overflow-hidden shadow-sm">
+              <Image src={previewUrl} alt="ตัวอย่างเสื้อผ้าที่ถ่าย" fill className="object-cover" />
               {(isUploading || isAnalyzing) && (
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-2">
+                <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3">
                   <Loader2 className="w-8 h-8 animate-spin text-charcoal" />
                   <span className="text-xs font-medium text-charcoal">
-                    {isUploading ? "กำลังอัปโหลดรูปภาพ..." : "AI Vision กำลังวิเคราะห์ลักษณะเสื้อผ้า..."}
+                    {isUploading ? "กำลังอัปโหลดรูปภาพ..." : "AI Vision กำลังวิเคราะห์สีและลักษณะเสื้อผ้า..."}
                   </span>
                 </div>
               )}
@@ -250,38 +279,37 @@ export function AddItemForm() {
               }}
               className="text-xs text-muted hover:text-danger underline"
             >
-              เปลี่ยนรูปภาพใหม่
+              ถ่ายหรือเลือกรูปภาพใหม่
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Camera Input for Mobile */}
+            {/* Primary Mobile Action: Camera */}
             <button
               type="button"
               onClick={() => cameraInputRef.current?.click()}
-              className="p-8 border-2 border-dashed border-line bg-paper hover:border-charcoal hover:bg-background transition-colors text-center flex flex-col items-center justify-center space-y-3"
+              className="p-8 border-2 border-dashed border-olive/40 bg-olive-pale/20 hover:border-charcoal hover:bg-paper transition-all text-center flex flex-col items-center justify-center space-y-3 cursor-pointer"
             >
               <Camera className="w-8 h-8 text-olive" />
               <div>
-                <strong className="block text-sm text-charcoal">ถ่ายภาพด้วยกล้อง</strong>
-                <span className="text-xs text-muted">สำหรับอุปกรณ์ที่มีกล้อง</span>
+                <strong className="block text-sm text-charcoal">ถ่ายรูปด้วยกล้อง</strong>
+                <span className="text-xs text-muted">ถ่ายภาพเสื้อผ้าชิ้นใหม่ทันที</span>
               </div>
             </button>
 
-            {/* File Input for Gallery */}
+            {/* Secondary: Gallery Upload */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-8 border-2 border-dashed border-line bg-paper hover:border-charcoal hover:bg-background transition-colors text-center flex flex-col items-center justify-center space-y-3"
+              className="p-8 border-2 border-dashed border-line bg-paper hover:border-charcoal hover:bg-background transition-all text-center flex flex-col items-center justify-center space-y-3 cursor-pointer"
             >
               <Upload className="w-8 h-8 text-charcoal" />
               <div>
                 <strong className="block text-sm text-charcoal">เลือกจากคลังภาพ</strong>
-                <span className="text-xs text-muted">JPEG, PNG, WebP (สูงสุด 5 MB)</span>
+                <span className="text-xs text-muted">JPEG, PNG, WebP (ไม่เกิน 5 MB)</span>
               </div>
             </button>
 
-            {/* Hidden Input Elements */}
             <input
               ref={cameraInputRef}
               type="file"
@@ -301,214 +329,207 @@ export function AddItemForm() {
         )}
       </div>
 
-      {/* Item Metadata Form (User confirmation and manual edit) */}
-      <div className="space-y-6 pt-6 border-t border-line">
-        <h2 className="font-serif text-2xl font-normal text-charcoal flex items-center gap-2">
-          <span>รายละเอียดและข้อมูลเสื้อผ้า</span>
-          {isAnalyzing && <Loader2 className="w-4 h-4 animate-spin text-muted" />}
-        </h2>
+      {/* Step 2: AI Detected Summary & Quick Confirm */}
+      {uploadedPath && (
+        <div className="space-y-6 pt-6 border-t border-line">
+          <div className="p-6 bg-paper border border-line space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-olive" />
+                <h3 className="font-serif text-xl font-normal text-charcoal">ผลการวิเคราะห์จาก AI</h3>
+              </div>
+              <span className="text-xs text-muted font-mono">ยืนยันข้อมูลเร็ว</span>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Name */}
-          <div className="space-y-2 sm:col-span-2">
-            <label className="block text-xs font-medium text-charcoal">ชื่อเรียกเสื้อผ้า *</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="เช่น เสื้อเชิ้ตผ้าลินินสีขาว, กางเกงสแล็กสีดำ"
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-              required
-            />
-          </div>
+            {/* Detected Key Card */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-mono text-muted uppercase mb-1">ชื่อเสื้อผ้า *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="เช่น เสื้อเชิ้ตผ้าลินินสีขาว"
+                  className="w-full px-4 py-3 border border-line bg-background text-sm font-medium text-charcoal focus:border-charcoal outline-none"
+                  required
+                />
+              </div>
 
-          {/* Item Type */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-charcoal">ประเภทเสื้อผ้า *</label>
-            <select
-              value={itemType}
-              onChange={(e) => setItemType(e.target.value as WardrobeItemType)}
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            >
-              <option value="top">เสื้อ (Top)</option>
-              <option value="bottom">กางเกง (Bottom)</option>
-              <option value="skirt">กระโปรง (Skirt)</option>
-              <option value="dress">ชุดเดรส (Dress)</option>
-              <option value="outerwear">เสื้อคลุม / แจ็กเก็ต (Outerwear)</option>
-              <option value="shoes">รองเท้า (Shoes)</option>
-              <option value="bag">กระเป๋า (Bag)</option>
-              <option value="accessory">เครื่องประดับ / หมวก (Accessory)</option>
-            </select>
-          </div>
+              {/* Category Chips */}
+              <div>
+                <label className="block text-xs font-mono text-muted uppercase mb-2">ประเภทเสื้อผ้า</label>
+                <div className="flex flex-wrap gap-2">
+                  {categoryChips.map((c) => {
+                    const isSelected = itemType === c.type;
+                    return (
+                      <button
+                        key={c.type}
+                        type="button"
+                        onClick={() => setItemType(c.type)}
+                        className={`px-3 py-1.5 text-xs font-medium border transition-all ${
+                          isSelected
+                            ? "bg-charcoal text-white border-charcoal"
+                            : "bg-background text-charcoal border-line hover:border-muted"
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
-          {/* Subcategory */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-charcoal">หมวดย่อย</label>
-            <input
-              type="text"
-              value={subcategory}
-              onChange={(e) => setSubcategory(e.target.value)}
-              placeholder="เช่น เชิ้ตแขนยาว, กางเกงยีนส์, สนีกเกอร์"
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            />
-          </div>
-
-          {/* Primary Colors */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-charcoal">สีหลัก (คั่นด้วยจุลภาค)</label>
-            <input
-              type="text"
-              value={primaryColorsText}
-              onChange={(e) => setPrimaryColorsText(e.target.value)}
-              placeholder="เช่น ขาว, ครีม, กรมท่า"
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            />
-          </div>
-
-          {/* Styles */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-charcoal">สไตล์ (คั่นด้วยจุลภาค)</label>
-            <input
-              type="text"
-              value={stylesText}
-              onChange={(e) => setStylesText(e.target.value)}
-              placeholder="เช่น มินิมอล, ทางการ, ลำลอง"
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            />
-          </div>
-
-          {/* Preferred Fit */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-charcoal">ความกระชับ / ทรงเสื้อผ้า</label>
-            <select
-              value={preferredFit}
-              onChange={(e) => setPreferredFit(e.target.value as WardrobePreferredFit)}
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            >
-              <option value="fitted">เข้ารูป (Fitted)</option>
-              <option value="regular">ทรงปกติ (Regular)</option>
-              <option value="relaxed">ทรงหลวมสบาย (Relaxed)</option>
-              <option value="oversized">โอเวอร์ไซซ์ (Oversized)</option>
-              <option value="unknown">ไม่ระบุ</option>
-            </select>
-          </div>
-
-          {/* Formality */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-charcoal">ระดับความเป็นทางการ</label>
-            <select
-              value={formality}
-              onChange={(e) => setFormality(e.target.value as WardrobeFormality)}
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            >
-              <option value="casual">ลำลองใส่สบาย (Casual)</option>
-              <option value="smart_casual">สมาร์ทลำลอง (Smart Casual)</option>
-              <option value="business">ทำงาน / ธุรกิจ (Business)</option>
-              <option value="formal">ทางการเต็มขั้น (Formal)</option>
-              <option value="sport">สปอร์ต / ออกกำลังกาย (Sport)</option>
-              <option value="unknown">ทั่วไป</option>
-            </select>
-          </div>
-
-          {/* Material */}
-          <div className="space-y-2 sm:col-span-2">
-            <label className="block text-xs font-medium text-charcoal">ชนิดเนื้อผ้า</label>
-            <input
-              type="text"
-              value={material}
-              onChange={(e) => setMaterial(e.target.value)}
-              placeholder="เช่น ผ้าลินิน, ผ้าคอตตอน, ผ้าเดนิม, หนังแท้"
-              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            />
-          </div>
-
-          {/* Weather Suitability Checkboxes */}
-          <div className="space-y-2 sm:col-span-2">
-            <label className="block text-xs font-medium text-charcoal">สภาพอากาศที่เหมาะสม</label>
-            <div className="flex flex-wrap gap-3 pt-1">
-              {[
-                { tag: "hot", label: "อากาศร้อน" },
-                { tag: "warm", label: "อบอุ่น/สบาย" },
-                { tag: "rain", label: "วันฝนตก" },
-                { tag: "cool", label: "อากาศเย็น/ห้องแอร์" },
-                { tag: "indoor", label: "ในร่ม/ในอาคาร" },
-              ].map((w) => {
-                const checked = weatherSuitability.includes(w.tag);
-                return (
-                  <button
-                    key={w.tag}
-                    type="button"
-                    onClick={() => toggleWeather(w.tag)}
-                    className={`px-3 py-1.5 text-xs font-medium border transition-colors flex items-center gap-1.5 ${
-                      checked
-                        ? "bg-charcoal text-white border-charcoal"
-                        : "bg-background text-charcoal border-line hover:border-charcoal"
-                    }`}
-                  >
-                    {checked && <Check className="w-3.5 h-3.5" />}
-                    <span>{w.label}</span>
-                  </button>
-                );
-              })}
+            {/* Quick Submit Button */}
+            <div className="pt-4 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs text-muted">กดบันทึกทันทีหากข้อมูลถูกต้องแล้ว</span>
+              <button
+                type="submit"
+                disabled={isSaving || !name.trim()}
+                className="w-full sm:w-auto px-8 py-3.5 bg-charcoal text-white hover:bg-black font-semibold text-xs rounded-none transition-colors inline-flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>กำลังบันทึก...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 text-olive" />
+                    <span>ยืนยันและบันทึกในตู้เสื้อผ้า</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* AI Description */}
-          <div className="space-y-2 sm:col-span-2">
-            <label className="block text-xs font-medium text-charcoal">รายละเอียดจาก AI / โน้ตส่วนตัว</label>
-            <textarea
-              rows={3}
-              value={aiDescription}
-              onChange={(e) => setAiDescription(e.target.value)}
-              placeholder="อธิบายรายละเอียดการใช้งาน จุดเด่น หรือคำแนะนำส่วนตัว"
-              className="w-full p-4 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-            />
-          </div>
+          {/* Advanced Drawer for Metadata */}
+          <div className="border border-line bg-paper">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full p-5 text-left flex items-center justify-between hover:bg-background/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-olive" />
+                <span className="text-sm font-medium text-charcoal">แก้ไขรายละเอียดเพิ่มเติม (เนื้อผ้า, ทรง, สภาพอากาศ)</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted font-mono">
+                <span>{showAdvanced ? "ซ่อน" : "แสดง"}</span>
+                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
 
-          {/* Favorite Toggle */}
-          <div className="flex items-center gap-3 sm:col-span-2 pt-2">
-            <input
-              type="checkbox"
-              id="isFav"
-              checked={isFavorite}
-              onChange={(e) => setIsFavorite(e.target.checked)}
-              className="w-4 h-4 accent-charcoal cursor-pointer"
-            />
-            <label htmlFor="isFav" className="text-sm font-medium text-charcoal cursor-pointer select-none">
-              ติดดาวรายการโปรดในตู้เสื้อผ้า
-            </label>
+            {showAdvanced && (
+              <div className="p-6 sm:p-8 border-t border-line space-y-6 bg-background">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-medium text-charcoal mb-1">หมวดย่อย</label>
+                    <input
+                      type="text"
+                      value={subcategory}
+                      onChange={(e) => setSubcategory(e.target.value)}
+                      placeholder="เช่น เชิ้ตแขนยาว, กางเกงสแล็ก"
+                      className="w-full px-4 py-3 border border-line bg-paper text-sm text-charcoal focus:border-charcoal outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-charcoal mb-1">สีหลัก</label>
+                    <input
+                      type="text"
+                      value={primaryColorsText}
+                      onChange={(e) => setPrimaryColorsText(e.target.value)}
+                      placeholder="เช่น ขาว, ครีม"
+                      className="w-full px-4 py-3 border border-line bg-paper text-sm text-charcoal focus:border-charcoal outline-none"
+                    />
+                  </div>
+
+                  {/* Fit Chips */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-charcoal mb-2">ทรงเสื้อผ้า</label>
+                    <div className="flex flex-wrap gap-2">
+                      {fitChips.map((f) => {
+                        const isSelected = preferredFit === f.fit;
+                        return (
+                          <button
+                            key={f.fit}
+                            type="button"
+                            onClick={() => setPreferredFit(f.fit)}
+                            className={`px-3 py-1.5 text-xs font-medium border transition-colors ${
+                              isSelected
+                                ? "bg-charcoal text-white border-charcoal"
+                                : "bg-paper text-charcoal border-line hover:border-muted"
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Material */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-charcoal mb-1">ชนิดเนื้อผ้า</label>
+                    <input
+                      type="text"
+                      value={material}
+                      onChange={(e) => setMaterial(e.target.value)}
+                      placeholder="เช่น ผ้าลินิน, ผ้าคอตตอน, ผ้าเดนิม"
+                      className="w-full px-4 py-3 border border-line bg-paper text-sm text-charcoal focus:border-charcoal outline-none"
+                    />
+                  </div>
+
+                  {/* Weather Chips */}
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="block text-xs font-medium text-charcoal">สภาพอากาศที่เหมาะสม</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { tag: "hot", label: "อากาศร้อน" },
+                        { tag: "warm", label: "อบอุ่น/สบาย" },
+                        { tag: "rain", label: "วันฝนตก" },
+                        { tag: "cool", label: "อากาศเย็น/ห้องแอร์" },
+                        { tag: "indoor", label: "ในร่ม/ในอาคาร" },
+                      ].map((w) => {
+                        const checked = weatherSuitability.includes(w.tag);
+                        return (
+                          <button
+                            key={w.tag}
+                            type="button"
+                            onClick={() => toggleWeather(w.tag)}
+                            className={`px-3 py-1.5 text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                              checked
+                                ? "bg-charcoal text-white border-charcoal"
+                                : "bg-paper text-charcoal border-line hover:border-muted"
+                            }`}
+                          >
+                            {checked && <Check className="w-3.5 h-3.5" />}
+                            <span>{w.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {/* Favorite Toggle */}
+                  <div className="flex items-center gap-3 sm:col-span-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="isFav"
+                      checked={isFavorite}
+                      onChange={(e) => setIsFavorite(e.target.checked)}
+                      className="w-4 h-4 accent-charcoal cursor-pointer"
+                    />
+                    <label htmlFor="isFav" className="text-xs font-medium text-charcoal cursor-pointer select-none">
+                      ติดดาวรายการโปรดในตู้เสื้อผ้า
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Action Submit Button */}
-      <div className="pt-6 border-t border-line flex items-center justify-end gap-4">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="px-6 py-4 border border-line text-charcoal hover:bg-paper font-medium text-xs rounded-none transition-colors"
-        >
-          ยกเลิก
-        </button>
-
-        <button
-          type="submit"
-          disabled={isUploading || isAnalyzing || isSaving || !uploadedPath}
-          className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>กำลังบันทึก...</span>
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4" />
-              <span>บันทึกในตู้เสื้อผ้า</span>
-            </>
-          )}
-        </button>
-      </div>
+      )}
     </form>
   );
 }

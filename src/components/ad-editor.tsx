@@ -3,7 +3,7 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Eye, Sparkles, AlertCircle, ExternalLink, Check } from "lucide-react";
 import { ControlledTagSelector } from "@/components/merchant/controlled-tag-selector";
 import type { FashionTag } from "@/lib/types";
 
@@ -47,6 +47,15 @@ export function AdEditor({
   const [pending, setPending] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+
+  // Live preview state fields
+  const [title, setTitle] = useState(ad?.title || "");
+  const [slug, setSlug] = useState(ad?.slug || "");
+  const [description, setDescription] = useState(ad?.description || "");
+  const [priceText, setPriceText] = useState(ad?.price_text || "");
+  const [destinationUrl, setDestinationUrl] = useState(ad?.destination_url || "");
+  const [adType, setAdType] = useState(ad?.ad_type || "single_product");
+
   const [uploaded, setUploaded] = useState(
     ad?.ad_images?.sort((a, b) => a.sort_order - b.sort_order) ?? [],
   );
@@ -126,12 +135,12 @@ export function AdEditor({
     const form = new FormData(formElement);
     const body = {
       shopId,
-      title: form.get("title"),
-      slug: form.get("slug"),
-      description: form.get("description"),
-      adType: form.get("adType"),
-      priceText: form.get("priceText") || null,
-      destinationUrl: form.get("destinationUrl"),
+      title: title || form.get("title"),
+      slug: slug || form.get("slug"),
+      description: description || form.get("description"),
+      adType: adType || form.get("adType"),
+      priceText: priceText || form.get("priceText") || null,
+      destinationUrl: destinationUrl || form.get("destinationUrl"),
       coverImagePath: coverPath || null,
       categoryIds: form.getAll("categoryIds"),
       tagIds: selectedTagIds,
@@ -169,112 +178,372 @@ export function AdEditor({
     router.refresh();
   }
 
-  return (
-    <form className="stack-form ad-editor" onSubmit={(event) => { event.preventDefault(); submit(event.currentTarget, "draft"); }}>
-      <div className="form-grid">
-        <label>ชื่อโฆษณา<input name="title" defaultValue={ad?.title} required maxLength={140} /></label>
-        <label>Slug<input name="slug" defaultValue={ad?.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" /></label>
-      </div>
-      <label>รายละเอียด<textarea name="description" defaultValue={ad?.description} rows={6} maxLength={3000} /></label>
-      <div className="form-grid">
-        <label>
-          ประเภท
-          <select name="adType" defaultValue={ad?.ad_type ?? "single_product"}>
-            <option value="single_product">เสื้อผ้าชิ้นเดียว</option>
-            <option value="outfit_set">ชุดเซ็ต</option>
-            <option value="collection">คอลเลกชัน</option>
-            <option value="promotion">โปรโมชัน</option>
-            <option value="shop_feature">โฆษณาร้าน</option>
-          </select>
-        </label>
-        <label>ข้อความราคา<input name="priceText" defaultValue={ad?.price_text ?? ""} maxLength={80} /></label>
-      </div>
-      <label>ลิงก์ Shopee<input name="destinationUrl" type="url" defaultValue={ad?.destination_url} required /></label>
-      <fieldset className="check-grid">
-        <legend>หมวดหมู่ (1–5 หมวด)</legend>
-        {categories.map((category) => (
-          <label key={category.id}>
-            <input type="checkbox" name="categoryIds" value={category.id} defaultChecked={selectedCategories.has(category.id)} />
-            {category.name_th}
-          </label>
-        ))}
-      </fieldset>
+  const coverUrl = coverPath
+    ? `/api/assets?bucket=ad-assets&path=${encodeURIComponent(coverPath)}`
+    : "/demo-assets/ad-linen-shirt.jpg";
 
-      <ControlledTagSelector
-        allTags={allTags}
-        selectedTagIds={selectedTagIds}
-        onChange={setSelectedTagIds}
-        label="แท็กแฟชั่นของโฆษณา (สไตล์, สี, โอกาส, ความเป็นทางการ)"
-      />
-      <div className="form-grid">
-        <label>เริ่มเผยแพร่<input name="startsAt" type="datetime-local" defaultValue={toLocalValue(ad?.starts_at)} /></label>
-        <label>สิ้นสุด<input name="endsAt" type="datetime-local" defaultValue={toLocalValue(ad?.ends_at)} /></label>
-      </div>
-      <section className="upload-panel">
-        <div>
-          <strong>รูปโฆษณา</strong>
-          <p>JPEG, PNG หรือ WebP สูงสุด 6MB ต่อรูป ลากลำดับด้วยปุ่มซ้าย/ขวาหลังอัปโหลด</p>
-        </div>
-        <label className="button button-ghost upload-button">
-          เลือกรูป
-          <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={upload} />
-        </label>
-        {progress !== null ? <progress value={progress} max={100}>{progress}%</progress> : null}
-        <div className="upload-grid">
-          {uploaded.map((item, index) => (
-            <div className="upload-item" key={item.storage_path}>
-              <Image
-                src={`/api/assets?bucket=ad-assets&path=${encodeURIComponent(item.storage_path)}`}
-                alt={item.alt_text}
-                width={180}
-                height={220}
-                unoptimized
-              />
-              <input
-                aria-label={`Alt text รูป ${index + 1}`}
-                value={item.alt_text}
-                onChange={(event) => setUploaded((current) => current.map((image, imageIndex) => imageIndex === index ? { ...image, alt_text: event.target.value } : image))}
-              />
-              <div className="inline-actions">
-                <button
-                  type="button"
-                  aria-label={`เลื่อนรูป ${index + 1} ไปซ้าย`}
-                  disabled={index === 0}
-                  onClick={() => setUploaded((current) => move(current, index, index - 1))}
-                >
-                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`เลื่อนรูป ${index + 1} ไปขวา`}
-                  disabled={index === uploaded.length - 1}
-                  onClick={() => setUploaded((current) => move(current, index, index + 1))}
-                >
-                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button type="button" aria-label={`ลบรูป ${index + 1}`} onClick={() => removeImage(index)}>
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                </button>
+  return (
+    <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+      {/* Main Ad Creation Form */}
+      <form
+        className="space-y-8"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit(event.currentTarget, "draft");
+        }}
+      >
+        {/* Step 1: Basic Information */}
+        <div className="p-6 sm:p-8 bg-paper border border-line space-y-5">
+          <div className="flex items-center justify-between border-b border-line pb-3">
+            <span className="font-mono text-xs text-muted uppercase">Step 1 / Basics</span>
+            <span className="text-xs text-olive font-medium">ชื่อ & ลิงก์สินค้า</span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-mono text-muted uppercase mb-1">ชื่อโฆษณา / สินค้า *</label>
+                <input
+                  name="title"
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (!slug && e.target.value) {
+                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""));
+                    }
+                  }}
+                  required
+                  maxLength={140}
+                  placeholder="เช่น เสื้อเชิ้ตคอตตอนลินินทรงหลวม"
+                  className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+                />
               </div>
-              <label><input type="radio" checked={coverPath === item.storage_path} onChange={() => setCoverPath(item.storage_path)} /> รูปหน้าปก</label>
+
+              <div>
+                <label className="block text-xs font-mono text-muted uppercase mb-1">URL Slug *</label>
+                <input
+                  name="slug"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  required
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  placeholder="linen-loose-shirt"
+                  className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+                />
+              </div>
             </div>
-          ))}
+
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">รายละเอียดสินค้า</label>
+              <textarea
+                name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                maxLength={3000}
+                placeholder="อธิบายจุดเด่นของสินค้า คอลเลกชัน หรือส่วนลดสำหรับผู้ซื้อ"
+                className="w-full p-4 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-mono text-muted uppercase mb-1">ประเภทโฆษณา</label>
+                <select
+                  name="adType"
+                  value={adType}
+                  onChange={(e) => setAdType(e.target.value)}
+                  className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+                >
+                  <option value="single_product">เสื้อผ้าชิ้นเดียว (Single Product)</option>
+                  <option value="outfit_set">ชุดเซ็ต (Outfit Set)</option>
+                  <option value="collection">คอลเลกชัน (Collection)</option>
+                  <option value="promotion">โปรโมชันพิเศษ (Promotion)</option>
+                  <option value="shop_feature">แนะนำร้านค้า (Shop Feature)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono text-muted uppercase mb-1">ข้อความราคาที่แสดง</label>
+                <input
+                  name="priceText"
+                  value={priceText}
+                  onChange={(e) => setPriceText(e.target.value)}
+                  maxLength={80}
+                  placeholder="เช่น 1,290 บาท / ลด 20%"
+                  className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">ลิงก์ไปยังปลายทาง Shopee *</label>
+              <input
+                name="destinationUrl"
+                type="url"
+                value={destinationUrl}
+                onChange={(e) => setDestinationUrl(e.target.value)}
+                required
+                placeholder="https://shopee.co.th/product/..."
+                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
+            </div>
+          </div>
         </div>
-      </section>
-      {message ? <p className="form-message" role="status">{message}</p> : null}
-      <div className="inline-actions">
-        <button className="button button-ghost" disabled={pending} type="submit">บันทึกร่าง</button>
-        <button
-          className="button button-solid"
-          disabled={pending || !canSubmit || !coverPath}
-          type="button"
-          onClick={(event) => submit(event.currentTarget.form!, "submit")}
-        >
-          ส่งตรวจ
-        </button>
-      </div>
-      {!canSubmit ? <p className="muted">ส่งตรวจได้เมื่อร้านอนุมัติและ subscription active แล้ว แต่ยังบันทึกร่างได้</p> : null}
-    </form>
+
+        {/* Step 2: Taxonomy & Tags */}
+        <div className="p-6 sm:p-8 bg-paper border border-line space-y-5">
+          <div className="flex items-center justify-between border-b border-line pb-3">
+            <span className="font-mono text-xs text-muted uppercase">Step 2 / Taxonomy</span>
+            <span className="text-xs text-muted">เลือก 1-5 หมวด</span>
+          </div>
+
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-mono text-muted uppercase mb-2">หมวดหมู่สินค้า</legend>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {categories.map((category) => (
+                <label
+                  key={category.id}
+                  className="p-3 border border-line bg-background text-xs font-medium text-charcoal flex items-center gap-2 cursor-pointer hover:border-charcoal transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    name="categoryIds"
+                    value={category.id}
+                    defaultChecked={selectedCategories.has(category.id)}
+                    className="w-4 h-4 accent-charcoal cursor-pointer"
+                  />
+                  <span>{category.name_th}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="pt-2">
+            <ControlledTagSelector
+              allTags={allTags}
+              selectedTagIds={selectedTagIds}
+              onChange={setSelectedTagIds}
+              label="แท็กแฟชั่นโฆษณา (สไตล์, สี, กิจกรรมที่เหมาะ)"
+            />
+          </div>
+        </div>
+
+        {/* Step 3: Images & Upload */}
+        <div className="p-6 sm:p-8 bg-paper border border-line space-y-5">
+          <div className="flex items-center justify-between border-b border-line pb-3">
+            <span className="font-mono text-xs text-muted uppercase">Step 3 / Media</span>
+            <span className="text-xs text-muted">สูงสุด 8 รูปภาพ</span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <strong className="block text-sm text-charcoal">รูปภาพสินค้า & หน้าปก</strong>
+                <p className="text-xs text-muted">รองรับ JPEG, PNG, WebP ขนาดไม่เกิน 6 MB ต่อรูปภาพ</p>
+              </div>
+
+              <label className="px-5 py-2.5 border border-charcoal bg-charcoal text-white hover:bg-black text-xs font-medium cursor-pointer inline-flex items-center gap-2 transition-colors">
+                <span>+ เลือกรูปภาพ</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={upload} className="hidden" />
+              </label>
+            </div>
+
+            {progress !== null && (
+              <div className="w-full bg-line/40 h-2 overflow-hidden">
+                <div className="bg-olive h-full transition-all duration-200" style={{ width: `${progress}%` }}></div>
+              </div>
+            )}
+
+            {uploaded.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                {uploaded.map((item, index) => (
+                  <div key={item.storage_path} className="border border-line bg-background p-2 space-y-2 relative group">
+                    <div className="aspect-[4/5] relative overflow-hidden bg-paper border border-line">
+                      <Image
+                        src={`/api/assets?bucket=ad-assets&path=${encodeURIComponent(item.storage_path)}`}
+                        alt={item.alt_text}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+
+                    <input
+                      aria-label={`Alt text รูป ${index + 1}`}
+                      value={item.alt_text}
+                      onChange={(event) =>
+                        setUploaded((current) =>
+                          current.map((image, imageIndex) =>
+                            imageIndex === index ? { ...image, alt_text: event.target.value } : image,
+                          ),
+                        )
+                      }
+                      placeholder="คำอธิบายรูป"
+                      className="w-full p-1.5 border border-line bg-paper text-[11px] outline-none"
+                    />
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => setUploaded((current) => move(current, index, index - 1))}
+                          className="p-1 border border-line hover:bg-paper disabled:opacity-30"
+                        >
+                          <ChevronLeft className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === uploaded.length - 1}
+                          onClick={() => setUploaded((current) => move(current, index, index + 1))}
+                          className="p-1 border border-line hover:bg-paper disabled:opacity-30"
+                        >
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="p-1 text-danger hover:bg-danger/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <label className="flex items-center gap-1.5 text-[11px] text-muted cursor-pointer pt-1 border-t border-line/60">
+                      <input
+                        type="radio"
+                        name="coverSelection"
+                        checked={coverPath === item.storage_path}
+                        onChange={() => setCoverPath(item.storage_path)}
+                        className="w-3 h-3 accent-charcoal"
+                      />
+                      <span>รูปหน้าปก</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 border border-dashed border-line text-center text-xs text-muted space-y-1">
+                <p>ยังไม่มีรูปภาพที่อัปโหลด กรุณาคลิกปุ่มเลือกรูปภาพเพื่ออัปโหลดรูปหน้าปก</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Schedule */}
+        <div className="p-6 sm:p-8 bg-paper border border-line space-y-4">
+          <h3 className="font-serif text-xl text-charcoal">กำหนดเวลาเผยแพร่</h3>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">เริ่มเผยแพร่</label>
+              <input
+                name="startsAt"
+                type="datetime-local"
+                defaultValue={toLocalValue(ad?.starts_at)}
+                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">สิ้นสุด</label>
+              <input
+                name="endsAt"
+                type="datetime-local"
+                defaultValue={toLocalValue(ad?.ends_at)}
+                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {message && (
+          <div className="p-4 border border-olive/30 bg-olive-pale/30 text-olive-dark text-xs font-medium flex items-center gap-2">
+            <Check className="w-4 h-4" />
+            <span>{message}</span>
+          </div>
+        )}
+
+        {/* Submit Action Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 p-6 bg-paper border border-line">
+          <div className="text-xs text-muted">
+            {!canSubmit ? (
+              <span className="text-warning flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                <span>สามารถบันทึกร่างได้ และจะส่งตรวจได้เมื่อร้านอนุมัติพร้อม subscription active</span>
+              </span>
+            ) : (
+              <span>พร้อมสำหรับการส่งตรวจโฆษณา</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              className="px-6 py-3.5 border border-line text-charcoal hover:bg-background font-medium text-xs rounded-none transition-colors"
+              disabled={pending}
+              type="submit"
+            >
+              บันทึกร่าง
+            </button>
+            <button
+              className="px-8 py-3.5 bg-charcoal text-white hover:bg-black font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              disabled={pending || !canSubmit || !coverPath || !title}
+              type="button"
+              onClick={(event) => submit(event.currentTarget.form!, "submit")}
+            >
+              <Sparkles className="w-4 h-4 text-olive" />
+              <span>ส่งตรวจโฆษณา</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {/* Live Preview Sidebar */}
+      <aside className="space-y-6 sticky top-24">
+        <div className="p-6 bg-paper border border-line space-y-4">
+          <div className="flex items-center justify-between border-b border-line pb-3">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-olive" />
+              <h3 className="font-serif text-lg font-normal text-charcoal">ตัวอย่างการแสดงผลจริง</h3>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 bg-background border border-line">Live Preview</span>
+          </div>
+
+          {/* Render exact mock of Ad Card */}
+          <div className="border border-line bg-background p-4 space-y-3">
+            <div className="aspect-[4/5] relative bg-paper border border-line overflow-hidden">
+              <Image src={coverUrl} alt="Preview" fill className="object-cover" unoptimized />
+              <div className="absolute top-2 left-2">
+                <span className="px-2 py-0.5 bg-black/80 backdrop-blur-xs text-white text-[10px] font-mono font-medium">
+                  โฆษณา
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-olive uppercase block">สตูดิโอร้านค้าของคุณ</span>
+              <h4 className="font-serif text-base font-normal text-charcoal line-clamp-1">
+                {title || "ชื่อโฆษณาสินค้า"}
+              </h4>
+              <p className="text-xs text-muted line-clamp-2">{description || "รายละเอียดสินค้าจะแสดงที่นี่..."}</p>
+            </div>
+
+            <div className="pt-3 border-t border-line flex items-center justify-between">
+              <span className="text-xs font-medium text-charcoal font-mono">{priceText || "฿ 1,290"}</span>
+              <span className="px-3 py-1.5 bg-charcoal text-white text-[10px] font-medium inline-flex items-center gap-1">
+                <span> Shopee</span>
+                <ExternalLink className="w-3 h-3" />
+              </span>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted leading-relaxed">
+            ตัวอย่างโฆษณาสินค้าเมื่อแสดงในหน้า Discover และหน้าคำแนะนำเพิ่มเติมสำหรับผู้ซื้อ
+          </p>
+        </div>
+      </aside>
+    </div>
   );
 }
 

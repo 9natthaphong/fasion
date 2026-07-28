@@ -128,7 +128,7 @@ export default async function HomePage() {
             body="เลือกหมวดกิจกรรมหรือโอกาสใช้งาน เพื่อสำรวจไอเดียจากร้านค้าอิสระ"
           />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 border-t border-l border-line bg-background">
-            {categories.slice(0, 10).map((category, index) => (
+            {(categories || []).slice(0, 10).map((category, index) => (
               <Link
                 className="p-6 border-r border-b border-line hover:bg-paper transition-colors group flex flex-col justify-between min-h-[120px]"
                 href={`/categories/${category.slug}`}
@@ -152,7 +152,7 @@ export default async function HomePage() {
             action={{ href: "/discover", label: "ดูคอลเลกชันทั้งหมด" }}
           />
           <div className="ad-grid">
-            {ads.slice(0, 8).map((ad, index) => (
+            {(ads || []).slice(0, 8).map((ad, index) => (
               <AdCard ad={ad} key={ad.id} priority={index < 2} />
             ))}
           </div>

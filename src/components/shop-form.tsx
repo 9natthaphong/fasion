@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Store, ShoppingBag, Globe, Sparkles, Check } from "lucide-react";
 
 interface ShopFormProps {
   shop?: {
@@ -18,6 +19,8 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [name, setName] = useState(shop?.name || "");
+  const [slug, setSlug] = useState(shop?.slug || "");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,57 +35,124 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
     const result = await response.json();
     setPending(false);
     if (!response.ok) {
-      setMessage(result.error ?? "บันทึกร้านไม่สำเร็จ");
+      setMessage(result.error ?? "บันทึกข้อมูลร้านไม่สำเร็จ");
       return;
     }
-    setMessage("บันทึกร้านเรียบร้อย");
+    setMessage("บันทึกข้อมูลโปรไฟล์ร้านเรียบร้อยแล้ว");
     router.push(onboarding ? "/merchant" : "/merchant/shop");
     router.refresh();
   }
 
   return (
-    <form className="stack-form" onSubmit={submit}>
-      <label>
-        ชื่อร้าน
-        <input name="name" defaultValue={shop?.name} required minLength={2} maxLength={100} />
-      </label>
-      <label>
-        Slug ร้าน
-        <input
-          name="slug"
-          defaultValue={shop?.slug}
-          required
-          pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-          placeholder="my-fashion-shop"
-        />
-        <small>ใช้ใน URL และแก้ได้ก่อนร้านเผยแพร่</small>
-      </label>
-      <label>
-        เรื่องราวของร้าน
-        <textarea name="description" defaultValue={shop?.description} rows={5} maxLength={1500} />
-      </label>
-      <label>
-        ลิงก์ Shopee
-        <input
-          name="shopeeUrl"
-          defaultValue={shop?.shopee_url ?? ""}
-          type="url"
-          placeholder="https://shopee.co.th/..."
-        />
-      </label>
-      <label>
-        ลิงก์ Instagram
-        <input
-          name="instagramUrl"
-          defaultValue={shop?.instagram_url ?? ""}
-          type="url"
-          placeholder="https://instagram.com/..."
-        />
-      </label>
-      {message ? <p className="form-message" role="status">{message}</p> : null}
-      <button className="button button-solid" disabled={pending} type="submit">
-        {pending ? "กำลังบันทึก…" : onboarding ? "สร้างโปรไฟล์ร้าน" : "บันทึกการเปลี่ยนแปลง"}
-      </button>
+    <form className="space-y-6 max-w-2xl" onSubmit={submit}>
+      {onboarding && (
+        <div className="p-5 border border-olive/30 bg-olive-pale/30 text-xs text-charcoal space-y-2">
+          <div className="flex items-center gap-2 font-mono uppercase font-semibold text-olive">
+            <Store className="w-4 h-4" />
+            <span>เริ่มต้นเปิดสตูดิโอร้านค้าบน FitToday</span>
+          </div>
+          <p className="text-muted leading-relaxed">
+            กรอกข้อมูลเบื้องต้นเกี่ยวกับสตูดิโอและแบรนด์ของคุณ ข้อมูลนี้จะใช้แสดงในหน้าโปรไฟล์ร้านและเชื่อมต่อกับลิงก์ Shopee ของคุณ
+          </p>
+        </div>
+      )}
+
+      <div className="p-6 sm:p-8 bg-paper border border-line space-y-5">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-mono text-muted uppercase mb-1">ชื่อร้านค้า / สตูดิโอ *</label>
+            <input
+              name="name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (!slug && e.target.value) {
+                  setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""));
+                }
+              }}
+              required
+              minLength={2}
+              maxLength={100}
+              placeholder="เช่น Quiet Form Studio"
+              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-muted uppercase mb-1">Slug URL ร้านค้า *</label>
+            <input
+              name="slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              required
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              placeholder="quiet-form"
+              className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none font-mono"
+            />
+            <small className="text-[11px] text-muted block mt-1">ใช้เป็นส่วนหนึ่งของที่อยู่ URL ร้านค้า เช่น fittoday.app/shops/{slug || "shop-name"}</small>
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-muted uppercase mb-1">เรื่องราวและเอกลักษณ์ของร้าน</label>
+            <textarea
+              name="description"
+              defaultValue={shop?.description}
+              rows={4}
+              maxLength={1500}
+              placeholder="อธิบายปรัชญาการออกแบบ สไตล์เสื้อผ้า และจุดเด่นของแบรนด์"
+              className="w-full p-4 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none resize-none"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1 flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-olive" />
+                <span>ลิงก์ Shopee หลักของร้าน</span>
+              </label>
+              <input
+                name="shopeeUrl"
+                defaultValue={shop?.shopee_url ?? ""}
+                type="url"
+                placeholder="https://shopee.co.th/shop-name"
+                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-olive" />
+                <span>ลิงก์ Instagram / โซเชียลร้านค้า</span>
+              </label>
+              <input
+                name="instagramUrl"
+                defaultValue={shop?.instagram_url ?? ""}
+                type="url"
+                placeholder="https://instagram.com/shop-name"
+                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {message && (
+        <div className="p-4 border border-olive/30 bg-olive-pale/30 text-olive-dark text-xs font-medium flex items-center gap-2">
+          <Check className="w-4 h-4" />
+          <span>{message}</span>
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          className="px-8 py-4 bg-charcoal text-white hover:bg-black font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+          disabled={pending}
+          type="submit"
+        >
+          <Sparkles className="w-4 h-4 text-olive" />
+          <span>{pending ? "กำลังบันทึก…" : onboarding ? "สร้างโปรไฟล์สตูดิโอร้านค้า" : "บันทึกการเปลี่ยนแปลง"}</span>
+        </button>
+      </div>
     </form>
   );
 }
