@@ -280,16 +280,21 @@ export function isOwnedWardrobeAssetPath(path: string, userId: string): boolean 
   return uuidRegex.test(parts[0]) && filenameRegex.test(parts[1]);
 }
 
-export const wardrobeItemTypeEnum = z.enum([
-  "top",
-  "bottom",
-  "skirt",
-  "dress",
-  "outerwear",
-  "shoes",
-  "bag",
-  "accessory",
-]);
+import { normalizeItemType } from "@/lib/clothing-taxonomy";
+
+export const wardrobeItemTypeEnum = z.preprocess(
+  (val) => (typeof val === "string" ? normalizeItemType(val) ?? val : val),
+  z.enum([
+    "top",
+    "bottom",
+    "skirt",
+    "dress",
+    "outerwear",
+    "shoes",
+    "bag",
+    "accessory",
+  ])
+);
 
 export const wardrobePreferredFitEnum = z.enum([
   "fitted",

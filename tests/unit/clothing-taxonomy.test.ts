@@ -18,7 +18,7 @@ describe("Clothing Taxonomy & Filtering", () => {
     expect(normalizeItemType("outerwears")).toBe("outerwear");
     expect(normalizeItemType("shoes")).toBe("shoes");
     expect(normalizeItemType("shoe")).toBe("shoes");
-    expect(normalizeItemType("unknown_random")).toBe("top");
+    expect(normalizeItemType("unknown_random")).toBeNull();
   });
 
   it("returns human-readable Thai labels", () => {

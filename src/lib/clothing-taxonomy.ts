@@ -39,8 +39,8 @@ export const CANONICAL_FORMALITIES: { key: WardrobeFormality; labelTh: string }[
   { key: "unknown", labelTh: "ทั่วไป" },
 ];
 
-export function normalizeItemType(input: string | null | undefined): WardrobeItemType {
-  if (!input) return "top";
+export function normalizeItemType(input: string | null | undefined): WardrobeItemType | null {
+  if (!input) return null;
   const cleaned = input.trim().toLowerCase();
   
   for (const cat of CANONICAL_WARDROBE_TYPES) {
@@ -48,11 +48,13 @@ export function normalizeItemType(input: string | null | undefined): WardrobeIte
       return cat.key;
     }
   }
-  return "top";
+  return null;
 }
 
-export function getItemTypeLabel(type: WardrobeItemType): string {
-  const found = CANONICAL_WARDROBE_TYPES.find((c) => c.key === type);
+export function getItemTypeLabel(type: WardrobeItemType | string | null | undefined): string {
+  if (!type) return "เสื้อผ้า";
+  const normalized = normalizeItemType(type);
+  const found = CANONICAL_WARDROBE_TYPES.find((c) => c.key === (normalized ?? type));
   return found ? found.labelTh : "เสื้อผ้า";
 }
 
@@ -83,7 +85,7 @@ export function filterWardrobeItems(
     if (options?.type && options.type !== "all") {
       const normalizedQuery = normalizeItemType(options.type);
       const normalizedItem = normalizeItemType(item.item_type);
-      if (normalizedItem !== normalizedQuery) return false;
+      if (normalizedQuery && normalizedItem !== normalizedQuery) return false;
     }
 
     // 5. Favorite filter
