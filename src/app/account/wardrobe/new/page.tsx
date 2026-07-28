@@ -10,7 +10,7 @@ export default async function NewWardrobeItemPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-b border-line pb-6">
+      <div className="editorial-workflow-header border-b border-line pb-6">
         <div className="inline-flex items-center gap-2 text-xs font-mono text-muted uppercase">
           <Shirt className="w-4 h-4 text-olive" />
           <span>Add Wardrobe Item</span>

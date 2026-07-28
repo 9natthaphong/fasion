@@ -49,6 +49,7 @@ export interface Ad {
   price_text: string | null;
   destination_url: string;
   cover_image_path: string | null;
+  image_alt?: string;
   status: AdStatus;
   starts_at: string | null;
   ends_at: string | null;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StylistForm } from "@/components/stylist-form";
+import { EditorialPageIntro } from "@/components/ui";
 
 export const metadata: Metadata = { title: "AI Stylist — FitToday" };
 
@@ -12,19 +13,20 @@ export default async function AiStylistPage({ searchParams }: PageProps) {
   const initialMode = params.mode === "wardrobe" ? "wardrobe" : "general";
 
   return (
-    <div className="container py-12 space-y-8">
-      <header className="max-w-3xl space-y-3">
-        <p className="font-mono text-xs text-muted uppercase">Independent AI styling</p>
-        <h1 className="font-serif text-4xl sm:text-5xl font-normal text-charcoal">วันนี้จะไปไหน?</h1>
-        <p className="text-base text-muted leading-relaxed">
-          บอกกิจกรรม อากาศ และสไตล์ที่ชอบ แล้วรับไอเดียจัดลุค 3 ทิศทาง (Safe, Elevated, Comfortable) เลือกแนะนำได้ทั้งจากเสื้อผ้าทั่วไปหรือตู้เสื้อผ้าส่วนตัวของคุณ
-        </p>
-      </header>
+    <div className="editorial-page-shell editorial-page-ai">
+      <div className="container py-12 space-y-8">
+        <EditorialPageIntro
+          tone="ai"
+          eyebrow="INDEPENDENT AI STYLING"
+          title="วันนี้จะไปไหน?"
+          body="ตอบคำถามสั้น ๆ สามขั้น แล้วรับลุค Safe, Elevated และ Comfortable จากบริบทของคุณ เลือกได้ว่าจะใช้คำแนะนำทั่วไปหรือตู้เสื้อผ้าส่วนตัว"
+        />
 
-      <StylistForm
-        configured={Boolean(process.env.OPENAI_API_KEY)}
-        initialMode={initialMode}
-      />
+        <StylistForm
+          configured={Boolean(process.env.OPENAI_API_KEY)}
+          initialMode={initialMode}
+        />
+      </div>
     </div>
   );
 }

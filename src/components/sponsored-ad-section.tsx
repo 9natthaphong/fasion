@@ -51,7 +51,7 @@ export function SponsoredAdSection({ ads }: Props) {
               <div className="space-y-3">
                 {/* Image */}
                 <div className="aspect-[4/3] relative bg-background border border-line overflow-hidden">
-                  <Image src={coverUrl} alt={ad.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <Image src={coverUrl} alt={ad.image_alt ?? ad.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute top-2 left-2">
                     <span className="px-2 py-0.5 bg-black/80 backdrop-blur-xs text-white text-[10px] font-mono font-medium">
                       โฆษณา

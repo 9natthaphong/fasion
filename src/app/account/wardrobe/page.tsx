@@ -4,6 +4,7 @@ import { requirePageRole } from "@/lib/auth";
 import { getWardrobeItems } from "@/lib/wardrobe";
 import { WardrobeItemCard } from "@/components/wardrobe/wardrobe-item-card";
 import { WardrobeInsightsPanel } from "@/components/wardrobe/wardrobe-insights-panel";
+import { parseWardrobeFilters } from "@/lib/wardrobe-filters";
 import type { WardrobeItemType, WardrobeAvailabilityStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,16 +21,23 @@ export default async function WardrobePage({ searchParams }: PageProps) {
   const user = await requirePageRole(["customer"], "/login/customer");
   const params = await searchParams;
 
-  const currentType = (params.type as WardrobeItemType | "all") || "all";
-  const currentStatus = (params.status as WardrobeAvailabilityStatus | "all") || "all";
-  const favoriteOnly = params.favorite === "true";
-
-  const allItems = await getWardrobeItems(user.id, {});
-  const items = await getWardrobeItems(user.id, {
+  const filters = parseWardrobeFilters(params);
+  const {
     type: currentType,
     status: currentStatus,
     favoriteOnly,
-  });
+  } = filters;
+
+  const [allItems, items] = await Promise.all([
+    getWardrobeItems(user.id, {}),
+    filters.invalid
+      ? Promise.resolve([])
+      : getWardrobeItems(user.id, {
+          type: currentType,
+          status: currentStatus,
+          favoriteOnly,
+        }),
+  ]);
 
   const categories: { key: WardrobeItemType | "all"; label: string }[] = [
     { key: "all", label: "ทั้งหมด" },
@@ -53,7 +61,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-6">
+      <div className="editorial-workflow-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-6">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-mono text-muted uppercase">
             <Shirt className="w-4 h-4 text-olive" />

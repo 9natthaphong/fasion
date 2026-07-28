@@ -46,7 +46,7 @@ export default async function AdDetailPage({
         <div className="detail-media">
           <Image
             src={ad.cover_image_path ?? "/demo/look-olive.svg"}
-            alt={ad.title}
+            alt={ad.image_alt ?? ad.title}
             width={960}
             height={1200}
             priority

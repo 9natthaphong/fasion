@@ -17,7 +17,7 @@ export default async function OutfitsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-b border-line pb-6">
+      <div className="editorial-workflow-header border-b border-line pb-6">
         <div className="inline-flex items-center gap-2 text-xs font-mono text-muted uppercase">
           <Sparkles className="w-4 h-4 text-olive" />
           <span>Saved Outfits, History & Wear Log</span>

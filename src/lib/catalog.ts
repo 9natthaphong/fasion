@@ -1,4 +1,12 @@
-import { ads as demoAds, categories as demoCategories, getDemoAd, getDemoShop, shops as demoShops } from "@/lib/demo-data";
+import {
+  ads as demoAds,
+  categories as demoCategories,
+  demoAdCoverBySlug,
+  demoAdAltBySlug,
+  getDemoAd,
+  getDemoShop,
+  shops as demoShops,
+} from "@/lib/demo-data";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Ad, Category, Shop } from "@/lib/types";
@@ -20,9 +28,20 @@ function mapShop(row: Record<string, unknown>): Shop {
 function mapAd(row: Record<string, unknown>): Ad {
   const shopRow = Array.isArray(row.shops) ? row.shops[0] : row.shops;
   const categoryRows = (row.ad_categories as { categories: Category | Category[] }[] | null) ?? [];
+  const demoCover =
+    row.is_demo === true && typeof row.slug === "string"
+      ? demoAdCoverBySlug[row.slug]
+      : undefined;
   return {
     ...(row as unknown as Ad),
-    cover_image_path: assetUrl("ad-assets", row.cover_image_path as string | null),
+    cover_image_path: assetUrl(
+      "ad-assets",
+      demoCover ?? (row.cover_image_path as string | null),
+    ),
+    image_alt:
+      row.is_demo === true && typeof row.slug === "string"
+        ? demoAdAltBySlug[row.slug]
+        : undefined,
     shop: shopRow ? mapShop(shopRow as Record<string, unknown>) : undefined,
     categories: categoryRows.flatMap((item) => Array.isArray(item.categories) ? item.categories : [item.categories]).filter(Boolean),
     impressions: 0,
