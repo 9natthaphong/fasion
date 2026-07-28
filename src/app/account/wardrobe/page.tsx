@@ -77,7 +77,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           </Link>
           <Link
             href="/account/wardrobe/new"
-            className="px-5 py-3 bg-charcoal text-white hover:bg-black font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
+            className="px-5 py-3 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มเสื้อผ้าใหม่</span>
@@ -188,7 +188,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           <div className="pt-2">
             <Link
               href="/account/wardrobe/new"
-              className="px-6 py-3 bg-charcoal text-white hover:bg-black font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
+              className="px-6 py-3 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มเสื้อผ้าชิ้นแรก</span>

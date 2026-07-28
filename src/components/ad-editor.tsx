@@ -343,7 +343,7 @@ export function AdEditor({
                 <p className="text-xs text-muted">รองรับ JPEG, PNG, WebP ขนาดไม่เกิน 6 MB ต่อรูปภาพ</p>
               </div>
 
-              <label className="px-5 py-2.5 border border-charcoal bg-charcoal text-white hover:bg-black text-xs font-medium cursor-pointer inline-flex items-center gap-2 transition-colors">
+              <label className="px-5 py-2.5 border border-charcoal bg-charcoal text-white hover:bg-olive text-xs font-medium cursor-pointer inline-flex items-center gap-2 transition-colors">
                 <span>+ เลือกรูปภาพ</span>
                 <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={upload} className="hidden" />
               </label>
@@ -487,7 +487,7 @@ export function AdEditor({
               บันทึกร่าง
             </button>
             <button
-              className="px-8 py-3.5 bg-charcoal text-white hover:bg-black font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-8 py-3.5 bg-charcoal text-white hover:bg-olive font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
               disabled={pending || !canSubmit || !coverPath || !title}
               type="button"
               onClick={(event) => submit(event.currentTarget.form!, "submit")}

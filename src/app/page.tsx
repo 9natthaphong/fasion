@@ -285,7 +285,7 @@ export default async function HomePage() {
             ให้ AI ช่วยจัดลุค 3 ทิศทางที่เหมาะกับกิจกรรมและอากาศของคุณในไม่กี่วินาที
           </p>
           <div>
-            <Link href="/ai-stylist" className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-sm rounded-none transition-colors inline-flex items-center gap-2">
+            <Link href="/ai-stylist" className="px-6 py-3.5 bg-charcoal text-white hover:bg-olive font-medium text-sm transition-colors inline-flex items-center gap-2">
               <span>เริ่มเลือกชุดกับ AI Stylist</span>
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>

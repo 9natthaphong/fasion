@@ -3,22 +3,39 @@
 :root {
   --ivory: #f4f0e8;
   --paper: #fbf9f4;
+  --paper-hover: #f0ebe0;
+  --paper-active: #e6dfcf;
   --charcoal: #161713;
+  --charcoal-hover: #2d3027;
   --muted: #52514b;
+  --muted-light: #76746b;
   --line: #d4cebf;
+  --line-strong: #b3a995;
   --olive: #39432f;
   --olive-dark: #272e20;
   --olive-pale: #e1e5da;
+  --olive-hover: #48553c;
   --dark-panel: #171814;
+  --dark-panel-hover: #22241e;
   --dark-text: #f4f0e8;
+  --dark-muted: #a19c8f;
+  --dark-line: #33352d;
   --danger: #9b3930;
+  --danger-hover: #7e2d25;
   --warning: #8a5b20;
   --success: #3e6945;
+  --focus-ring: #39432f;
 }
 
 @theme inline {
   --color-background: var(--ivory);
   --color-foreground: var(--charcoal);
+  --color-paper: var(--paper);
+  --color-paper-hover: var(--paper-hover);
+  --color-charcoal: var(--charcoal);
+  --color-olive: var(--olive);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
   --font-sans: var(--font-sans), "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-serif), "Noto Serif Thai", Georgia, serif;
 }
@@ -140,33 +157,44 @@ a {
   transition:
     background 180ms ease,
     color 180ms ease,
-    border-color 180ms ease;
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .button-solid {
   background: var(--charcoal);
-  color: white;
+  color: #ffffff;
+  border-color: var(--charcoal);
 }
 
 .button-solid:hover {
-  background: #000000;
+  background: var(--olive);
+  color: #ffffff;
+  border-color: var(--olive);
 }
 
 .button-ghost {
   border-color: var(--line);
-  background: transparent;
+  background: var(--paper);
   color: var(--charcoal);
 }
 
 .button-ghost:hover {
   border-color: var(--charcoal);
-  background: var(--paper);
+  background: var(--paper-hover);
+  color: var(--charcoal);
 }
 
 .button-danger {
   border-color: color-mix(in srgb, var(--danger), white 50%);
   color: var(--danger);
-  background: white;
+  background: var(--paper);
+}
+
+.button-danger:hover {
+  border-color: var(--danger);
+  background: var(--danger-bg, #F9EEEC);
+  color: var(--danger);
 }
 
 .button:disabled,

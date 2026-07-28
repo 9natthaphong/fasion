@@ -145,7 +145,7 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
 
       <div className="flex justify-end">
         <button
-          className="px-8 py-4 bg-charcoal text-white hover:bg-black font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+          className="px-8 py-4 bg-charcoal text-white hover:bg-olive font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
           disabled={pending}
           type="submit"
         >

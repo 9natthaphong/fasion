@@ -351,7 +351,7 @@ export function EditItemForm({ item }: Props) {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-8 py-4 bg-charcoal text-white hover:bg-black font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-8 py-4 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             >
               {isSaving ? (
                 <>

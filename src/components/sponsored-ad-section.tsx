@@ -90,7 +90,7 @@ export function SponsoredAdSection({ ads }: Props) {
                   href={`/go/ad/${ad.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-charcoal text-white hover:bg-black text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
                 >
                   <span>เปิดดูใน Shopee</span>
                   <ExternalLink className="w-3 h-3" />
@@ -133,7 +133,7 @@ export function SponsoredAdSection({ ads }: Props) {
               <button
                 type="button"
                 onClick={() => setSelectedAdForInfo(null)}
-                className="px-4 py-2 bg-charcoal text-white text-xs font-medium hover:bg-black"
+                className="px-4 py-2 bg-charcoal text-white text-xs font-medium hover:bg-olive transition-colors"
               >
                 เข้าใจแล้ว
               </button>

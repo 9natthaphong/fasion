@@ -76,7 +76,7 @@ export function WardrobeItemCard({ item }: Props) {
           type="button"
           onClick={toggleFavorite}
           aria-label={isFav ? "ยกเลิกการถูกใจ" : "ถูกใจเสื้อผ้าชิ้นนี้"}
-          className="absolute top-2.5 right-2.5 p-2 bg-background/90 backdrop-blur-sm border border-line text-charcoal hover:bg-white transition-colors z-10"
+          className="absolute top-2.5 right-2.5 p-2 bg-background/90 backdrop-blur-sm border border-line text-charcoal hover:bg-paper-hover transition-colors z-10"
         >
           <Heart
             className={`w-4 h-4 transition-colors ${

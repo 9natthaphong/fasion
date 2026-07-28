@@ -259,7 +259,7 @@ export function StylistForm({
             </div>
             <Link
               href="/account/wardrobe/new"
-              className="text-xs font-semibold px-3 py-1.5 bg-charcoal text-white hover:bg-black inline-flex items-center gap-1.5 transition-colors"
+              className="text-xs font-semibold px-3 py-1.5 bg-charcoal text-white hover:bg-olive inline-flex items-center gap-1.5 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>เพิ่มเสื้อผ้าชิ้นใหม่</span>
@@ -518,7 +518,7 @@ export function StylistForm({
           <button
             type="submit"
             disabled={isSubmitting || (mode === "wardrobe" && wardrobeItems.length < 1)}
-            className="w-full py-5 bg-charcoal text-white hover:bg-black font-semibold text-sm rounded-none transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+            className="w-full py-5 bg-charcoal text-white hover:bg-olive font-semibold text-sm rounded-none transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

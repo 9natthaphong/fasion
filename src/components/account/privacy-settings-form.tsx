@@ -187,7 +187,7 @@ export function PrivacySettingsForm({ initialProfile }: Props) {
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-3 bg-charcoal text-white hover:bg-black text-xs font-medium inline-flex items-center gap-2 disabled:opacity-50"
+            className="px-6 py-3 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-2 disabled:opacity-50"
           >
             {isSaving ? (
               <>

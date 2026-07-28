@@ -600,7 +600,7 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-8 py-4 bg-charcoal text-white hover:bg-black text-xs font-medium transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+                  className="px-8 py-4 bg-charcoal text-white hover:bg-olive text-xs font-medium transition-colors inline-flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSaving ? (
                     <>

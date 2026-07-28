@@ -386,7 +386,7 @@ export function AddItemForm() {
               <button
                 type="submit"
                 disabled={isSaving || !name.trim()}
-                className="w-full sm:w-auto px-8 py-3.5 bg-charcoal text-white hover:bg-black font-semibold text-xs rounded-none transition-colors inline-flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3.5 bg-charcoal text-white hover:bg-olive font-semibold text-xs rounded-none transition-colors inline-flex items-center justify-center gap-2"
               >
                 {isSaving ? (
                   <>

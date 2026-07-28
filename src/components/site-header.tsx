@@ -29,7 +29,7 @@ export function SiteHeader() {
             <span>เข้าสู่ระบบ</span>
           </Link>
 
-          <Link href="/ai-stylist" className="px-4 py-2 bg-charcoal text-white hover:bg-black font-medium text-xs rounded-none transition-colors">
+          <Link href="/ai-stylist" className="px-4 py-2 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors">
             เลือกชุดวันนี้
           </Link>
 

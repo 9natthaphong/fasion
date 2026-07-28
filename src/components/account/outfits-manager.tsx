@@ -237,7 +237,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <div className="pt-2">
                 <Link
                   href="/ai-stylist"
-                  className="px-6 py-3 bg-charcoal text-white hover:bg-black text-xs font-medium inline-flex items-center gap-2"
+                  className="px-6 py-3 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>ลองเปิดใช้งาน AI Stylist</span>
@@ -343,7 +343,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <div className="pt-2">
                 <Link
                   href="/ai-stylist"
-                  className="px-6 py-3 bg-charcoal text-white hover:bg-black text-xs font-medium inline-flex items-center gap-2"
+                  className="px-6 py-3 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>เปิด AI Stylist</span>
@@ -529,7 +529,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <button
                 type="submit"
                 disabled={isRecordingWear}
-                className="px-5 py-2 bg-charcoal text-white text-xs font-medium hover:bg-black disabled:opacity-50"
+                className="px-5 py-2 bg-charcoal text-white text-xs font-medium hover:bg-olive disabled:opacity-50"
               >
                 {isRecordingWear ? "กำลังบันทึก..." : "บันทึกประวัติการใส่"}
               </button>
@@ -626,7 +626,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <button
                 type="submit"
                 disabled={isSubmittingFeedback}
-                className="px-5 py-2 bg-charcoal text-white text-xs font-medium hover:bg-black disabled:opacity-50"
+                className="px-5 py-2 bg-charcoal text-white text-xs font-medium hover:bg-olive disabled:opacity-50"
               >
                 {isSubmittingFeedback ? "กำลังส่ง..." : "ส่งข้อเสนอแนะ"}
               </button>
