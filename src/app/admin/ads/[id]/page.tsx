@@ -1,9 +1,14 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { AdminActionForm } from "@/components/admin-action-form";
 import { StatusBadge } from "@/components/ui";
 import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { resolveAdCoverUrl, resolveAdImageUrl, resolveShopAssetUrl } from "@/lib/assets";
+import { ImagePreviewModal } from "@/components/admin/image-preview-modal";
 import type { FashionTag } from "@/lib/types";
+import { ImageIcon, ExternalLink, Store, Tag } from "lucide-react";
 
 export default async function AdminAdDetailPage({ params }: { params: Promise<{ id: string }> }) {
   if (!isSupabaseAdminConfigured()) {
@@ -20,13 +25,54 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
   }
 
   const { id } = await params;
-  const { data: ad } = await getAdminClient()
+  const adminClient = getAdminClient();
+
+  // Fetch ad with shop details, ad_images ordered by sort_order, and fashion tags
+  const { data: ad } = await adminClient
     .from("ads")
-    .select("*, shops(name, status, subscription_status), ad_fashion_tags(fashion_tags(*))")
+    .select(`
+      *,
+      shops(id, name, slug, logo_path, status, subscription_status),
+      ad_images(id, storage_path, alt_text, sort_order),
+      ad_fashion_tags(fashion_tags(*))
+    `)
     .eq("id", id)
     .maybeSingle();
 
   if (!ad) notFound();
+
+  const rawShop = Array.isArray(ad.shops) ? ad.shops[0] : ad.shops;
+  const shopData = rawShop as {
+    id: string;
+    name: string;
+    slug: string;
+    logo_path?: string | null;
+    status: string;
+    subscription_status: string;
+  } | null;
+
+  // Resolve cover image and gallery images safely
+  const resolvedCoverUrl = resolveAdCoverUrl(ad.cover_image_path);
+  const resolvedShopLogoUrl = resolveShopAssetUrl(shopData?.logo_path);
+
+  interface AdImageItem {
+    id: string;
+    storage_path: string;
+    alt_text?: string | null;
+    sort_order: number;
+  }
+
+  const rawImages: AdImageItem[] = ad.ad_images || [];
+  const sortedImages = [...rawImages].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+  const resolvedGallery = sortedImages
+    .map((img) => ({
+      ...img,
+      resolvedUrl: resolveAdImageUrl(img.storage_path),
+    }))
+    .filter((img): img is typeof img & { resolvedUrl: string } => Boolean(img.resolvedUrl));
+
+  const totalImageCount = (resolvedCoverUrl ? 1 : 0) + resolvedGallery.length;
 
   const host = (() => {
     try {
@@ -41,63 +87,220 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
     .filter(Boolean);
 
   return (
-    <section className="dashboard-section narrow space-y-6">
-      <p className="eyebrow">Review ad</p>
-      <h1>{ad.title}</h1>
-      <StatusBadge>{ad.status}</StatusBadge>
-
-      <dl className="detail-list space-y-3">
+    <section className="dashboard-section space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <dt>ร้าน</dt>
-          <dd>{Array.isArray(ad.shops) ? ad.shops[0]?.name : ad.shops?.name}</dd>
+          <p className="eyebrow">Ad Moderation & Review</p>
+          <h1 className="text-2xl sm:text-3xl font-serif">{ad.title}</h1>
         </div>
-
-        <div>
-          <dt>รายละเอียด</dt>
-          <dd>{ad.description}</dd>
+        <div className="flex items-center gap-2">
+          <StatusBadge tone={ad.status === "active" ? "success" : ad.status === "rejected" ? "danger" : "warning"}>
+            {ad.status}
+          </StatusBadge>
+          <span className="text-xs font-mono text-muted bg-paper px-2 py-1 border border-line">
+            {totalImageCount} รูปภาพ
+          </span>
         </div>
+      </div>
 
-        {fashionTags.length > 0 && (
-          <div>
-            <dt>แท็กแฟชั่นที่ร้านเลือก (Taxonomy)</dt>
-            <dd>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {fashionTags.map((tag: FashionTag) => (
-                  <span key={tag.id} className="px-2 py-0.5 bg-paper border border-line text-xs font-medium text-charcoal">
-                    {tag.tag_type}: {tag.name_th} ({tag.name_en})
-                  </span>
+      {/* Editorial Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Imagery Canvas */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Main Cover Image */}
+          <div className="border border-line bg-paper p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-olive font-semibold uppercase flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" />
+                รูปหน้าปกหลัก (Cover Image)
+              </span>
+              {resolvedCoverUrl && (
+                <span className="text-[11px] font-mono text-muted">Primary Banner</span>
+              )}
+            </div>
+
+            {resolvedCoverUrl ? (
+              <div className="space-y-2">
+                <div className="relative aspect-[4/3] sm:aspect-[16/10] bg-charcoal overflow-hidden border border-line flex items-center justify-center">
+                  <Image
+                    src={resolvedCoverUrl}
+                    alt={ad.image_alt || ad.title}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 55vw"
+                    priority
+                    className="object-contain"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted pt-1">
+                  <span className="italic">{ad.image_alt || ad.title}</span>
+                  <ImagePreviewModal src={resolvedCoverUrl} alt={ad.title} label="Cover Image" />
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-ivory border border-dashed border-line space-y-2">
+                <ImageIcon className="w-8 h-8 text-muted mx-auto" />
+                <p className="text-xs text-muted">โฆษณานี้ไม่มีรูปหน้าปกหลัก (No Cover Image)</p>
+              </div>
+            )}
+          </div>
+
+          {/* Secondary Ad Images Gallery */}
+          <div className="border border-line bg-paper p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-line/60 pb-2">
+              <h3 className="text-sm font-semibold text-charcoal flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-olive" />
+                <span>รูปภาพโฆษณาประกอบ ({resolvedGallery.length} รูป)</span>
+              </h3>
+              <span className="text-xs font-mono text-muted">เรียงตาม sort_order</span>
+            </div>
+
+            {resolvedGallery.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {resolvedGallery.map((img) => (
+                  <div key={img.id} className="border border-line bg-background p-2 space-y-2">
+                    <div className="relative aspect-[3/4] bg-charcoal overflow-hidden border border-line flex items-center justify-center">
+                      <Image
+                        src={img.resolvedUrl}
+                        alt={img.alt_text || `Ad image ${img.sort_order}`}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 25vw"
+                        className="object-contain"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-mono text-muted">ลำดับ #{img.sort_order}</span>
+                      </div>
+                      <p className="text-xs text-charcoal line-clamp-2">{img.alt_text || "—"}</p>
+                      <ImagePreviewModal
+                        src={img.resolvedUrl}
+                        alt={img.alt_text || `Ad image #${img.sort_order}`}
+                        label={`Gallery Image #${img.sort_order}`}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
-            </dd>
+            ) : (
+              <p className="text-xs text-muted py-4 text-center">ไม่มีรูปภาพประกอบเพิ่มเติม</p>
+            )}
           </div>
-        )}
-
-        <div>
-          <dt>ปลายทาง</dt>
-          <dd className="break-text">
-            {ad.destination_url}
-            <br />
-            <small>Domain: {host}</small>
-          </dd>
         </div>
 
-        <div>
-          <dt>ช่วงเผยแพร่</dt>
-          <dd>
-            {ad.starts_at ? new Date(ad.starts_at).toLocaleString("th-TH") : "ทันที"} —{" "}
-            {ad.ends_at ? new Date(ad.ends_at).toLocaleString("th-TH") : "ไม่กำหนด"}
-          </dd>
-        </div>
-      </dl>
+        {/* Right Column: Metadata & Action Form */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Shop Header Info */}
+          {shopData && (
+            <div className="border border-line bg-paper p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                {resolvedShopLogoUrl ? (
+                  <Image
+                    src={resolvedShopLogoUrl}
+                    alt={shopData.name}
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 rounded-full object-cover border border-line"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-olive text-white font-serif flex items-center justify-center text-sm font-bold">
+                    {shopData.name.slice(0, 1)}
+                  </div>
+                )}
+                <div>
+                  <Link href={`/admin/shops/${shopData.id}`} className="text-sm font-semibold text-charcoal hover:underline flex items-center gap-1">
+                    <Store className="w-3.5 h-3.5 text-olive" />
+                    <span>{shopData.name}</span>
+                  </Link>
+                  <p className="text-xs text-muted">Slug: {shopData.slug}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1 border-t border-line/60">
+                <StatusBadge tone={shopData.status === "approved" ? "success" : "warning"}>
+                  ร้าน: {shopData.status}
+                </StatusBadge>
+                <StatusBadge tone={shopData.subscription_status === "active" ? "success" : "neutral"}>
+                  Sub: {shopData.subscription_status}
+                </StatusBadge>
+              </div>
+            </div>
+          )}
 
-      <AdminActionForm
-        endpoint={`/api/admin/ads/${id}`}
-        actions={[
-          { value: "approve", label: "อนุมัติโฆษณา" },
-          { value: "reject", label: "ปฏิเสธ", tone: "danger" },
-          { value: "pause", label: "ซ่อน / Pause", tone: "danger" },
-        ]}
-      />
+          {/* Ad Metadata Details */}
+          <div className="border border-line bg-background p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-charcoal border-b border-line pb-2">รายละเอียดโฆษณา</h3>
+            <dl className="detail-list space-y-3 text-xs">
+              <div>
+                <dt>ประเภทโฆษณา</dt>
+                <dd className="font-mono text-olive font-semibold">{ad.ad_type}</dd>
+              </div>
+
+              <div>
+                <dt>ข้อความราคา</dt>
+                <dd>{ad.price_text || "—"}</dd>
+              </div>
+
+              <div>
+                <dt>คำอธิบาย</dt>
+                <dd className="whitespace-pre-line text-charcoal">{ad.description || "—"}</dd>
+              </div>
+
+              {fashionTags.length > 0 && (
+                <div>
+                  <dt>แท็กแฟชั่น (Taxonomy)</dt>
+                  <dd>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {fashionTags.map((tag: FashionTag) => (
+                        <span key={tag.id} className="px-2 py-0.5 bg-paper border border-line text-[11px] font-medium text-charcoal inline-flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-olive" />
+                          {tag.name_th}
+                        </span>
+                      ))}
+                    </div>
+                  </dd>
+                </div>
+              )}
+
+              <div>
+                <dt>ลิงก์ปลายทาง (Shopee)</dt>
+                <dd className="break-all pt-1">
+                  <a
+                    href={ad.destination_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-olive hover:underline inline-flex items-center gap-1 font-mono text-[11px]"
+                  >
+                    <span>{ad.destination_url}</span>
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
+                  <span className="block text-[11px] text-muted font-mono mt-0.5">Domain: {host}</span>
+                </dd>
+              </div>
+
+              <div>
+                <dt>ช่วงเวลาโฆษณา</dt>
+                <dd className="font-mono text-[11px]">
+                  {ad.starts_at ? new Date(ad.starts_at).toLocaleString("th-TH") : "เริ่มต้นทันที"}
+                  <br />
+                  ถึง {ad.ends_at ? new Date(ad.ends_at).toLocaleString("th-TH") : "ไม่มีกำหนดสิ้นสุด"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          {/* Moderation Action Form */}
+          <div className="border border-line bg-paper p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-charcoal">ดำเนินการการตรวจสอบ</h3>
+            <AdminActionForm
+              endpoint={`/api/admin/ads/${id}`}
+              actions={[
+                { value: "approve", label: "อนุมัติโฆษณา (Approve)" },
+                { value: "reject", label: "ปฏิเสธ (Reject)", tone: "danger" },
+                { value: "pause", label: "ซ่อน / Pause", tone: "danger" },
+              ]}
+            />
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
