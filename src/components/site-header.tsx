@@ -24,7 +24,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Link href="/login/customer" className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-charcoal hover:text-black transition-colors">
+          <Link href="/login/customer" className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-charcoal hover:text-olive transition-colors">
             <User className="w-4 h-4 text-muted" />
             <span>เข้าสู่ระบบ</span>
           </Link>
