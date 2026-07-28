@@ -17,6 +17,7 @@ const cspHeader = isDev
   : `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:${supabaseSource}; connect-src 'self'${supabaseSource}; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`;
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: isDev ? ["127.0.0.1"] : undefined,
   turbopack: {
     root: process.cwd(),
   },

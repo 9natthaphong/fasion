@@ -13,6 +13,7 @@ function adminClient() {
 test.describe("Account Deletion", () => {
   test.beforeEach(({}, testInfo) => {
     const missingVars = [];
+    if (process.env.RUN_DESTRUCTIVE_E2E !== "1") missingVars.push("RUN_DESTRUCTIVE_E2E=1");
     if (!process.env.E2E_ADMIN_EMAIL) missingVars.push("E2E_ADMIN_EMAIL");
     if (!process.env.E2E_ADMIN_PASSWORD) missingVars.push("E2E_ADMIN_PASSWORD");
     if (!process.env.E2E_CUSTOMER_EMAIL) missingVars.push("E2E_CUSTOMER_EMAIL");

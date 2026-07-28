@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
 const hasCredentials = Boolean(
-  process.env.E2E_CUSTOMER_EMAIL &&
+  process.env.RUN_AUTHENTICATED_E2E === "1" &&
+    process.env.E2E_CUSTOMER_EMAIL &&
     process.env.E2E_CUSTOMER_PASSWORD &&
     process.env.E2E_MERCHANT_EMAIL &&
     process.env.E2E_MERCHANT_PASSWORD &&
@@ -20,7 +21,10 @@ function adminClient() {
 
 test.describe("Authenticated E2E Workflows", () => {
   test.beforeEach(({}, testInfo) => {
-    test.skip(testInfo.project.name !== "chromium" || !hasCredentials);
+    test.skip(
+      testInfo.project.name !== "chromium" || !hasCredentials,
+      "Authenticated E2E requires RUN_AUTHENTICATED_E2E=1 and the complete disposable account set.",
+    );
   });
 
   test("customer login, profile update, outfit history deletion, and privacy consent work", async ({ page }) => {

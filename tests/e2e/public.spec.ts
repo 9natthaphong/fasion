@@ -3,11 +3,65 @@ import { expect, test } from "@playwright/test";
 test("public discovery journey has no overflow", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /วันนี้จะไปไหน/ })).toBeVisible();
-  await page.getByRole("link", { name: "สำรวจแฟชั่นจากร้านค้า" }).click();
+  await page.getByRole("link", { name: "ค้นหาแฟชั่นจากร้านค้า" }).click();
   await expect(page).toHaveURL(/\/discover/);
-  await expect(page.getByRole("heading", { name: "ค้นหาสไตล์จากร้านค้า" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ค้นหาสไตล์จากร้านค้าอิสระ" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
+});
+
+test("cinematic story exposes its optimized video source, poster, and chapters", async ({ page }) => {
+  await page.goto("/");
+  const story = page.getByTestId("cinematic-story");
+  const video = page.getByTestId("cinematic-video");
+
+  await expect(story).toHaveAttribute("data-video-ready", "true");
+  await expect(video).toHaveAttribute(
+    "poster",
+    "/videos-assets/fittoday-wardrobe-story-poster.webp",
+  );
+  await expect(
+    video.locator("source"),
+  ).toHaveAttribute(
+    "src",
+    "/videos-assets/fittoday-wardrobe-story.mp4",
+  );
+  await expect(page.getByTestId("cinematic-chapter-opening")).toBeVisible();
+  await expect(page.getByTestId("cinematic-chapter-ready")).toHaveCount(1);
+});
+
+test("cinematic scrub advances and reverses the master timeline", async ({ page }) => {
+  await page.goto("/");
+  const story = page.getByTestId("cinematic-story");
+  const video = page.getByTestId("cinematic-video");
+  await expect(story).toHaveAttribute("data-video-ready", "true");
+
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight * 2.8));
+  await expect
+    .poll(async () => Number(await video.evaluate((element) => (element as HTMLVideoElement).currentTime)))
+    .toBeGreaterThan(5);
+  const forwardTime = Number(
+    await video.evaluate((element) => (element as HTMLVideoElement).currentTime),
+  );
+
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.7));
+  await expect
+    .poll(async () => Number(await video.evaluate((element) => (element as HTMLVideoElement).currentTime)))
+    .toBeLessThan(forwardTime - 1);
+});
+
+test("reduced motion presents a complete normal-flow static story", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const story = page.getByTestId("cinematic-story");
+  await expect(story).toHaveAttribute("data-motion", "reduced");
+
+  for (const id of ["opening", "wardrobe", "intelligence", "directions", "ready"]) {
+    await expect(page.getByTestId(`cinematic-chapter-${id}`)).toBeVisible();
+  }
+  const readyChapter = page.getByTestId("cinematic-chapter-ready");
+  await expect(readyChapter.getByRole("link", { name: "ให้ AI เลือกชุดวันนี้" })).toBeVisible();
+  await expect(readyChapter.getByRole("link", { name: "เปิดตู้เสื้อผ้าของฉัน" })).toBeVisible();
 });
 
 test("opens a demo shop and ad without broken images", async ({ page }) => {
