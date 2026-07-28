@@ -3,6 +3,7 @@ import { requirePageRole } from "@/lib/auth";
 
 const links = [
   { href: "/account", label: "ภาพรวม" },
+  { href: "/account/wardrobe", label: "ตู้เสื้อผ้าของฉัน" },
   { href: "/account/profile", label: "โปรไฟล์และความชอบ" },
   { href: "/account/outfits", label: "ประวัติ AI Stylist" },
   { href: "/account/likes", label: "รายการที่ถูกใจ" },

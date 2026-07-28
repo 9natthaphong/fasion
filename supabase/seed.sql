@@ -30,26 +30,27 @@ values
   (
     '00000000-0000-4000-8000-000000000101', null, 'Quiet Form', 'quiet-form',
     'เสื้อผ้า everyday minimal ที่เน้นทรงสบาย เนื้อผ้าเหมาะกับอากาศร้อน และสีที่หยิบมาใส่ซ้ำได้ง่าย',
-    '/demo/shop-quiet.svg', '/demo/look-olive.svg', 'approved', 'active', '2027-12-31', true
+    '/demo/shop-quiet.svg', '/demo-assets/shop-quiet-cover.jpg', 'approved', 'active', '2027-12-31', true
   ),
   (
     '00000000-0000-4000-8000-000000000102', null, 'Everyday Edit', 'everyday-edit',
     'เสื้อผ้าทำงานแบบไม่เป็นทางการเกินไป จับคู่ได้ทั้งวันทำงาน คาเฟ่ และวันเดินทาง',
-    '/demo/shop-edit.svg', '/demo/look-indigo.svg', 'approved', 'active', '2027-12-31', true
+    '/demo/shop-edit.svg', '/demo-assets/shop-edit-cover.jpg', 'approved', 'active', '2027-12-31', true
   ),
   (
     '00000000-0000-4000-8000-000000000103', null, 'Morrow Studio', 'morrow-studio',
     'สตูดิโอแฟชั่นไร้เพศ โครงเสื้อชัด รายละเอียดน้อย และใช้พาเลตต์สีสงบสำหรับแต่งตัวทุกวัน',
-    '/demo/shop-morrow.svg', '/demo/look-clay.svg', 'approved', 'active', '2027-12-31', true
+    '/demo/shop-morrow.svg', '/demo-assets/shop-morrow-cover.jpg', 'approved', 'active', '2027-12-31', true
   ),
   (
     '00000000-0000-4000-8000-000000000104', null, 'Sunday Assembly', 'sunday-assembly',
     'ชุดเซ็ตและเดรสที่ออกแบบให้แต่งง่ายในครั้งเดียว เหมาะกับวันพักผ่อนและโอกาสพิเศษแบบเรียบๆ',
-    '/demo/shop-sunday.svg', '/demo/look-sand.svg', 'approved', 'active', '2027-12-31', true
+    '/demo/shop-sunday.svg', '/demo-assets/shop-sunday-cover.jpg', 'approved', 'active', '2027-12-31', true
   )
 on conflict (id) do update set
   name = excluded.name,
   description = excluded.description,
+  cover_path = excluded.cover_path,
   status = excluded.status,
   subscription_status = excluded.subscription_status,
   subscription_ends_at = excluded.subscription_ends_at;
@@ -59,25 +60,26 @@ insert into public.ads (
   destination_url, cover_image_path, status, starts_at, ends_at, is_demo, created_at
 )
 values
-  ('00000000-0000-4000-8000-000000000201','00000000-0000-4000-8000-000000000101','เสื้อลินิน Utility','linen-utility-shirt','ชิ้นหลักที่ออกแบบให้ใส่ง่ายในอากาศร้อน','single_product','890 บาท','https://shopee.co.th/','/demo/look-olive.svg','active','2026-07-01','2027-12-31',true,'2026-07-26'),
-  ('00000000-0000-4000-8000-000000000202','00000000-0000-4000-8000-000000000102','Soft Tailored Set','soft-tailored-set','การจัดชุดที่บาลานซ์ความเรียบและรายละเอียด','outfit_set','1,790 บาท','https://shopee.co.th/','/demo/look-indigo.svg','active','2026-07-01','2027-12-31',true,'2026-07-25'),
-  ('00000000-0000-4000-8000-000000000203','00000000-0000-4000-8000-000000000103','City Walk Collection','city-walk-collection','คอลเลกชันสำหรับวันเดินทางในเมือง','collection','เริ่มต้น 690 บาท','https://shopee.co.th/','/demo/look-clay.svg','active','2026-07-01','2027-12-31',true,'2026-07-24'),
-  ('00000000-0000-4000-8000-000000000204','00000000-0000-4000-8000-000000000104','Weekend Pairing','weekend-pairing','ชุดวันหยุดที่แต่งได้ในครั้งเดียว','outfit_set','1,290 บาท','https://shopee.co.th/','/demo/look-sand.svg','active','2026-07-01','2027-12-31',true,'2026-07-23'),
-  ('00000000-0000-4000-8000-000000000205','00000000-0000-4000-8000-000000000101','กางเกงจีบ Relaxed','relaxed-pleated-pants','ทรงสบายสำหรับวันทำงาน','single_product','990 บาท','https://shopee.co.th/','/demo/look-olive.svg','active','2026-07-01','2027-12-31',true,'2026-07-22'),
-  ('00000000-0000-4000-8000-000000000206','00000000-0000-4000-8000-000000000102','Desk to Dinner','desk-to-dinner','ชุดทำงานที่ต่อเนื่องถึงมื้อเย็น','collection','เริ่มต้น 790 บาท','https://shopee.co.th/','/demo/look-indigo.svg','active','2026-07-01','2027-12-31',true,'2026-07-21'),
-  ('00000000-0000-4000-8000-000000000207','00000000-0000-4000-8000-000000000103','Mono Layer','mono-layer','เลเยอร์โทนเดียวสำหรับทุกวัน','outfit_set','1,590 บาท','https://shopee.co.th/','/demo/look-clay.svg','active','2026-07-01','2027-12-31',true,'2026-07-20'),
-  ('00000000-0000-4000-8000-000000000208','00000000-0000-4000-8000-000000000104','Summer Dress Edit','summer-dress-edit','เดรสสำหรับอากาศร้อน','collection','เริ่มต้น 1,090 บาท','https://shopee.co.th/','/demo/look-sand.svg','active','2026-07-01','2027-12-31',true,'2026-07-19'),
-  ('00000000-0000-4000-8000-000000000209','00000000-0000-4000-8000-000000000101','Lightweight Overshirt','lightweight-overshirt','เสื้อคลุมบางสำหรับห้องแอร์','single_product','850 บาท','https://shopee.co.th/','/demo/look-olive.svg','active','2026-07-01','2027-12-31',true,'2026-07-18'),
-  ('00000000-0000-4000-8000-000000000210','00000000-0000-4000-8000-000000000102','Workday Capsule','workday-capsule','แคปซูลชุดทำงานที่จับคู่ซ้ำได้','collection','เริ่มต้น 750 บาท','https://shopee.co.th/','/demo/look-indigo.svg','active','2026-07-01','2027-12-31',true,'2026-07-17'),
-  ('00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000103','Motion Knit Set','motion-knit-set','ชุดนิตติ้งที่เคลื่อนไหวสบาย','outfit_set','1,390 บาท','https://shopee.co.th/','/demo/look-clay.svg','active','2026-07-01','2027-12-31',true,'2026-07-16'),
-  ('00000000-0000-4000-8000-000000000212','00000000-0000-4000-8000-000000000104','Weekend Special ลด 15%','weekend-special','โปรโมชันตัวอย่างสำหรับวันหยุด','promotion','ลด 15%','https://shopee.co.th/','/demo/look-sand.svg','active','2026-07-01','2027-12-31',true,'2026-07-15'),
-  ('00000000-0000-4000-8000-000000000213','00000000-0000-4000-8000-000000000101','Everyday Structure Tote','everyday-tote','กระเป๋าทรงชัดสำหรับทุกวัน','single_product','790 บาท','https://shopee.co.th/','/demo/look-olive.svg','active','2026-07-01','2027-12-31',true,'2026-07-14'),
-  ('00000000-0000-4000-8000-000000000214','00000000-0000-4000-8000-000000000102','Quiet Accessories','quiet-accessories','เครื่องประดับรายละเอียดน้อย','collection','เริ่มต้น 290 บาท','https://shopee.co.th/','/demo/look-indigo.svg','active','2026-07-01','2027-12-31',true,'2026-07-13'),
-  ('00000000-0000-4000-8000-000000000215','00000000-0000-4000-8000-000000000103','Travel Light Set','travel-light-set','ชุดเดินทางน้ำหนักเบา','outfit_set','1,490 บาท','https://shopee.co.th/','/demo/look-clay.svg','active','2026-07-01','2027-12-31',true,'2026-07-12'),
-  ('00000000-0000-4000-8000-000000000216','00000000-0000-4000-8000-000000000104','เปิดตัว Sunday Assembly','new-studio-opening','แนะนำร้านตัวอย่างและคอลเลกชันใหม่','shop_feature','ชมคอลเลกชัน','https://shopee.co.th/','/demo/look-sand.svg','active','2026-07-01','2027-12-31',true,'2026-07-11')
+  ('00000000-0000-4000-8000-000000000201','00000000-0000-4000-8000-000000000101','เสื้อลินิน Utility','linen-utility-shirt','ชิ้นหลักที่ออกแบบให้ใส่ง่ายในอากาศร้อน','single_product','890 บาท','https://shopee.co.th/','/demo-assets/ad-linen-shirt.jpg','active','2026-07-01','2027-12-31',true,'2026-07-26'),
+  ('00000000-0000-4000-8000-000000000202','00000000-0000-4000-8000-000000000102','Soft Tailored Set','soft-tailored-set','การจัดชุดที่บาลานซ์ความเรียบและรายละเอียด','outfit_set','1,790 บาท','https://shopee.co.th/','/images/fittoday/ad-soft-tailored-set-v1.webp','active','2026-07-01','2027-12-31',true,'2026-07-25'),
+  ('00000000-0000-4000-8000-000000000203','00000000-0000-4000-8000-000000000103','City Walk Collection','city-walk-collection','คอลเลกชันสำหรับวันเดินทางในเมือง','collection','เริ่มต้น 690 บาท','https://shopee.co.th/','/images/fittoday/ad-city-shoes.jpg','active','2026-07-01','2027-12-31',true,'2026-07-24'),
+  ('00000000-0000-4000-8000-000000000204','00000000-0000-4000-8000-000000000104','Weekend Pairing','weekend-pairing','ชุดวันหยุดที่แต่งได้ในครั้งเดียว','outfit_set','1,290 บาท','https://shopee.co.th/','/demo-assets/ad-weekend-pairing.jpg','active','2026-07-01','2027-12-31',true,'2026-07-23'),
+  ('00000000-0000-4000-8000-000000000205','00000000-0000-4000-8000-000000000101','กางเกงจีบ Relaxed','relaxed-pleated-pants','ทรงสบายสำหรับวันทำงาน','single_product','990 บาท','https://shopee.co.th/','/images/fittoday/ad-pleated-pants.jpg','active','2026-07-01','2027-12-31',true,'2026-07-22'),
+  ('00000000-0000-4000-8000-000000000206','00000000-0000-4000-8000-000000000102','Desk to Dinner','desk-to-dinner','ชุดทำงานที่ต่อเนื่องถึงมื้อเย็น','collection','เริ่มต้น 790 บาท','https://shopee.co.th/','/demo-assets/ad-tailored-set.jpg','active','2026-07-01','2027-12-31',true,'2026-07-21'),
+  ('00000000-0000-4000-8000-000000000207','00000000-0000-4000-8000-000000000103','Mono Layer','mono-layer','เลเยอร์โทนเดียวสำหรับทุกวัน','outfit_set','1,590 บาท','https://shopee.co.th/','/demo-assets/ad-city-walk.jpg','active','2026-07-01','2027-12-31',true,'2026-07-20'),
+  ('00000000-0000-4000-8000-000000000208','00000000-0000-4000-8000-000000000104','Summer Dress Edit','summer-dress-edit','เดรสสำหรับอากาศร้อน','collection','เริ่มต้น 1,090 บาท','https://shopee.co.th/','/images/fittoday/ad-summer-dress.jpg','active','2026-07-01','2027-12-31',true,'2026-07-19'),
+  ('00000000-0000-4000-8000-000000000209','00000000-0000-4000-8000-000000000101','Lightweight Overshirt','lightweight-overshirt','เสื้อคลุมบางสำหรับห้องแอร์','single_product','850 บาท','https://shopee.co.th/','/demo-assets/ad-linen-shirt.jpg','active','2026-07-01','2027-12-31',true,'2026-07-18'),
+  ('00000000-0000-4000-8000-000000000210','00000000-0000-4000-8000-000000000102','Workday Capsule','workday-capsule','แคปซูลชุดทำงานที่จับคู่ซ้ำได้','collection','เริ่มต้น 750 บาท','https://shopee.co.th/','/images/fittoday/ad-workday-capsule-v1.webp','active','2026-07-01','2027-12-31',true,'2026-07-17'),
+  ('00000000-0000-4000-8000-000000000211','00000000-0000-4000-8000-000000000103','Motion Knit Set','motion-knit-set','ชุดนิตติ้งที่เคลื่อนไหวสบาย','outfit_set','1,390 บาท','https://shopee.co.th/','/demo-assets/ad-city-walk.jpg','active','2026-07-01','2027-12-31',true,'2026-07-16'),
+  ('00000000-0000-4000-8000-000000000212','00000000-0000-4000-8000-000000000104','Weekend Special ลด 15%','weekend-special','โปรโมชันตัวอย่างสำหรับวันหยุด','promotion','ลด 15%','https://shopee.co.th/','/demo-assets/ad-weekend-pairing.jpg','active','2026-07-01','2027-12-31',true,'2026-07-15'),
+  ('00000000-0000-4000-8000-000000000213','00000000-0000-4000-8000-000000000101','Everyday Structure Tote','everyday-tote','กระเป๋าทรงชัดสำหรับทุกวัน','single_product','790 บาท','https://shopee.co.th/','/images/fittoday/ad-structure-tote.jpg','active','2026-07-01','2027-12-31',true,'2026-07-14'),
+  ('00000000-0000-4000-8000-000000000214','00000000-0000-4000-8000-000000000102','Quiet Accessories','quiet-accessories','เครื่องประดับรายละเอียดน้อย','collection','เริ่มต้น 290 บาท','https://shopee.co.th/','/demo-assets/ad-tailored-set.jpg','active','2026-07-01','2027-12-31',true,'2026-07-13'),
+  ('00000000-0000-4000-8000-000000000215','00000000-0000-4000-8000-000000000103','Travel Light Set','travel-light-set','ชุดเดินทางน้ำหนักเบา','outfit_set','1,490 บาท','https://shopee.co.th/','/images/fittoday/ad-travel-light-set-v1.webp','active','2026-07-01','2027-12-31',true,'2026-07-12'),
+  ('00000000-0000-4000-8000-000000000216','00000000-0000-4000-8000-000000000104','เปิดตัว Sunday Assembly','new-studio-opening','แนะนำร้านตัวอย่างและคอลเลกชันใหม่','shop_feature','ชมคอลเลกชัน','https://shopee.co.th/','/images/fittoday/ad-summer-dress.jpg','active','2026-07-01','2027-12-31',true,'2026-07-11')
 on conflict (id) do update set
   title = excluded.title,
   description = excluded.description,
+  cover_image_path = excluded.cover_image_path,
   status = excluded.status,
   ends_at = excluded.ends_at;
 
@@ -122,4 +124,3 @@ select
 from public.shops s
 cross join generate_series(1, 24) as n
 where s.is_demo;
-

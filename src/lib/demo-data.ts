@@ -32,7 +32,7 @@ export const shops: Shop[] = [
     description:
       "เสื้อผ้า everyday minimal ที่เน้นทรงสบาย เนื้อผ้าเหมาะกับอากาศร้อน และสีที่หยิบมาใส่ซ้ำได้ง่าย",
     logo_path: "/demo/shop-quiet.svg",
-    cover_path: "/demo/look-olive.svg",
+    cover_path: "/demo-assets/shop-quiet-cover.jpg",
     shopee_url: null,
     instagram_url: null,
     status: "approved",
@@ -47,7 +47,7 @@ export const shops: Shop[] = [
     description:
       "เสื้อผ้าทำงานแบบไม่เป็นทางการเกินไป จับคู่ได้ทั้งวันทำงาน คาเฟ่ และวันเดินทาง",
     logo_path: "/demo/shop-edit.svg",
-    cover_path: "/demo/look-indigo.svg",
+    cover_path: "/demo-assets/shop-edit-cover.jpg",
     shopee_url: null,
     instagram_url: null,
     status: "approved",
@@ -62,7 +62,7 @@ export const shops: Shop[] = [
     description:
       "สตูดิโอแฟชั่นไร้เพศ โครงเสื้อชัด รายละเอียดน้อย และใช้พาเลตต์สีสงบสำหรับแต่งตัวทุกวัน",
     logo_path: "/demo/shop-morrow.svg",
-    cover_path: "/demo/look-clay.svg",
+    cover_path: "/demo-assets/shop-morrow-cover.jpg",
     shopee_url: null,
     instagram_url: null,
     status: "approved",
@@ -77,7 +77,7 @@ export const shops: Shop[] = [
     description:
       "ชุดเซ็ตและเดรสที่ออกแบบให้แต่งง่ายในครั้งเดียว เหมาะกับวันพักผ่อนและโอกาสพิเศษแบบเรียบๆ",
     logo_path: "/demo/shop-sunday.svg",
-    cover_path: "/demo/look-sand.svg",
+    cover_path: "/demo-assets/shop-sunday-cover.jpg",
     shopee_url: null,
     instagram_url: null,
     status: "approved",
@@ -106,12 +106,30 @@ const adBlueprints = [
   ["new-studio-opening", "เปิดตัว Sunday Assembly", "shop_feature", "ชมคอลเลกชัน", 3, [5, 14]],
 ] as const;
 
-const imagePaths = [
-  "/demo/look-olive.svg",
-  "/demo/look-indigo.svg",
-  "/demo/look-clay.svg",
-  "/demo/look-sand.svg",
-];
+export const demoAdCoverBySlug: Record<string, string> = {
+  "linen-utility-shirt": "/demo-assets/ad-linen-shirt.jpg",
+  "soft-tailored-set": "/images/fittoday/ad-soft-tailored-set-v1.webp",
+  "city-walk-collection": "/images/fittoday/ad-city-shoes.jpg",
+  "weekend-pairing": "/demo-assets/ad-weekend-pairing.jpg",
+  "relaxed-pleated-pants": "/images/fittoday/ad-pleated-pants.jpg",
+  "desk-to-dinner": "/demo-assets/ad-tailored-set.jpg",
+  "mono-layer": "/demo-assets/ad-city-walk.jpg",
+  "summer-dress-edit": "/images/fittoday/ad-summer-dress.jpg",
+  "lightweight-overshirt": "/demo-assets/ad-linen-shirt.jpg",
+  "workday-capsule": "/images/fittoday/ad-workday-capsule-v1.webp",
+  "motion-knit-set": "/demo-assets/ad-weekend-pairing.jpg",
+  "weekend-special": "/demo-assets/ad-weekend-pairing.jpg",
+  "everyday-tote": "/images/fittoday/ad-structure-tote.jpg",
+  "quiet-accessories": "/images/fittoday/ad-structure-tote.jpg",
+  "travel-light-set": "/images/fittoday/ad-travel-light-set-v1.webp",
+  "new-studio-opening": "/images/fittoday/ad-summer-dress.jpg",
+};
+
+export const demoAdAltBySlug: Record<string, string> = {
+  "soft-tailored-set": "ผู้หญิงไทยสวมชุดสูทกางเกงสีเบจในสตูดิโอแสงธรรมชาติ",
+  "workday-capsule": "กางเกงทำงานสีชาร์โคล เสื้อเชิ้ตสีงาช้าง และเบลเซอร์สีเขียวหม่นจัดเป็นชุดแคปซูล",
+  "travel-light-set": "ผู้หญิงไทยสวมกางเกงสีทรายและเสื้อเชิ้ตสีขาวสำหรับวันเดินทาง",
+};
 
 export const ads: Ad[] = adBlueprints.map(
   ([slug, title, adType, price, shopIndex, categoryIndexes], index) => ({
@@ -126,7 +144,8 @@ export const ads: Ad[] = adBlueprints.map(
     ad_type: adType,
     price_text: price,
     destination_url: "https://shopee.co.th/",
-    cover_image_path: imagePaths[index % imagePaths.length],
+    cover_image_path: demoAdCoverBySlug[slug],
+    image_alt: demoAdAltBySlug[slug],
     status: "active",
     starts_at: "2026-07-01T00:00:00.000Z",
     ends_at: "2027-01-01T00:00:00.000Z",
@@ -147,4 +166,3 @@ export function getDemoAd(slug: string) {
 export function getDemoShop(slug: string) {
   return shops.find((shop) => shop.slug === slug) ?? null;
 }
-

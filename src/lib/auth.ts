@@ -8,33 +8,46 @@ export interface CurrentUser {
   email: string | null;
   role: UserRole;
   displayName: string | null;
+  avatarUrl?: string | null;
+}
+
+export function isConfiguredAdmin(
+  profileRole: string | null | undefined,
+  email: string | null | undefined,
+) {
+  return (
+    profileRole === "admin" &&
+    Boolean(email) &&
+    getAdminEmails().has(email!.toLowerCase())
+  );
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-  if (error || !claims?.sub) return null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
 
-  const { data: profile } = await supabase
+  const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
+  const { data: profile } = await adminClient
     .from("profiles")
-    .select("role, display_name")
-    .eq("id", claims.sub)
+    .select("role, display_name, avatar_url")
+    .eq("id", user.id)
     .maybeSingle();
   if (!profile) return null;
 
-  const email = typeof claims.email === "string" ? claims.email : null;
-  const role =
-    email && getAdminEmails().has(email.toLowerCase())
-      ? "admin"
-      : (profile.role as UserRole);
+  const email = user.email ?? null;
+  if (profile.role === "admin" && !isConfiguredAdmin(profile.role, email)) {
+    return null;
+  }
+  const role = profile.role as UserRole;
 
   return {
-    id: claims.sub,
+    id: user.id,
     email,
     role,
     displayName: profile.display_name,
+    avatarUrl: profile.avatar_url ?? null,
   };
 }
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { adSchema } from "@/lib/validation";
-import { canSubmit, toAdRow } from "../route";
+import { canSubmit, toAdUpdateRow } from "../route";
 import { requireSameOrigin } from "@/lib/request-security";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,10 +16,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { data: shop } = await supabase.from("shops").select("id, status, subscription_status, subscription_ends_at").eq("id", parsed.data.shopId).eq("owner_id", auth.user.id).is("deleted_at", null).maybeSingle();
   if (!shop) return NextResponse.json({ error: "ไม่พบร้านหรือคุณไม่มีสิทธิ์" }, { status: 403 });
   if (parsed.data.intent === "submit" && !canSubmit(shop)) return NextResponse.json({ error: "ร้านต้องได้รับอนุมัติและ subscription ต้อง active ก่อนส่งตรวจ" }, { status: 409 });
+  if (parsed.data.intent === "submit" && !parsed.data.coverImagePath) return NextResponse.json({ error: "กรุณาอัปโหลดรูปหน้าปกก่อนส่งตรวจ" }, { status: 400 });
   const { data: existing } = await supabase.from("ads").select("id, status").eq("id", id).eq("shop_id", shop.id).maybeSingle();
   if (!existing) return NextResponse.json({ error: "ไม่พบโฆษณา" }, { status: 404 });
-  if (!["draft", "rejected", "paused"].includes(existing.status) && parsed.data.intent === "draft") return NextResponse.json({ error: "โฆษณาที่กำลังตรวจหรือ active แก้เนื้อหาไม่ได้ กรุณา pause ก่อน" }, { status: 409 });
-  const { error } = await supabase.from("ads").update(toAdRow(parsed.data)).eq("id", id);
+  if (!["draft", "rejected", "paused"].includes(existing.status)) return NextResponse.json({ error: "โฆษณาที่กำลังตรวจหรือ active แก้เนื้อหาไม่ได้ กรุณา pause ก่อน" }, { status: 409 });
+  const { error } = await supabase.from("ads").update(toAdUpdateRow(parsed.data)).eq("id", id);
   if (error) return NextResponse.json({ error: error.code === "23505" ? "Slug โฆษณานี้ถูกใช้แล้ว" : "บันทึกโฆษณาไม่สำเร็จ" }, { status: 400 });
   await Promise.all([
     supabase.from("ad_categories").delete().eq("ad_id", id),
@@ -30,6 +31,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     parsed.data.images.length ? supabase.from("ad_images").insert(parsed.data.images.map((image) => ({ ad_id: id, storage_path: image.storagePath, alt_text: image.altText, sort_order: image.sortOrder }))) : Promise.resolve({ error: null }),
   ]);
   if (categoryResult.error || imageResult.error) return NextResponse.json({ error: "บันทึกหมวดหมู่หรือรูปไม่ครบ กรุณาลองอีกครั้ง" }, { status: 500 });
+  if (parsed.data.intent === "submit") {
+    const { error: submitError } = await supabase
+      .from("ads")
+      .update({ status: "pending_review" })
+      .eq("id", id)
+      .eq("status", "draft");
+    if (submitError) {
+      return NextResponse.json(
+        { error: "บันทึกดราฟต์แล้ว แต่ส่งตรวจไม่สำเร็จ กรุณาลองอีกครั้ง" },
+        { status: 409 },
+      );
+    }
+  }
   return NextResponse.json({ id });
 }
 

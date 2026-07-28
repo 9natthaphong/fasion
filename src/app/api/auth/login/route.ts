@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { loginSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
+import { isConfiguredAdmin } from "@/lib/auth";
 
 export async function POST(request: Request) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
@@ -21,19 +23,36 @@ export async function POST(request: Request) {
   if (error || !data.user) {
     return NextResponse.json({ error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
   }
-  const { data: profile } = await supabase
+  const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
+  const { data: profile } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", data.user.id)
     .single();
-  if (requestedRole && profile?.role !== requestedRole) {
+  const adminLogin =
+    requestedRole === "customer" &&
+    isConfiguredAdmin(profile?.role, data.user.email);
+  if (
+    requestedRole &&
+    profile?.role !== requestedRole &&
+    !adminLogin
+  ) {
     await supabase.auth.signOut();
     return NextResponse.json(
       { error: `บัญชีนี้เป็นประเภท ${profile?.role ?? "อื่น"} กรุณาใช้หน้าเข้าสู่ระบบที่ถูกต้อง` },
       { status: 403 },
     );
   }
-  return NextResponse.json({
-    redirectTo: profile?.role === "merchant" ? "/merchant" : "/account",
+  const response = NextResponse.json({
+    redirectTo: adminLogin
+      ? "/admin"
+      : profile?.role === "merchant"
+        ? "/merchant"
+        : "/account",
   });
+  const cookieStore = await cookies();
+  for (const c of cookieStore.getAll()) {
+    response.cookies.set(c.name, c.value, c);
+  }
+  return response;
 }

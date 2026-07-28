@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getEventIdentity, eventSessionCookie, isLikelyBot, passRateLimit, requireSameOrigin } from "@/lib/request-security";
 import { impressionSchema } from "@/lib/validation";
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   const identity = await getEventIdentity(user?.id);
   if (!(await passRateLimit("impression", user?.id ?? identity.sessionId, 120, 3600))) return NextResponse.json({ error: "ส่ง event ถี่เกินไป" }, { status: 429 });
+  if (!isSupabaseAdminConfigured()) return NextResponse.json({ ok: true, deduplicated: false });
   const admin = getAdminClient();
   const { data: ad } = await admin.from("ads").select("id, status, starts_at, ends_at, shops!inner(status, subscription_status, subscription_ends_at)").eq("id", parsed.data.adId).eq("status", "active").is("deleted_at", null).maybeSingle();
   if (!ad || (ad.starts_at && new Date(ad.starts_at) > new Date()) || (ad.ends_at && new Date(ad.ends_at) <= new Date())) return NextResponse.json({ error: "โฆษณาไม่พร้อมเผยแพร่" }, { status: 404 });

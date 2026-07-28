@@ -1,8 +1,12 @@
 import { StatCard } from "@/components/ui";
 import { formatCtr } from "@/lib/domain";
+import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export default async function AdminAnalyticsPage() {
+  if (!isSupabaseAdminConfigured()) {
+    return <section className="dashboard-section"><p className="eyebrow">System analytics</p><h1>สถิติระบบ</h1><div className="config-notice" role="status"><strong>Configuration missing</strong><p>ต้องตั้งค่า SUPABASE_SECRET_KEY บน server เพื่อดูสถิติรวมของระบบ</p></div></section>;
+  }
   const admin = getAdminClient();
   const [{ count: impressions }, { count: clicks }, { count: likes }, { count: views }] = await Promise.all([
     admin.from("ad_impressions").select("id", { count: "exact", head: true }),

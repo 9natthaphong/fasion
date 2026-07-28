@@ -32,6 +32,31 @@ export function SectionHeading({
   );
 }
 
+export function EditorialPageIntro({
+  eyebrow,
+  title,
+  body,
+  aside,
+  tone = "neutral",
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  aside?: ReactNode;
+  tone?: "neutral" | "ai" | "sponsored";
+}) {
+  return (
+    <div className={`editorial-page-intro editorial-page-intro-${tone}`}>
+      <div>
+        <p className="editorial-eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{body}</p>
+      </div>
+      {aside ? <aside>{aside}</aside> : null}
+    </div>
+  );
+}
+
 export function DemoBadge() {
   return <span className="demo-badge">Demo</span>;
 }
@@ -90,4 +115,3 @@ export function StatCard({
     </div>
   );
 }
-

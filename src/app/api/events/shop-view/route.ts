@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { eventSessionCookie, getEventIdentity, isLikelyBot, passRateLimit, requireSameOrigin } from "@/lib/request-security";
 import { shopViewSchema } from "@/lib/validation";
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   const identity = await getEventIdentity(user?.id);
   if (!(await passRateLimit("shop-view", user?.id ?? identity.sessionId, 60, 3600))) return NextResponse.json({ error: "ส่ง event ถี่เกินไป" }, { status: 429 });
+  if (!isSupabaseAdminConfigured()) return NextResponse.json({ ok: true, deduplicated: false });
   const admin = getAdminClient();
   const { data: shop } = await admin.from("shops").select("id").eq("id", parsed.data.shopId).eq("status", "approved").eq("subscription_status", "active").is("deleted_at", null).maybeSingle();
   if (!shop) return NextResponse.json({ error: "ไม่พบร้าน" }, { status: 404 });

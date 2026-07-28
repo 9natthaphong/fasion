@@ -3,19 +3,25 @@ import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
 
-const buckets = new Set(["avatars", "shop-assets", "ad-assets"]);
+const buckets = new Set(["avatars", "shop-assets", "ad-assets", "wardrobe-assets"]);
 
 export async function GET(request: Request) {
   if (!isSupabaseAdminConfigured()) return new NextResponse(null, { status: 404 });
   const url = new URL(request.url);
   const bucket = url.searchParams.get("bucket");
   const path = url.searchParams.get("path");
-  if (!bucket || !path || !buckets.has(bucket) || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp)$/i.test(path)) return new NextResponse(null, { status: 400 });
+  if (!bucket || !path || !buckets.has(bucket)) return new NextResponse(null, { status: 400 });
+  
+  const validPathPattern = bucket === "wardrobe-assets"
+    ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp)$/i
+    : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp)$/i;
+
+  if (!validPathPattern.test(path)) return new NextResponse(null, { status: 400 });
   const admin = getAdminClient();
   const user = await getCurrentUser();
   const allowed = await canReadAsset(admin, bucket, path, user);
   if (!allowed) return new NextResponse(null, { status: 404 });
-  const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 60);
+  const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 120);
   if (error) return new NextResponse(null, { status: 404 });
   return NextResponse.redirect(data.signedUrl, 307);
 }
@@ -28,6 +34,18 @@ async function canReadAsset(
 ) {
   if (user?.role === "admin") return true;
   if (bucket === "avatars") return Boolean(user && path.startsWith(`${user.id}/`));
+  if (bucket === "wardrobe-assets") return Boolean(user && path.startsWith(`${user.id}/`));
+  if (user?.role === "merchant") {
+    const shopId = path.split("/", 1)[0];
+    const { data: ownedShop } = await admin
+      .from("shops")
+      .select("id")
+      .eq("id", shopId)
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (ownedShop) return true;
+  }
   if (bucket === "shop-assets") {
     const { data: shop } = await admin.from("shops").select("id, owner_id, status, subscription_status, subscription_ends_at").or(`logo_path.eq.${path},cover_path.eq.${path}`).is("deleted_at", null).maybeSingle();
     if (!shop) return false;
@@ -46,3 +64,4 @@ async function canReadAsset(
   if (user?.role === "merchant" && shop?.owner_id === user.id) return true;
   return ad.status === "active" && (!ad.starts_at || new Date(ad.starts_at) <= new Date()) && (!ad.ends_at || new Date(ad.ends_at) > new Date()) && shop?.status === "approved" && shop?.subscription_status === "active" && (!shop.subscription_ends_at || new Date(shop.subscription_ends_at) > new Date());
 }
+

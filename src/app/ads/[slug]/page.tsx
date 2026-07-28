@@ -10,6 +10,7 @@ import { getPublicAd, getPublicAds } from "@/lib/catalog";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { Heart } from "lucide-react";
 import { adTypeLabel, calculateCtr, formatNumber } from "@/lib/format";
 
 export async function generateMetadata({
@@ -45,7 +46,7 @@ export default async function AdDetailPage({
         <div className="detail-media">
           <Image
             src={ad.cover_image_path ?? "/demo/look-olive.svg"}
-            alt={ad.title}
+            alt={ad.image_alt ?? ad.title}
             width={960}
             height={1200}
             priority
@@ -65,9 +66,14 @@ export default async function AdDetailPage({
             {ad.is_demo ? (
               <span className="button button-solid" aria-disabled="true">Demo — ยังไม่เปิดลิงก์ซื้อ</span>
             ) : (
-              <Link className="button button-solid" href={`/go/ad/${ad.id}`}>ไป Shopee ↗</Link>
+              <Link className="button button-solid" href={`/go/ad/${ad.id}`} prefetch={false}>ไป Shopee ↗</Link>
             )}
-            {ad.is_demo ? <button type="button" className="button button-ghost" disabled>♡ ถูกใจ</button> : <LikeButton adId={ad.id} initialLiked={liked} />}
+            {ad.is_demo ? (
+              <button type="button" className="button button-ghost" disabled>
+                <Heart className="w-4 h-4" aria-hidden="true" />
+                ถูกใจ
+              </button>
+            ) : <LikeButton adId={ad.id} initialLiked={liked} />}
           </div>
           <div className="disclosure-box">
             <strong>สนับสนุนโดยร้านค้า</strong>

@@ -39,7 +39,7 @@ npm run dev
 | `NEXT_PUBLIC_SITE_URL` | ใช่ | canonical URL และ Auth callback |
 | `SUPABASE_SECRET_KEY` | ไม่ | server-only events, admin และ signed assets |
 | `OPENAI_API_KEY` | ไม่ | OpenAI Responses API |
-| `OPENAI_MODEL` | ไม่ | ค่าเริ่มต้น `gpt-5.6-luna` |
+| `OPENAI_MODEL` | ไม่ | ค่าเริ่มต้น `gpt-4o-mini` |
 | `ADMIN_EMAILS` | ไม่ | allowlist อีเมล admin คั่นด้วยจุลภาค |
 
 ห้ามใช้ service-role/secret key ในตัวแปรที่ขึ้นต้นด้วย `NEXT_PUBLIC_` และห้าม commit `.env.local`
@@ -48,7 +48,7 @@ Supabase รุ่นใหม่ใช้ publishable/secret keys ตามต�
 
 ## ตั้งค่า Supabase
 
-Migration หลักอยู่ที่ `supabase/migrations/20260727000100_initial_schema.sql` และ seed อยู่ที่ `supabase/seed.sql`
+Migration และ seed อยู่ที่ `supabase/migrations/` และ `supabase/seed.sql` ตามลำดับ ห้ามแก้ migration ที่ apply แล้ว ให้เพิ่ม additive migration ใหม่เสมอ
 
 ```bash
 npx supabase link --project-ref YOUR_PROJECT_REF
@@ -86,9 +86,9 @@ Migration สร้าง:
 
 ### Admin
 
-วิธีแนะนำสำหรับ deployment คือใส่อีเมลที่เชื่อถือได้ใน `ADMIN_EMAILS` (server-only) หลังจากเจ้าของอีเมลสมัครบัญชีตามปกติแล้ว Admin UI และ mutation ตรวจสิทธิ์ซ้ำที่ server ก่อนใช้ Supabase secret key
+Admin access ต้องผ่าน **ทั้งสองเงื่อนไข**: อีเมลอยู่ใน `ADMIN_EMAILS` (server-only) และ `profiles.role = 'admin'` หาก `ADMIN_EMAILS` ว่าง ระบบจะ fail closed แม้ database role เป็น admin
 
-อีกวิธีคือกำหนด `profiles.role = 'admin'` ด้วย SQL ที่รันผ่าน Supabase Dashboard/ผู้ถือสิทธิ์ฐานข้อมูลเท่านั้น:
+กำหนด database role ได้เฉพาะผ่าน Supabase Dashboard/ผู้ถือสิทธิ์ฐานข้อมูล:
 
 ```sql
 update public.profiles
@@ -138,7 +138,7 @@ Playwright ต้องติดตั้ง Chromium ก่อน:
 npx playwright install chromium
 ```
 
-ชุด E2E public รันได้โดยไม่มี secret ส่วน flow ที่ต้องล็อกอิน/AI จริงต้องตั้ง Supabase/OpenAI test environment ก่อน ห้ามใช้บัญชี Production กับการทดสอบที่ลบข้อมูล
+ชุด E2E public รันได้โดยไม่มี secret ส่วน authenticated tests สร้าง temporary users และลบข้อมูลทดสอบหลังจบ จึงควรรันเฉพาะกับ project ที่อนุญาตให้ทดสอบ Live AI และ registration tests เป็น opt-in ผ่าน `RUN_LIVE_AI_E2E=1` และ `RUN_REGISTRATION_E2E=1`
 
 ## Deploy บน Vercel
 
@@ -149,6 +149,8 @@ npx playwright install chromium
 5. ตั้ง `ADMIN_EMAILS` และ server secret เฉพาะ Preview/Production ที่ต้องใช้
 6. เพิ่ม `OPENAI_API_KEY` ผ่าน Vercel Environment Variables เมื่อพร้อม แล้ว redeploy
 7. ตรวจ Preview ก่อน merge เข้า default branch ซึ่งเป็น Production source
+
+> **หมายเหตุ:** ยังไม่ได้ deploy Vercel และยังไม่ merge PR #1 โปรดอ่านสถานะ verification และ release blockers ล่าสุดใน [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md)
 
 ## ขอบเขต MVP
 

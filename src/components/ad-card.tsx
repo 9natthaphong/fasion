@@ -12,7 +12,7 @@ export function AdCard({ ad, priority = false }: { ad: Ad; priority?: boolean })
       <Link href={`/ads/${ad.slug}`} className="ad-image-wrap">
         <Image
           src={ad.cover_image_path ?? "/demo/look-olive.svg"}
-          alt={ad.title}
+          alt={ad.image_alt ?? ad.title}
           width={720}
           height={900}
           priority={priority}
