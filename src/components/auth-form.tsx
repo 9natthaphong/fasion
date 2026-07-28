@@ -18,7 +18,7 @@ export function AuthForm({
   mode: "login" | "register";
   role: Role;
 }) {
-  const router = useRouter();
+  // const router = useRouter();
   const searchParams = useSearchParams();
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -85,6 +85,7 @@ export function AuthForm({
       }
       const requestedNext = searchParams.get("next");
       const destination = requestedNext?.startsWith("/") ? requestedNext : data.redirectTo ?? "/";
+      // eslint-disable-next-line react-hooks/immutability
       window.location.href = destination;
     } catch {
       setServerError("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง");

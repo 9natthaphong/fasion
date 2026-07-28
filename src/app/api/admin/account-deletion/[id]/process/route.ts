@@ -28,7 +28,13 @@ export async function POST(
 
   try {
     const { id: requestId } = await params;
-    const result = await processAccountDeletion(requestId, auth.user.email);
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(requestId)) {
+      return NextResponse.json({ error: "รูปแบบ Request ID ไม่ถูกต้อง" }, { status: 400 });
+    }
+    
+    const result = await processAccountDeletion(requestId, auth.user.email, auth.user.id);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error || "ดำเนินการไม่สำเร็จ" }, { status: 400 });

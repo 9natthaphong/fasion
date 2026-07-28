@@ -38,13 +38,28 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
 
-  // Stage 1: Upsert pending account deletion request
-  const { error } = await supabase
+  // Stage 1: Insert pending account deletion request
+  const { data: existing, error: selectErr } = await supabase
     .from("account_deletion_requests")
-    .upsert({ user_id: auth.user.id, status: "pending" }, { onConflict: "user_id" });
+    .select("id")
+    .eq("user_id", auth.user.id)
+    .in("status", ["pending", "processing", "failed"])
+    .maybeSingle();
 
-  if (error) {
-    console.error("[ACCOUNT_DELETION_REQUEST_ERROR]", error.code);
+  if (selectErr) {
+    console.error("[ACCOUNT_DELETION_SELECT_ERROR]", selectErr);
+  }
+
+  let reqError: { code?: string; message: string } | null = null;
+  if (!existing) {
+    const { error } = await supabase
+      .from("account_deletion_requests")
+      .insert({ user_id: auth.user.id, status: "pending" });
+    reqError = error;
+  }
+
+  if (reqError) {
+    console.error("[ACCOUNT_DELETION_INSERT_ERROR]", reqError);
     return NextResponse.json({ error: "ส่งคำขอลบบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" }, { status: 500 });
   }
 
