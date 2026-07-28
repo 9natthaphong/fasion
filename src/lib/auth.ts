@@ -8,6 +8,7 @@ export interface CurrentUser {
   email: string | null;
   role: UserRole;
   displayName: string | null;
+  avatarUrl?: string | null;
 }
 
 export function isConfiguredAdmin(
@@ -30,7 +31,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
   const { data: profile } = await adminClient
     .from("profiles")
-    .select("role, display_name")
+    .select("role, display_name, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) return null;
@@ -46,6 +47,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     email,
     role,
     displayName: profile.display_name,
+    avatarUrl: profile.avatar_url ?? null,
   };
 }
 

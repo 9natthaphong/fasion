@@ -28,14 +28,18 @@ export const metadata: Metadata = {
     "AI Stylist ภาษาไทยและพื้นที่ค้นหาแฟชั่นจากร้านค้า โดยแยกคำแนะนำ AI ออกจากโฆษณาอย่างชัดเจน",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+import { getCurrentUser } from "@/lib/auth";
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const currentUser = await getCurrentUser();
+
   return (
     <html lang="th" className={`${notoSansThai.variable} ${notoSerifThai.variable}`}>
       <body className="bg-background text-foreground antialiased selection:bg-olive-pale selection:text-olive-dark">
         <a className="skip-link" href="#main">
           ข้ามไปเนื้อหาหลัก
         </a>
-        <SiteHeader />
+        <SiteHeader user={currentUser} />
         <main id="main">{children}</main>
         <SiteFooter />
       </body>
