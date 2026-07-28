@@ -1,6 +1,53 @@
 # FitToday — Codex handoff
 
-อัปเดตจากการตรวจ source, runtime, Git, browser และ live Supabase เมื่อ 27 กรกฎาคม 2026
+อัปเดตจากการตรวจ source, runtime, Git, browser และ dependency audit เมื่อ 28 กรกฎาคม 2026
+
+> **Final cinematic verification is the current source of truth.** Statements
+> later in this document that describe authenticated Customer/Merchant flows,
+> Storage uploads, live tracking writes, or a live OpenAI request as passed are
+> retained only as historical evidence from an earlier environment. They were
+> not reproducible in this final pass and must be treated as **Blocked**, not
+> current release evidence.
+
+## Final cinematic verification — 2026-07-28
+
+- Cinematic implementation: [`src/components/cinematic/wardrobe-story.tsx`](../src/components/cinematic/wardrobe-story.tsx)
+- Timeline contract: [`src/lib/cinematic.ts`](../src/lib/cinematic.ts)
+- Encoding and measurements: [`CINEMATIC_VIDEO_PIPELINE.md`](./CINEMATIC_VIDEO_PIPELINE.md)
+- Master: `public/videos-assets/fittoday-wardrobe-story.mp4`, 16.125 s,
+  1280×720, 24 fps, H.264 High, 4,869,401 bytes, no audio, `faststart`
+- Poster: `public/videos-assets/fittoday-wardrobe-story-poster.webp`, 38,066 bytes
+- Originals `1.mp4` and `2.mp4` remain unchanged and uncommitted user assets.
+- GSAP `3.15.0` + `@gsap/react` `2.1.2`; one scoped ScrollTrigger, no Lenis,
+  no Three.js, and no React state updates per scrub frame.
+- Public Production browser matrix: 34 route/viewport checks, 0 status failures,
+  0 horizontal overflows, 0 broken images, 0 console errors, and 0 required
+  request failures. Browser-cancelled speculative Next RSC prefetches are not
+  required resource failures.
+- Timeline frames inspected at 0/20/40/60/80/100% on 1440×1000 and 390×844,
+  plus 1024×768 and 360×800. Wheel, reverse wheel, fast scroll, touch swipe,
+  resize, Back navigation, and mid-page reload all preserved progress.
+- Reduced motion uses the poster plus all five chapters in normal document flow;
+  it does not start the video warm-up.
+- Final automated result: `typecheck` Passed; lint Passed; 14 Vitest files /
+  92 tests Passed; Production build Passed; Playwright 20 Passed / 12 Skipped.
+  Skips require explicit `RUN_AUTHENTICATED_E2E=1`,
+  `RUN_DESTRUCTIVE_E2E=1`, or `RUN_LIVE_AI_E2E=1`.
+- Authenticated live verification attempted once, but the Supabase auth request
+  returned `AuthRetryableFetchError: fetch failed`. No disposable user was
+  created. Customer, Merchant, Admin, Storage upload, live tracking writes, and
+  live AI remain Blocked in this final pass.
+- Connected Supabase tooling exposes only the unrelated `painthai` project, not
+  FitToday reference `pbapddmoprntydpsfirr`; the live migration ledger and
+  Advisors could not be rechecked.
+- New additive migration
+  [`20260728235056_restrict_static_demo_ad_assets.sql`](../supabase/migrations/20260728235056_restrict_static_demo_ad_assets.sql)
+  removes the global merchant bypass for repository-static `/images/*` and
+  `/demo-assets/*` paths. It is intentionally **not claimed as applied live**.
+- `npm audit --omit=dev --audit-level=high`: 0 vulnerabilities.
+  Full `npm audit`: 9 high, all in the ESLint → minimatch → brace-expansion
+  development chain. npm offers only semver-major/breaking repair; no `--force`
+  was used.
 
 ## สถานะที่ยืนยันแล้ว
 
@@ -13,7 +60,7 @@
 - `.env.local` ถูก ignore และไม่มีการ commit ค่า environment
 - `ADMIN_EMAILS` ตั้งใจไม่กำหนด จึงปิด Admin access แบบ fail-closed
 
-สถานะโดยรวม: source, build, public routes, Customer E2E และ Merchant E2E ใช้งานได้ แต่ยัง **ไม่พร้อม Production** เพราะ additive security migration ด้านล่างยังไม่ได้ apply live และ Admin browser E2E ยังถูกบล็อกตาม configuration ที่ตั้งใจไว้
+สถานะโดยรวม: source, build, public routes และ cinematic browser QA ใช้งานได้ แต่ยัง **ไม่พร้อม Production** เพราะ additive security migration ด้านล่างยังไม่ได้ apply live และ authenticated Customer/Merchant/Admin flows ยังไม่ได้ยืนยันซ้ำใน final pass
 
 ## สิ่งที่ handoff เดิมระบุผิดหรือเก่า
 
@@ -21,8 +68,8 @@
 - Storage buckets ไม่ได้เป็น public 2/5 MB
 - Admin ต้องผ่านทั้ง `profiles.role = "admin"` และอีเมลใน `ADMIN_EMAILS`; ไม่ใช่อย่างใดอย่างหนึ่ง
 - Admin detail routes มีอยู่จริง
-- Customer และ Merchant authenticated E2E ถูกทดสอบแล้ว ไม่ได้ deferred ทั้งหมด
-- OpenAI live request ถูกทดสอบจริงและคืน 3 directions ตาม schema
+- Claim เดิมว่า Customer/Merchant authenticated E2E ผ่านแล้วไม่ใช่หลักฐานปัจจุบัน; final pass ถูก Blocked จาก Supabase auth connectivity
+- Claim เดิมว่า OpenAI live request ผ่านแล้วไม่ใช่หลักฐานปัจจุบัน; final pass ตรวจเฉพาะ missing-key/configuration behavior และ skip live request
 - `npm audit` เดิมมี 12 high แต่หลังแก้ production dependency เหลือ 9 high เฉพาะ dev tooling; production audit เป็น 0
 - ลิงก์ `file:///C:/...` เดิมใช้งานข้ามเครื่องไม่ได้ จึงเปลี่ยนเป็น relative links
 - Migration ที่เพิ่มในรอบนี้ยังไม่ได้ apply live จึงห้ามอ้างว่า repository migrations ตรงกับ live ทั้งหมด
@@ -32,7 +79,7 @@
 Build ยืนยัน routes ต่อไปนี้:
 
 - Public: `/`, `/ai-stylist`, `/discover`, `/categories/[slug]`, `/shops/[slug]`, `/ads/[slug]`, `/login/customer`, `/login/merchant`, `/register/customer`, `/register/merchant`, `/privacy`, `/terms`
-- Customer: `/account`, `/account/profile`, `/account/outfits`, `/account/likes`, `/account/settings`
+- Customer: `/account`, `/account/profile`, `/account/outfits`, `/account/likes`, `/account/settings`, `/account/wardrobe`, `/account/wardrobe/new`, `/account/wardrobe/[id]`
 - Merchant: `/merchant`, `/merchant/onboarding`, `/merchant/shop`, `/merchant/ads`, `/merchant/ads/new`, `/merchant/ads/[id]/edit`, `/merchant/analytics`, `/merchant/settings`
 - Admin: `/admin`, `/admin/shops`, `/admin/shops/[id]`, `/admin/ads`, `/admin/ads/[id]`, `/admin/users`, `/admin/analytics`
 - Server flows: `/api/auth/*`, `/api/account/*`, `/api/merchant/*`, `/api/admin/*`, `/api/events/*`, `/api/ai-stylist`, `/api/assets`, `/go/ad/[id]`
@@ -54,12 +101,14 @@ Additive migration ที่ยังต้อง apply:
 
 - [`supabase/migrations/20260727145323_harden_merchant_ad_assets.sql`](../supabase/migrations/20260727145323_harden_merchant_ad_assets.sql)
 - เพิ่ม asset ownership trigger, merchant ad state-transition guard, draft-only merchant insert, relation policies ที่จำกัดตาม editable state และป้องกันลบ Storage object ที่ถูกใช้โดย ad pending/active
+- [`supabase/migrations/20260728235056_restrict_static_demo_ad_assets.sql`](../supabase/migrations/20260728235056_restrict_static_demo_ad_assets.sql)
+- จำกัด repository-static ad assets ให้ใช้ได้เฉพาะ fixed demo shop IDs และ exact allowlist; merchant ปกติต้องใช้ shop-prefixed Storage path เท่านั้น
 
-ห้ามแก้ migration เก่าหรือ weaken RLS. ต้อง apply ไฟล์ใหม่นี้กับ project `pbapddmoprntydpsfirr` แล้วรัน Security Advisor และ Performance Advisor ซ้ำก่อน Production
+ห้ามแก้ migration เก่าหรือ weaken RLS. ต้องตรวจ migration ledger ของ project `pbapddmoprntydpsfirr`, apply เฉพาะไฟล์ที่ยังขาด แล้วรัน Security Advisor และ Performance Advisor ซ้ำก่อน Production
 
-## Live Supabase ที่ตรวจได้
+## Historical live Supabase snapshot — not reverified in final pass
 
-ตรวจด้วย server client แบบ read-only ก่อน mutation ทดสอบ และลบ temporary users/rows/files หลังจบแล้ว:
+ตัวเลขต่อไปนี้มาจากรอบก่อนหน้าและไม่ใช่ management-plane evidence ของ final pass:
 
 | Table | Final count |
 | --- | ---: |
@@ -94,15 +143,15 @@ Storage buckets จริง:
 ## Functional verification
 
 - Public: routes ที่กำหนดทั้งหมดตอบต่ำกว่า 400, ไม่มี console/CSP/image error และไม่มี horizontal overflow ใน Playwright desktop/mobile
-- Customer: login, profile, private body-data opt-in, opt-out พร้อม clear values, owned outfit history view/delete, like, duplicate-like prevention, unlike, Shopee click และ account deletion request ผ่านด้วย temporary user
-- Merchant: login, onboarding pending/inactive, upload 2 ภาพ, signed preview, draft creation, alt text, reorder, edit, submit pending review หลัง test fixture อนุมัติ shop/subscription และ owned analytics ผ่านด้วย temporary user
-- Registration: เรียกจริงแล้ว Supabase ตอบ `email rate limit exceeded`; จึง Blocked ไม่ใช่ Passed
+- Customer: **Blocked** ใน final pass; authenticated request เชื่อมต่อ Supabase ไม่สำเร็จ จึงไม่ยืนยัน profile, privacy consent, wardrobe, likes, outfit history หรือ deletion request ซ้ำ
+- Merchant: **Blocked** ใน final pass; ไม่ยืนยัน onboarding, draft/edit/submit, image upload/reorder/alt text หรือ analytics ซ้ำ
+- Registration: **Blocked**; final pass เชื่อมต่อ Supabase auth ไม่สำเร็จ
 - Admin: anonymous redirect และ server authorization ผ่าน; browser Admin E2E Blocked เพราะ `ADMIN_EMAILS` ตั้งใจ unset
-- Tracking: unit test ยืนยัน 50% visibility ต่อเนื่อง 1 วินาทีและส่งครั้งเดียว; live temporary fixture ยืนยัน impression/shop-view ถูกบันทึกและ deduplicate; click บันทึกก่อน redirect
-- AI Stylist: live request ผ่านและคืน exactly `safe`, `elevated`, `comfortable`; test นี้เป็น opt-in ผ่าน `RUN_LIVE_AI_E2E=1` เพื่อไม่สร้างค่าใช้จ่ายซ้ำ
-- Storage upload: Merchant E2E ยืนยัน upload, preview, reorder และ cleanup
+- Tracking: unit test ยืนยัน 50% visibility ต่อเนื่อง 1 วินาทีและส่งครั้งเดียว; live event writes **Blocked** ใน final pass
+- AI Stylist: configuration-missing UI ผ่าน; live request **Skipped/Blocked** เพราะไม่ได้ opt-in ด้วย `RUN_LIVE_AI_E2E=1`
+- Storage upload: **Blocked** ตาม Merchant E2E
 
-Playwright final suite: 16 passed, 6 skipped. รายการ skip คือ test ที่ตั้งใจ opt-in (registration/live AI) และ authenticated flows ใน mobile project ที่รันจริงแล้วบน Chromium
+Playwright final suite: **20 passed, 12 skipped**. Skips คือ authenticated/destructive/live-AI tests ที่ต้อง opt-in อย่างชัดเจน และ duplicate mobile-project skips ของ workflows ที่ออกแบบให้รันเฉพาะ Chromium
 
 ## Dependencies และ performance
 
@@ -123,6 +172,9 @@ Original AI-generated demo assets อยู่ที่ [`public/images/fittoday
 - `direction-safe-editorial-v1.webp`
 - `direction-elevated-editorial-v1.webp`
 - `direction-comfortable-editorial-v1.webp`
+- `ad-soft-tailored-set-v1.webp`
+- `ad-workday-capsule-v1.webp`
+- `ad-travel-light-set-v1.webp`
 - [`ASSET_NOTES.md`](../public/images/fittoday/ASSET_NOTES.md)
 
 รูปไม่มี logo, trademark, watermark หรือ text ในภาพ และไม่ถูกนำเสนอเป็น merchant content จริง หน้า Home แยก AI directions ออกจาก sponsored merchant section ชัดเจน
@@ -147,11 +199,12 @@ npm run start -- -p 3001
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx playwright test --workers=1
 ```
 
-Live AI และ registration tests เป็น opt-in:
+Live AI, authenticated, and destructive tests are opt-in:
 
 ```bash
 RUN_LIVE_AI_E2E=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx playwright test tests/e2e/public.spec.ts --project=chromium --grep "live AI"
-RUN_REGISTRATION_E2E=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx playwright test tests/e2e/authenticated.spec.ts --project=chromium --grep "registration"
+RUN_AUTHENTICATED_E2E=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx playwright test tests/e2e/authenticated.spec.ts --project=chromium
+RUN_DESTRUCTIVE_E2E=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx playwright test tests/e2e/account-deletion.spec.ts --project=chromium
 ```
 
 ## Release gate
