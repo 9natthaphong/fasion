@@ -6,9 +6,7 @@ import { requireSameOrigin } from "@/lib/request-security";
 import { z } from "zod";
 
 const DeleteRequestSchema = z.object({
-  confirmation: z.literal("DELETE", {
-    errorMap: () => ({ message: "คำยืนยันไม่ถูกต้อง พิมพ์ DELETE เพื่อยืนยัน" })
-  } as any),
+  confirmation: z.literal("DELETE"),
 });
 
 export async function POST(request: Request) {
@@ -32,18 +30,22 @@ export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") || "";
   let payload: unknown = {};
 
-  if (contentType.includes("application/json")) {
-    payload = await request.json().catch(() => ({}));
-  } else {
-    const formData = await request.formData().catch(() => null);
-    if (formData) {
-      payload = { confirmation: formData.get("confirmation") };
+  try {
+    if (contentType.includes("application/json")) {
+      payload = await request.json();
+    } else {
+      const formData = await request.formData();
+      if (formData) {
+        payload = { confirmation: formData.get("confirmation") };
+      }
     }
+  } catch {
+    return NextResponse.json({ error: "รูปแบบคำขอไม่ถูกต้อง" }, { status: 400 });
   }
 
   const parsed = DeleteRequestSchema.safeParse(payload);
   if (!parsed.success) {
-    return NextResponse.json({ error: (parsed.error as any).errors[0].message }, { status: 400 });
+    return NextResponse.json({ error: "คำยืนยันไม่ถูกต้อง พิมพ์ DELETE เพื่อยืนยัน" }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -57,25 +59,31 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (selectErr) {
-    console.error("[ACCOUNT_DELETION_SELECT_ERROR]", "Database error during select");
+    console.error("[ACCOUNT_DELETION_SELECT_ERROR]", selectErr);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาดในการตรวจสอบคำขอ กรุณาลองใหม่อีกครั้ง" }, { status: 500 });
   }
 
   if (!existing) {
     const { error } = await supabase
       .from("account_deletion_requests")
-      .insert({ user_id: auth.user.id, status: "pending" });
+      .insert({ user_id: auth.user.id, target_user_id: auth.user.id, status: "pending" });
     
     if (error) {
       // 23505 is PostgreSQL unique_violation. If it races, treat it as already existing.
       if (error.code !== "23505") {
-        console.error("[ACCOUNT_DELETION_INSERT_ERROR]", "Database error during insert");
+        console.error("[ACCOUNT_DELETION_INSERT_ERROR]", error);
         return NextResponse.json({ error: "ส่งคำขอลบบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" }, { status: 500 });
       }
     }
   }
 
   // Revoke session & sign out
-  await supabase.auth.signOut();
+  const { error: signOutErr } = await supabase.auth.signOut();
+  if (signOutErr) {
+    console.error("[ACCOUNT_DELETION_SIGNOUT_ERROR]", signOutErr);
+    // Even if sign out fails, the request was recorded, but we should inform the user
+    // We will still proceed since the deletion request itself succeeded.
+  }
 
   const message = "รับคำขอลบบัญชีเรียบร้อยแล้ว แอดมินจะดำเนินการลบข้อมูลส่วนตัวของคุณอย่างถาวรในขั้นตอนถัดไป";
   const redirectTo = "/?account-deletion=requested";

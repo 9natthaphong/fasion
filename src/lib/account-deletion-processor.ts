@@ -37,7 +37,7 @@ export async function processAccountDeletion(
   // 1. Fetch deletion request and its current status
   const { data: requestRow, error: reqErr } = await supabaseAdmin
     .from("account_deletion_requests")
-    .select("id, user_id, status")
+    .select("id, user_id, target_user_id, status")
     .eq("id", requestId)
     .maybeSingle();
 
@@ -46,7 +46,7 @@ export async function processAccountDeletion(
   }
   
   if (requestRow.status === 'completed') {
-    return { success: true, requestId, targetUserId: requestRow.user_id || undefined };
+    return { success: true, requestId, targetUserId: requestRow.target_user_id || requestRow.user_id || undefined };
   }
 
   // 2. Atomically claim
@@ -59,13 +59,14 @@ export async function processAccountDeletion(
     return { success: false, error: "Failed to claim request (concurrent or invalid status)", requestId };
   }
 
-  const targetUserId = requestRow.user_id;
+  const targetUserId = requestRow.target_user_id || requestRow.user_id;
   if (!targetUserId) {
     await markFailed(supabaseAdmin, requestId, "MISSING_USER", "Target user ID is null");
     return { success: false, error: "Target user ID is null", requestId };
   }
 
   // 3. Fetch target user profile and verify role is customer
+  // If the profile is already gone, it might be a retry, so it's safe to continue
   const { data: targetProfile, error: profileErr } = await supabaseAdmin
     .from("profiles")
     .select("id, role")
@@ -78,6 +79,8 @@ export async function processAccountDeletion(
   }
 
   if (targetProfile && targetProfile.role === "merchant") {
+    // If it's a retry and profile is gone, this block won't run, which is correct
+    // (A merchant would have been rejected on the first try)
     await supabaseAdmin
       .from("account_deletion_requests")
       .update({ 
@@ -105,21 +108,12 @@ export async function processAccountDeletion(
     if (err3) throw new Error("Failed to anonymize shop_views");
 
     // 5. Clean up Storage assets
-    const { data: wardrobeItems, error: wardrobeErr } = await supabaseAdmin
-      .from("wardrobe_items")
-      .select("image_path")
-      .eq("user_id", targetUserId);
-      
-    if (wardrobeErr) throw new Error("Failed to fetch wardrobe_items");
-
-    if (wardrobeItems && wardrobeItems.length > 0) {
-      const storagePaths = wardrobeItems.map((w) => w.image_path).filter(Boolean);
-      // Ensure deletion is restricted to target user
-      const safePaths = storagePaths.filter((p: string) => p.startsWith(`${targetUserId}/`));
-      if (safePaths.length > 0) {
-        const { error: stgErr } = await supabaseAdmin.storage.from("wardrobe-assets").remove(safePaths);
-        if (stgErr) throw new Error("Failed to remove wardrobe assets");
-      }
+    const { data: wFiles, error: wListErr } = await supabaseAdmin.storage.from("wardrobe-assets").list(targetUserId);
+    if (wListErr) throw new Error("Failed to list wardrobe assets");
+    if (wFiles && wFiles.length > 0) {
+      const wPaths = wFiles.map((f: { name: string }) => `${targetUserId}/${f.name}`);
+      const { error: wRmErr } = await supabaseAdmin.storage.from("wardrobe-assets").remove(wPaths);
+      if (wRmErr) throw new Error("Failed to remove wardrobe assets");
     }
     
     const { data: avFiles, error: listErr } = await supabaseAdmin.storage.from("avatars").list(targetUserId);
@@ -166,7 +160,6 @@ export async function processAccountDeletion(
 
       if (outfitResults && outfitResults.length > 0) {
         const resIds = outfitResults.map((res) => res.id);
-        // FIX: use outfit_result_id instead of result_id
         await del('outfit_result_items', supabaseAdmin.from("outfit_result_items").delete().in("outfit_result_id", resIds));
         await del('outfit_results', supabaseAdmin.from("outfit_results").delete().in("request_id", reqIds));
       }
@@ -176,8 +169,6 @@ export async function processAccountDeletion(
     await del('ad_likes', supabaseAdmin.from("ad_likes").delete().eq("user_id", targetUserId));
     await del('wardrobe_items', supabaseAdmin.from("wardrobe_items").delete().eq("user_id", targetUserId));
 
-    // Wait for cascading deletes (profiles table delete is normally handled by auth cascade, but doing explicitly can be safer)
-    // Wait, the prompt says: "Do not delete the public profile manually before Auth deletion if that could leave an Auth user without a profile."
     // 7. Delete the Auth user using the Supabase Admin API
     const { error: authDeleteErr } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
     if (authDeleteErr && !authDeleteErr.message.includes("User not found")) {
@@ -200,48 +191,14 @@ export async function processAccountDeletion(
       throw new Error("Profile still exists after deletion attempt");
     }
 
-    // Record admin audit
-    const { error: auditErr } = await supabaseAdmin.rpc('record_admin_audit', {
-      p_actor_id: adminUserId,
-      p_action: 'DELETE_ACCOUNT',
-      p_entity_type: 'customer',
-      p_entity_id: targetUserId,
-      p_after_data: { request_id: requestId }
+    // 9. Atomically record audit and update to completed
+    const { data: finalReq, error: finalizeErr } = await supabaseAdmin.rpc('finalize_account_deletion', {
+      p_request_id: requestId,
+      p_admin_id: adminUserId
     });
-    if (auditErr) {
-      throw new Error("Failed to record admin audit");
-    }
 
-    // 9. Update preserved request to completed
-    const { data: updateData, error: updateErr } = await supabaseAdmin
-      .from("account_deletion_requests")
-      .update({ 
-        status: "completed", 
-        processed_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(),
-        user_id: null
-      })
-      .eq("id", requestId)
-      .select("status, user_id, processed_at, completed_at, processed_by, attempt_count");
-
-    if (updateErr) {
-      throw new Error("Failed to update deletion request to completed");
-    }
-    
-    if (!updateData || updateData.length !== 1) {
-      throw new Error("Failed to confirm exactly one deletion request was updated");
-    }
-    
-    const finalRow = updateData[0];
-    if (
-      finalRow.status !== "completed" || 
-      finalRow.user_id !== null || 
-      !finalRow.processed_at || 
-      !finalRow.completed_at || 
-      !finalRow.processed_by || 
-      finalRow.attempt_count < 1
-    ) {
-      throw new Error("Final request state is invalid");
+    if (finalizeErr || !finalReq) {
+      throw new Error("Failed to atomically finalize deletion request");
     }
 
     return { success: true, requestId, targetUserId };

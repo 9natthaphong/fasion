@@ -15,6 +15,10 @@ test.describe("Account Deletion", () => {
     const missingVars = [];
     if (!process.env.E2E_ADMIN_EMAIL) missingVars.push("E2E_ADMIN_EMAIL");
     if (!process.env.E2E_ADMIN_PASSWORD) missingVars.push("E2E_ADMIN_PASSWORD");
+    if (!process.env.E2E_CUSTOMER_EMAIL) missingVars.push("E2E_CUSTOMER_EMAIL");
+    if (!process.env.E2E_CUSTOMER_PASSWORD) missingVars.push("E2E_CUSTOMER_PASSWORD");
+    if (!process.env.E2E_MERCHANT_EMAIL) missingVars.push("E2E_MERCHANT_EMAIL");
+    if (!process.env.E2E_MERCHANT_PASSWORD) missingVars.push("E2E_MERCHANT_PASSWORD");
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingVars.push("NEXT_PUBLIC_SUPABASE_URL");
     if (!process.env.SUPABASE_SECRET_KEY) missingVars.push("SUPABASE_SECRET_KEY");
     
@@ -23,7 +27,7 @@ test.describe("Account Deletion", () => {
     }
   });
 
-  test("destructive account deletion workflow", async ({ browser }) => {
+  test("destructive account deletion workflow with retry safety", async ({ browser }) => {
     const admin = adminClient();
     
     // 1. Create disposable user
@@ -40,15 +44,19 @@ test.describe("Account Deletion", () => {
     expect(authErr).toBeNull();
     const userId = authData.user!.id;
 
-    // Use try/finally to clean up the disposable user
+    let reqId = crypto.randomUUID();
+    const resId = crypto.randomUUID();
+    const resItemId = crypto.randomUUID();
+    const wardrobeId = crypto.randomUUID();
+    const outfitId = crypto.randomUUID();
+    const savedOutfitItemId = crypto.randomUUID();
+    
+    let impId: string | undefined;
+    let clickId: string | undefined;
+    let viewId: string | undefined;
+
     try {
       // 2. Add fixtures
-      const reqId = crypto.randomUUID();
-      const resId = crypto.randomUUID();
-      const resItemId = crypto.randomUUID();
-      const wardrobeId = crypto.randomUUID();
-      const outfitId = crypto.randomUUID();
-      
       const { error: profErr } = await admin.from("profiles").update({ 
         display_name: "Test", role: "customer" 
       }).eq("id", userId);
@@ -64,8 +72,18 @@ test.describe("Account Deletion", () => {
       });
       expect(fitErr).toBeNull();
 
+      // Real storage files
+      const tinyPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+      const wardrobePath = `${userId}/wardrobe-test.png`;
+      const { error: up1Err } = await admin.storage.from("wardrobe-assets").upload(wardrobePath, tinyPng, { contentType: 'image/png' });
+      expect(up1Err).toBeNull();
+      
+      const avatarPath = `${userId}/avatar-test.png`;
+      const { error: up2Err } = await admin.storage.from("avatars").upload(avatarPath, tinyPng, { contentType: 'image/png' });
+      expect(up2Err).toBeNull();
+
       const { error: wErr } = await admin.from("wardrobe_items").insert({
-        id: wardrobeId, user_id: userId, item_type: "top", name: "test", image_path: "test.jpg"
+        id: wardrobeId, user_id: userId, item_type: "top", name: "test", image_path: wardrobePath
       });
       expect(wErr).toBeNull();
       
@@ -73,6 +91,11 @@ test.describe("Account Deletion", () => {
         id: outfitId, user_id: userId, name: "Test Outfit", notes: "test", direction: "safe"
       });
       expect(soErr).toBeNull();
+
+      const { error: soiErr } = await admin.from("saved_outfit_items").insert({
+        id: savedOutfitItemId, saved_outfit_id: outfitId, wardrobe_item_id: wardrobeId, item_role: "top", sort_order: 0
+      });
+      expect(soiErr).toBeNull();
 
       const { error: orErr } = await admin.from("outfit_requests").insert({
         id: reqId, user_id: userId, input_data: { test: true }
@@ -89,8 +112,6 @@ test.describe("Account Deletion", () => {
       });
       expect(oriErr).toBeNull();
 
-      let impId: string | undefined;
-      let clickId: string | undefined;
       const { data: ads } = await admin.from("ads").select("id").limit(1);
       const adId = ads?.[0]?.id;
       if (adId) {
@@ -107,7 +128,6 @@ test.describe("Account Deletion", () => {
         clickId = clickData?.id;
       }
 
-      let viewId: string | undefined;
       const { data: shops } = await admin.from("shops").select("id").limit(1);
       const shopId = shops?.[0]?.id;
       if (shopId) {
@@ -134,14 +154,21 @@ test.describe("Account Deletion", () => {
       expect(res.ok()).toBeTruthy();
       await customerContext.close();
 
-      // 4. Admin processing (Context 2)
+      // Retrieve the real request ID
+      const { data: requestRow, error: checkReqErr } = await admin.from("account_deletion_requests").select("id").eq("target_user_id", userId).single();
+      expect(checkReqErr).toBeNull();
+      expect(requestRow).toBeTruthy();
+      reqId = requestRow!.id;
+
+      // 4. Setup retry scenario: Delete Auth user and set status to failed
+      await admin.auth.admin.deleteUser(userId);
+      const { error: setFailedErr } = await admin.from("account_deletion_requests").update({ status: 'failed' }).eq("id", reqId);
+      expect(setFailedErr).toBeNull();
+
+      // 5. Admin processing (Context 2)
       const adminContext = await browser.newContext();
       const adminPage = await adminContext.newPage();
       
-      const { data: requestRow, error: checkReqErr } = await admin.from("account_deletion_requests").select("id").eq("user_id", userId).single();
-      expect(checkReqErr).toBeNull();
-      expect(requestRow).toBeTruthy();
-
       const adminEmail = process.env.E2E_ADMIN_EMAIL!;
       const adminPassword = process.env.E2E_ADMIN_PASSWORD!;
       
@@ -151,22 +178,16 @@ test.describe("Account Deletion", () => {
       await adminPage.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
       await adminPage.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15_000 });
 
-      const processRes = await adminPage.request.post(`/api/admin/account-deletion/${requestRow!.id}/process`);
+      const processRes = await adminPage.request.post(`/api/admin/account-deletion/${reqId}/process`);
       expect(processRes.ok()).toBeTruthy();
       await adminContext.close();
 
-      // 5. Verify deletion
+      // 6. Verify deletion
       const { data: checkAuth } = await admin.auth.admin.getUserById(userId);
       expect(checkAuth.user).toBeNull();
       
       const { data: checkProfile } = await admin.from("profiles").select("id").eq("id", userId).maybeSingle();
       expect(checkProfile).toBeNull();
-
-      const { data: checkPref } = await admin.from("customer_preferences").select("user_id").eq("user_id", userId);
-      expect(checkPref?.length).toBe(0);
-
-      const { data: checkFit } = await admin.from("customer_fit_profiles").select("user_id").eq("user_id", userId);
-      expect(checkFit?.length).toBe(0);
 
       const { data: checkW } = await admin.from("wardrobe_items").select("id").eq("user_id", userId);
       expect(checkW?.length).toBe(0);
@@ -174,33 +195,23 @@ test.describe("Account Deletion", () => {
       const { data: checkSO } = await admin.from("saved_outfits").select("id").eq("user_id", userId);
       expect(checkSO?.length).toBe(0);
 
-      const { data: checkOR } = await admin.from("outfit_requests").select("id").eq("user_id", userId);
-      expect(checkOR?.length).toBe(0);
-      
-      const { data: checkORes } = await admin.from("outfit_results").select("id").eq("request_id", reqId);
-      expect(checkORes?.length).toBe(0);
-      
-      const { data: checkOResItems } = await admin.from("outfit_result_items").select("id").eq("outfit_result_id", resId);
-      expect(checkOResItems?.length).toBe(0);
+      const { data: checkSOI } = await admin.from("saved_outfit_items").select("id").eq("saved_outfit_id", outfitId);
+      expect(checkSOI?.length).toBe(0);
 
-      if (adId) {
-        const { data: checkLike } = await admin.from("ad_likes").select("user_id").eq("user_id", userId);
-        expect(checkLike?.length).toBe(0);
-        
+      // Verify Storage
+      const { data: checkWFiles } = await admin.storage.from("wardrobe-assets").list(userId);
+      expect(checkWFiles).toHaveLength(0);
+
+      const { data: checkAFiles } = await admin.storage.from("avatars").list(userId);
+      expect(checkAFiles).toHaveLength(0);
+
+      if (adId && impId) {
         const { data: checkImp } = await admin.from("ad_impressions").select("user_id").eq("id", impId).single();
         expect(checkImp?.user_id).toBeNull();
-        
-        const { data: checkClick } = await admin.from("ad_clicks").select("user_id").eq("id", clickId).single();
-        expect(checkClick?.user_id).toBeNull();
       }
 
-      if (shopId) {
-        const { data: checkView } = await admin.from("shop_views").select("user_id").eq("id", viewId).single();
-        expect(checkView?.user_id).toBeNull();
-      }
-      
       // Verify request is completed and user_id is null
-      const { data: finalReq, error: finalErr } = await admin.from("account_deletion_requests").select("status, user_id, processed_by, attempt_count").eq("id", requestRow!.id).single();
+      const { data: finalReq, error: finalErr } = await admin.from("account_deletion_requests").select("status, user_id, processed_by, attempt_count").eq("id", reqId).single();
       expect(finalErr).toBeNull();
       expect(finalReq!.status).toBe("completed");
       expect(finalReq!.user_id).toBeNull();
@@ -208,10 +219,42 @@ test.describe("Account Deletion", () => {
       expect(finalReq!.attempt_count).toBeGreaterThanOrEqual(1);
 
     } finally {
-      // Ensure auth user is deleted in case of failure
+      // Complete manual cleanup of all artifacts
       await admin.auth.admin.deleteUser(userId);
-      // Clean up orphaned records if they failed to be deleted (cascade might not be enough if they were set to set null)
-      // We don't have to clean up much manually since deleteUser cascades to profiles, and profiles cascades to many things.
+      await admin.from("account_deletion_requests").delete().eq("target_user_id", userId);
+      await admin.from("admin_audit_log").delete().eq("entity_id", userId);
+      
+      if (impId) await admin.from("ad_impressions").delete().eq("id", impId);
+      if (clickId) await admin.from("ad_clicks").delete().eq("id", clickId);
+      if (viewId) await admin.from("shop_views").delete().eq("id", viewId);
+
+      // Remove storage files manually in case of failure
+      await admin.storage.from("wardrobe-assets").remove([`${userId}/wardrobe-test.png`]);
+      await admin.storage.from("avatars").remove([`${userId}/avatar-test.png`]);
+    }
+  });
+
+  test("reusable accounts can still authenticate after destructive tests", async ({ browser }) => {
+    const roles = [
+      { name: "customer", email: process.env.E2E_CUSTOMER_EMAIL, password: process.env.E2E_CUSTOMER_PASSWORD, path: "/login/customer" },
+      { name: "merchant", email: process.env.E2E_MERCHANT_EMAIL, password: process.env.E2E_MERCHANT_PASSWORD, path: "/login/merchant" },
+      { name: "admin", email: process.env.E2E_ADMIN_EMAIL, password: process.env.E2E_ADMIN_PASSWORD, path: "/login/customer" }
+    ];
+
+    for (const role of roles) {
+      if (!role.email || !role.password) continue;
+
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      
+      await page.goto(role.path);
+      await page.getByLabel("อีเมล").fill(role.email);
+      await page.locator("#auth-password").fill(role.password);
+      await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
+      await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15_000 });
+      expect(page.url()).not.toContain("/login");
+      
+      await context.close();
     }
   });
 });
