@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { adSchema } from "@/lib/validation";
+import { filterAdsByCategory } from "@/lib/catalog-filter";
+import { ads } from "@/lib/demo-data";
 
 describe("ad relevance and privacy invariants", () => {
   it("validates ad schema with optional taxonomy tagIds", () => {
@@ -49,5 +51,16 @@ describe("ad relevance and privacy invariants", () => {
     expect(mockAdScoringInput).not.toHaveProperty("heightCm");
     expect(mockAdScoringInput).not.toHaveProperty("weightKg");
     expect(mockAdScoringInput).not.toHaveProperty("chestCm");
+  });
+
+  it("never substitutes unrelated ads when a category has no direct relationship", () => {
+    expect(filterAdsByCategory(ads, "not-a-real-category")).toEqual([]);
+    const dresses = filterAdsByCategory(ads, "dresses");
+    expect(dresses.length).toBeGreaterThan(0);
+    expect(
+      dresses.every((ad) =>
+        ad.categories?.some((category) => category.slug === "dresses"),
+      ),
+    ).toBe(true);
   });
 });

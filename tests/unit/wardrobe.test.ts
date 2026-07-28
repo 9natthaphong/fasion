@@ -5,6 +5,7 @@ import {
   wardrobeAnalysisOutputSchema,
   wardrobeOutfitResponseSchema,
 } from "@/lib/validation";
+import { parseWardrobeFilters } from "@/lib/wardrobe-filters";
 
 const validWardrobeItem = {
   imagePath: "00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000002/10000000-0000-4000-8000-000000000003.webp",
@@ -69,6 +70,33 @@ describe("wardrobe asset path validation", () => {
 
     const invalidExtPath = `${userId}/00000000-0000-4000-8000-000000000002/10000000-0000-4000-8000-000000000003.exe`;
     expect(isOwnedWardrobeAssetPath(invalidExtPath, userId)).toBe(false);
+  });
+});
+
+describe("wardrobe query filters", () => {
+  it("accepts known filters", () => {
+    expect(
+      parseWardrobeFilters({
+        type: "dress",
+        status: "available",
+        favorite: "true",
+      }),
+    ).toEqual({
+      type: "dress",
+      status: "available",
+      favoriteOnly: true,
+      invalid: false,
+    });
+  });
+
+  it("marks unknown filters invalid instead of treating them as all items", () => {
+    const parsed = parseWardrobeFilters({
+      type: "unknown-type",
+      status: "not-a-status",
+    });
+    expect(parsed.invalid).toBe(true);
+    expect(parsed.type).toBe("all");
+    expect(parsed.status).toBe("all");
   });
 });
 

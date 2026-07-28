@@ -12,6 +12,13 @@ const hardeningMigration = readFileSync(
   ),
   "utf8",
 ).toLowerCase();
+const staticAssetRepairMigration = readFileSync(
+  new URL(
+    "../../supabase/migrations/20260728235056_restrict_static_demo_ad_assets.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
 
 const exposedTables = [
   "profiles",
@@ -66,5 +73,20 @@ describe("database migration security invariants", () => {
     expect(hardeningMigration).toContain("active ads may only be paused by merchants");
     expect(hardeningMigration).toContain("private.is_owned_ad_asset_path");
     expect(hardeningMigration).toContain("ads under review cannot be changed by merchants");
+  });
+
+  it("limits repository-static ad images to fixed demo shops and files", () => {
+    expect(staticAssetRepairMigration).toContain(
+      "'00000000-0000-4000-8000-000000000101'::uuid",
+    );
+    expect(staticAssetRepairMigration).toContain(
+      "'/images/fittoday/ad-pleated-pants.jpg'",
+    );
+    expect(staticAssetRepairMigration).not.toMatch(
+      /p_path like '\/images\/%'/,
+    );
+    expect(staticAssetRepairMigration).not.toMatch(
+      /p_path like '\/demo-assets\/%'/,
+    );
   });
 });
