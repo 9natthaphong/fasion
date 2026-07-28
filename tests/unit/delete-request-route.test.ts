@@ -8,7 +8,7 @@ let mockUser: any = { id: "user-1", role: "customer" };
 let requireSameOriginResult = true;
 let insertError: any = null;
 let existingData: any = null;
-let mockSignOut = vi.fn().mockResolvedValue({ error: null });
+const mockSignOut = vi.fn().mockResolvedValue({ error: null });
 
 vi.mock("@/lib/request-security", () => ({
   requireSameOrigin: vi.fn(async () => requireSameOriginResult)

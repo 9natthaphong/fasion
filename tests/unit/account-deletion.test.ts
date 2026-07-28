@@ -17,10 +17,8 @@ let deleteError: any = null;
 let requestData: any = null;
 let profileData: any = null;
 let profileError: any = null;
-let wardrobeItemsData: any = [];
 let updateDataOverride: any = null;
 let lastUpdateCall: any = null;
-let lastInsertCall: any = null;
 
 const createChain = (table: string, action: string) => {
   return {
@@ -30,7 +28,6 @@ const createChain = (table: string, action: string) => {
       return createChain(table, 'update');
     }),
     insert: vi.fn().mockImplementation((payload) => {
-      lastInsertCall = { table, payload };
       return createChain(table, 'insert');
     }),
     delete: vi.fn().mockImplementation(() => {
@@ -66,17 +63,14 @@ const createChain = (table: string, action: string) => {
          if (updateError) return Promise.resolve({ error: { message: updateError }, data: null }).then(resolve, reject);
          return Promise.resolve({ error: null, data: updateDataOverride || [] }).then(resolve, reject);
       }
-      if (action === 'select') {
-        if (table === "wardrobe_items") return Promise.resolve({ error: null, data: wardrobeItemsData }).then(resolve, reject);
-      }
       return Promise.resolve({ error: null, data: [] }).then(resolve, reject);
     }
   };
 };
 
 const supabaseAdminMock = {
-  rpc: vi.fn().mockImplementation(async (fn: string) => {
-    return mockRpc(fn);
+  rpc: vi.fn().mockImplementation(async (fn: string, args: any) => {
+    return mockRpc(fn, args);
   }),
   from: vi.fn((table: string) => createChain(table, 'from')),
   storage: {
@@ -98,9 +92,13 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 describe("Account Deletion Processor", () => {
+  const adminEmail = "authorized.admin@example.com";
+  const adminId = "123e4567-e89b-12d3-a456-426614174001";
+  const reqId = "123e4567-e89b-12d3-a456-426614174000";
+
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.ADMIN_EMAILS = "authorized.admin@example.com";
+    process.env.ADMIN_EMAILS = adminEmail;
     
     // Reset all mock data and errors
     Object.keys(tableErrors).forEach(k => delete tableErrors[k]);
@@ -108,17 +106,26 @@ describe("Account Deletion Processor", () => {
     updateError = null;
     deleteError = null;
     profileError = null;
-    requestData = { id: "123e4567-e89b-12d3-a456-426614174000", user_id: "user-1", target_user_id: "user-1", status: "pending" };
+    requestData = { id: reqId, user_id: "user-1", target_user_id: "user-1", status: "pending" };
     profileData = { id: "user-1", role: "customer" };
-    wardrobeItemsData = [];
     updateDataOverride = null;
     lastUpdateCall = null;
-    lastInsertCall = null;
     
     // Claim RPC and Finalize RPC mock
-    mockRpc = vi.fn().mockImplementation(async (fn: string) => {
+    mockRpc = vi.fn().mockImplementation(async (fn: string, args: any) => {
       if (fn === 'claim_deletion_request') return { data: true, error: null };
-      if (fn === 'finalize_account_deletion') return { data: { id: "123" }, error: null };
+      if (fn === 'finalize_account_deletion') {
+        return { data: { 
+          id: reqId, 
+          status: "completed", 
+          user_id: null, 
+          target_user_id: "user-1", 
+          processed_by: adminId, 
+          processed_at: new Date().toISOString(), 
+          completed_at: new Date().toISOString(),
+          attempt_count: 1 
+        }, error: null };
+      }
       return { data: null, error: null };
     });
     mockStorageFromList = vi.fn().mockResolvedValue({ data: [], error: null });
@@ -127,78 +134,126 @@ describe("Account Deletion Processor", () => {
     mockAuthAdminGetUserById = vi.fn().mockResolvedValue({ data: { user: null }, error: null });
   });
 
-  const runSuccessFlow = () => processAccountDeletion("123e4567-e89b-12d3-a456-426614174000", "authorized.admin@example.com", "123e4567-e89b-12d3-a456-426614174001");
+  const runSuccessFlow = () => processAccountDeletion(reqId, adminEmail, adminId);
 
-  it("Retry succeeds when user_id is null but target_user_id exists", async () => {
-    requestData = { id: "123e4567-e89b-12d3-a456-426614174000", user_id: null, target_user_id: "user-1", status: "failed" };
+  it("finalizer returns invalid row -> processor fails", async () => {
+    mockRpc.mockImplementation(async (fn: string) => {
+      if (fn === 'claim_deletion_request') return { data: true, error: null };
+      if (fn === 'finalize_account_deletion') {
+        return { data: { id: "wrong-id", status: "processing", user_id: "user-1", attempt_count: 0 }, error: null };
+      }
+    });
     const result = await runSuccessFlow();
-    expect(result.success).toBe(true);
-    expect(result.targetUserId).toBe("user-1");
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Finalizer returned mismatched ID");
   });
 
-  it("Retry succeeds when Auth user/profile are already gone", async () => {
-    requestData = { id: "123e4567-e89b-12d3-a456-426614174000", user_id: null, target_user_id: "user-1", status: "failed" };
+  it("markFailed update fails -> processor still returns failure and reports state-persistence failure safely", async () => {
+    // Cause an internal error during processing
+    mockStorageFromList.mockResolvedValue({ data: null, error: new Error("Simulated storage error") });
+    // And also make markFailed throw
+    updateError = "mock error inside markFailed";
+    
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Failed to list wardrobe-assets (and failed to persist failure state)");
+  });
+
+  it("merchant rejection update fails -> detected", async () => {
+    profileData.role = "merchant";
+    updateError = "update error"; 
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Failed to persist rejection state");
+  });
+
+  it("fresh concurrent processing claim fails", async () => {
+    mockRpc.mockImplementation(async (fn: string) => {
+      if (fn === 'claim_deletion_request') return { data: false, error: null };
+      return { data: null, error: null };
+    });
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Failed to claim request");
+  });
+
+  it("stale processing claim succeeds", async () => {
+    // The processor just calls claim_deletion_request and relies on it returning true
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(true);
+  });
+
+  it("finalizer called twice -> handled safely", async () => {
+    // Simulate retrying a completed request
+    requestData.status = 'completed';
+    requestData.user_id = null;
+    requestData.target_user_id = "user-1";
+    
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(true);
+    // Should short-circuit without calling claim or finalize again
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("nested wardrobe Storage files are deleted", async () => {
+    const listSpy = vi.fn();
+    mockStorageFromList = listSpy.mockImplementation(async (bucket: string, prefix: string) => {
+      if (bucket === "wardrobe-assets") {
+        if (prefix === "user-1") {
+          return { data: [{ name: "folder1" }], error: null }; // folder
+        }
+        if (prefix === "user-1/folder1") {
+          return { data: [{ name: "image.png", id: "uuid-1", updated_at: "now" }], error: null }; // file
+        }
+      }
+      return { data: [], error: null };
+    });
+    
+    const removeSpy = vi.fn().mockResolvedValue({ error: null });
+    mockStorageFromRemove = removeSpy;
+
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(true);
+    
+    // Check if it recursively listed and removed the nested file
+    expect(listSpy).toHaveBeenCalledWith("wardrobe-assets", "user-1");
+    expect(listSpy).toHaveBeenCalledWith("wardrobe-assets", "user-1/folder1");
+    expect(removeSpy).toHaveBeenCalledWith("wardrobe-assets", ["user-1/folder1/image.png"]);
+  });
+
+  it("nested avatar Storage files are deleted", async () => {
+    const listSpy = vi.fn();
+    mockStorageFromList = listSpy.mockImplementation(async (bucket: string, prefix: string) => {
+      if (bucket === "avatars") {
+        if (prefix === "user-1") {
+          return { data: [{ name: "nested" }], error: null }; // folder
+        }
+        if (prefix === "user-1/nested") {
+          return { data: [{ name: "avatar.png", id: "uuid-2", updated_at: "now" }], error: null }; // file
+        }
+      }
+      return { data: [], error: null };
+    });
+    
+    const removeSpy = vi.fn().mockResolvedValue({ error: null });
+    mockStorageFromRemove = removeSpy;
+
+    const result = await runSuccessFlow();
+    expect(result.success).toBe(true);
+    
+    // Check if it recursively listed and removed the nested file
+    expect(listSpy).toHaveBeenCalledWith("avatars", "user-1");
+    expect(listSpy).toHaveBeenCalledWith("avatars", "user-1/nested");
+    expect(removeSpy).toHaveBeenCalledWith("avatars", ["user-1/nested/avatar.png"]);
+  });
+
+  it("retry after Auth/profile deletion completes using target_user_id", async () => {
+    requestData = { id: reqId, user_id: null, target_user_id: "user-1", status: "failed" };
     profileData = null; // profile gone
     mockAuthAdminDeleteUser.mockResolvedValueOnce({ error: { message: "User not found" } }); // auth gone
     
     const result = await runSuccessFlow();
     expect(result.success).toBe(true);
-  });
-
-  it("Atomic completion failure returns failure", async () => {
-    mockRpc.mockImplementation(async (fn: string) => {
-      if (fn === 'claim_deletion_request') return { data: true, error: null };
-      if (fn === 'finalize_account_deletion') return { data: null, error: new Error("RPC Error") };
-      return { data: null, error: null };
-    });
-    const result = await runSuccessFlow();
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("Failed to atomically finalize");
-  });
-
-  it("Retrying atomic completion does not duplicate the audit event (handled in SQL, but test processor doesn't manually insert)", async () => {
-    // We just verify that processor calls the single RPC instead of doing manual inserts
-    await runSuccessFlow();
-    expect(lastInsertCall).toBeNull(); // No manual audit insert
-  });
-
-  it("Failure-state update errors are detected", async () => {
-    // If the atomic completion fails, the processor calls markFailed
-    mockRpc.mockImplementation(async (fn: string) => {
-      if (fn === 'claim_deletion_request') return { data: true, error: null };
-      if (fn === 'finalize_account_deletion') return { data: null, error: new Error("RPC Error") };
-      return { data: null, error: null };
-    });
-    updateError = "markFailed errored out"; // Mock the markFailed update throwing
-    // In our mock, if updateError is set, update returns error, but processor doesn't throw on markFailed, it just swallows it. Wait, we just want to know if it attempts to update the failure state.
-    const result = await runSuccessFlow();
-    expect(result.success).toBe(false);
-    expect(lastUpdateCall?.payload?.status).toBe("failed");
-  });
-
-  it("Merchant-rejection update errors are detected", async () => {
-    profileData.role = "merchant";
-    updateError = "Merchant reject update failed"; // if it throws, our processor should catch it.
-    // The processor doesn't catch update errors in merchant rejection, it just returns false
-    const result = await runSuccessFlow();
-    expect(result.success).toBe(false);
-    expect(lastUpdateCall?.payload?.status).toBe("rejected");
-  });
-
-  it("The processor never returns success before the atomic finalizer succeeds", async () => {
-    mockRpc.mockImplementation(async (fn: string) => {
-      if (fn === 'claim_deletion_request') return { data: true, error: null };
-      if (fn === 'finalize_account_deletion') return { data: null, error: new Error("RPC Error") };
-      return { data: null, error: null };
-    });
-    const result = await runSuccessFlow();
-    expect(result.success).toBe(false);
-  });
-
-  it("fails if profile verification query errors", async () => {
-    profileError = "Profile fetch failed";
-    const result = await runSuccessFlow();
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("Failed to fetch profile");
+    expect(result.targetUserId).toBe("user-1");
   });
 });

@@ -61,7 +61,11 @@ export async function processAccountDeletion(
 
   const targetUserId = requestRow.target_user_id || requestRow.user_id;
   if (!targetUserId) {
-    await markFailed(supabaseAdmin, requestId, "MISSING_USER", "Target user ID is null");
+    try {
+      await markFailed(supabaseAdmin, requestId, "MISSING_USER", "Target user ID is null");
+    } catch (e) {
+      return { success: false, error: "Target user ID is null (and failed to persist failure state)", requestId };
+    }
     return { success: false, error: "Target user ID is null", requestId };
   }
 
@@ -81,7 +85,7 @@ export async function processAccountDeletion(
   if (targetProfile && targetProfile.role === "merchant") {
     // If it's a retry and profile is gone, this block won't run, which is correct
     // (A merchant would have been rejected on the first try)
-    await supabaseAdmin
+    const { error: rejectErr } = await supabaseAdmin
       .from("account_deletion_requests")
       .update({ 
         status: "rejected", 
@@ -90,6 +94,9 @@ export async function processAccountDeletion(
         failure_message: "Merchant deletion requires manual review"
       })
       .eq("id", requestId);
+    if (rejectErr) {
+      return { success: false, error: "Failed to persist rejection state", requestId, targetUserId };
+    }
     return {
       success: false,
       error: "Merchant account deletion requires manual shop review and cannot be auto-deleted",
@@ -107,22 +114,45 @@ export async function processAccountDeletion(
     const { error: err3 } = await supabaseAdmin.from("shop_views").update({ user_id: null }).eq("user_id", targetUserId);
     if (err3) throw new Error("Failed to anonymize shop_views");
 
-    // 5. Clean up Storage assets
-    const { data: wFiles, error: wListErr } = await supabaseAdmin.storage.from("wardrobe-assets").list(targetUserId);
-    if (wListErr) throw new Error("Failed to list wardrobe assets");
-    if (wFiles && wFiles.length > 0) {
-      const wPaths = wFiles.map((f: { name: string }) => `${targetUserId}/${f.name}`);
-      const { error: wRmErr } = await supabaseAdmin.storage.from("wardrobe-assets").remove(wPaths);
-      if (wRmErr) throw new Error("Failed to remove wardrobe assets");
-    }
-    
-    const { data: avFiles, error: listErr } = await supabaseAdmin.storage.from("avatars").list(targetUserId);
-    if (listErr) throw new Error("Failed to list avatars");
-    if (avFiles && avFiles.length > 0) {
-      const avPaths = avFiles.map((f: { name: string }) => `${targetUserId}/${f.name}`);
-      const { error: rmErr } = await supabaseAdmin.storage.from("avatars").remove(avPaths);
-      if (rmErr) throw new Error("Failed to remove avatars");
-    }
+    // 5. Clean up Storage assets (recursive)
+    const cleanupFolder = async (bucket: string, prefix: string) => {
+      let pathsToRemove: string[] = [];
+      const listRecursive = async (currentPrefix: string) => {
+        const { data: files, error } = await supabaseAdmin.storage.from(bucket).list(currentPrefix);
+        if (error) throw new Error(`Failed to list ${bucket}`);
+        if (!files || files.length === 0) return;
+        
+        for (const file of files) {
+          // If it's a folder, there's no way to know except by checking if it has no id/size but just a name
+          // Supabase returns folders with metadata missing except name. But let's just list everything just in case,
+          // or assume if size is missing it's a folder. Wait, the simplest way is to fetch all paths.
+          // In Supabase, list() returns folders and files. Folders lack id/size.
+          const isFolder = !file.id && !file.updated_at;
+          const fullPath = `${currentPrefix}/${file.name}`;
+          if (isFolder) {
+            await listRecursive(fullPath);
+          } else {
+            pathsToRemove.push(fullPath);
+          }
+        }
+      };
+      
+      await listRecursive(prefix);
+      
+      // Batch remove in chunks of 100
+      for (let i = 0; i < pathsToRemove.length; i += 100) {
+        const batch = pathsToRemove.slice(i, i + 100);
+        // Ensure we only delete within the prefix
+        const safeBatch = batch.filter(p => p.startsWith(`${targetUserId}/`));
+        if (safeBatch.length > 0) {
+          const { error } = await supabaseAdmin.storage.from(bucket).remove(safeBatch);
+          if (error) throw new Error(`Failed to remove ${bucket} assets`);
+        }
+      }
+    };
+
+    await cleanupFolder("wardrobe-assets", targetUserId);
+    await cleanupFolder("avatars", targetUserId);
 
     // 6. Delete customer relational data
     const del = async (table: string, q: PromiseLike<{ error: Error | null }>) => {
@@ -201,18 +231,32 @@ export async function processAccountDeletion(
       throw new Error("Failed to atomically finalize deletion request");
     }
 
+    // Validate finalizer returned row
+    if (finalReq.id !== requestId) throw new Error("Finalizer returned mismatched ID");
+    if (finalReq.status !== "completed") throw new Error("Finalizer did not set status to completed");
+    if (finalReq.user_id !== null) throw new Error("Finalizer did not nullify user_id");
+    if (finalReq.target_user_id !== targetUserId) throw new Error("Finalizer altered target_user_id");
+    if (finalReq.processed_by !== adminUserId) throw new Error("Finalizer altered processed_by");
+    if (!finalReq.processed_at) throw new Error("Finalizer did not set processed_at");
+    if (!finalReq.completed_at) throw new Error("Finalizer did not set completed_at");
+    if (finalReq.attempt_count < 1) throw new Error("Finalizer attempt_count invalid");
+
     return { success: true, requestId, targetUserId };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error during deletion";
-    const safeError = errorMsg.includes("Failed") || errorMsg.includes("exists") ? errorMsg : "Deletion processing failed due to internal error";
+    const safeError = errorMsg.includes("Failed") || errorMsg.includes("exists") || errorMsg.includes("Finalizer") ? errorMsg : "Deletion processing failed due to internal error";
     console.error("[ACCOUNT_DELETION_PROCESS_FAILURE]", safeError);
-    await markFailed(supabaseAdmin, requestId, "PROCESSING_ERROR", safeError);
+    try {
+      await markFailed(supabaseAdmin, requestId, "PROCESSING_ERROR", safeError);
+    } catch (markErr) {
+      return { success: false, error: safeError + " (and failed to persist failure state)", requestId, targetUserId };
+    }
     return { success: false, error: safeError, requestId, targetUserId };
   }
 }
 
 async function markFailed(supabaseAdmin: ReturnType<typeof getAdminClient>, requestId: string, code: string, msg: string) {
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("account_deletion_requests")
     .update({ 
       status: "failed",
@@ -220,4 +264,7 @@ async function markFailed(supabaseAdmin: ReturnType<typeof getAdminClient>, requ
       failure_message: msg
     })
     .eq("id", requestId);
+  if (error) {
+    throw new Error(`Failed to persist failure state: ${code}`);
+  }
 }

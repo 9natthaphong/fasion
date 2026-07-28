@@ -74,11 +74,11 @@ test.describe("Account Deletion", () => {
 
       // Real storage files
       const tinyPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
-      const wardrobePath = `${userId}/wardrobe-test.png`;
+      const wardrobePath = `${userId}/${wardrobeId}/wardrobe-test.png`;
       const { error: up1Err } = await admin.storage.from("wardrobe-assets").upload(wardrobePath, tinyPng, { contentType: 'image/png' });
       expect(up1Err).toBeNull();
       
-      const avatarPath = `${userId}/avatar-test.png`;
+      const avatarPath = `${userId}/nested/avatar-test.png`;
       const { error: up2Err } = await admin.storage.from("avatars").upload(avatarPath, tinyPng, { contentType: 'image/png' });
       expect(up2Err).toBeNull();
 
@@ -222,15 +222,14 @@ test.describe("Account Deletion", () => {
       // Complete manual cleanup of all artifacts
       await admin.auth.admin.deleteUser(userId);
       await admin.from("account_deletion_requests").delete().eq("target_user_id", userId);
-      await admin.from("admin_audit_log").delete().eq("entity_id", userId);
       
       if (impId) await admin.from("ad_impressions").delete().eq("id", impId);
       if (clickId) await admin.from("ad_clicks").delete().eq("id", clickId);
       if (viewId) await admin.from("shop_views").delete().eq("id", viewId);
 
       // Remove storage files manually in case of failure
-      await admin.storage.from("wardrobe-assets").remove([`${userId}/wardrobe-test.png`]);
-      await admin.storage.from("avatars").remove([`${userId}/avatar-test.png`]);
+      await admin.storage.from("wardrobe-assets").remove([`${userId}/${wardrobeId}/wardrobe-test.png`]);
+      await admin.storage.from("avatars").remove([`${userId}/nested/avatar-test.png`]);
     }
   });
 
