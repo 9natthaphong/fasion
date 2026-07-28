@@ -18,16 +18,14 @@ let requestData: any = null;
 let profileData: any = null;
 let profileError: any = null;
 let updateDataOverride: any = null;
-let lastUpdateCall: any = null;
 
 const createChain = (table: string, action: string) => {
   return {
     select: vi.fn().mockImplementation(() => createChain(table, action === 'update' ? 'update' : 'select')),
-    update: vi.fn().mockImplementation((payload) => {
-      lastUpdateCall = { table, payload };
+    update: vi.fn().mockImplementation(() => {
       return createChain(table, 'update');
     }),
-    insert: vi.fn().mockImplementation((payload) => {
+    insert: vi.fn().mockImplementation(() => {
       return createChain(table, 'insert');
     }),
     delete: vi.fn().mockImplementation(() => {
@@ -69,8 +67,8 @@ const createChain = (table: string, action: string) => {
 };
 
 const supabaseAdminMock = {
-  rpc: vi.fn().mockImplementation(async (fn: string, args: any) => {
-    return mockRpc(fn, args);
+  rpc: vi.fn().mockImplementation(async (fn: string) => {
+    return mockRpc(fn);
   }),
   from: vi.fn((table: string) => createChain(table, 'from')),
   storage: {
@@ -109,10 +107,9 @@ describe("Account Deletion Processor", () => {
     requestData = { id: reqId, user_id: "user-1", target_user_id: "user-1", status: "pending" };
     profileData = { id: "user-1", role: "customer" };
     updateDataOverride = null;
-    lastUpdateCall = null;
     
     // Claim RPC and Finalize RPC mock
-    mockRpc = vi.fn().mockImplementation(async (fn: string, args: any) => {
+    mockRpc = vi.fn().mockImplementation(async (fn: string) => {
       if (fn === 'claim_deletion_request') return { data: true, error: null };
       if (fn === 'finalize_account_deletion') {
         return { data: { 

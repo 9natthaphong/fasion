@@ -63,7 +63,7 @@ export async function processAccountDeletion(
   if (!targetUserId) {
     try {
       await markFailed(supabaseAdmin, requestId, "MISSING_USER", "Target user ID is null");
-    } catch (e) {
+    } catch {
       return { success: false, error: "Target user ID is null (and failed to persist failure state)", requestId };
     }
     return { success: false, error: "Target user ID is null", requestId };
@@ -116,7 +116,7 @@ export async function processAccountDeletion(
 
     // 5. Clean up Storage assets (recursive)
     const cleanupFolder = async (bucket: string, prefix: string) => {
-      let pathsToRemove: string[] = [];
+      const pathsToRemove: string[] = [];
       const listRecursive = async (currentPrefix: string) => {
         const { data: files, error } = await supabaseAdmin.storage.from(bucket).list(currentPrefix);
         if (error) throw new Error(`Failed to list ${bucket}`);
@@ -248,7 +248,7 @@ export async function processAccountDeletion(
     console.error("[ACCOUNT_DELETION_PROCESS_FAILURE]", safeError);
     try {
       await markFailed(supabaseAdmin, requestId, "PROCESSING_ERROR", safeError);
-    } catch (markErr) {
+    } catch {
       return { success: false, error: safeError + " (and failed to persist failure state)", requestId, targetUserId };
     }
     return { success: false, error: safeError, requestId, targetUserId };
