@@ -57,9 +57,9 @@ test.describe("Production Hotfix Verification E2E", () => {
 
       // Verify status is NOT 400
       if (apiStatus !== null) {
-        expect(apiStatus).not.toBe(400);
-        if (apiResponseBody?.error) {
-          expect(apiResponseBody.error).not.toContain("expected string, received undefined");
+        expect(apiStatus !== 400).toBe(true);
+        if (typeof apiResponseBody?.error === "string") {
+          expect(apiResponseBody.error.includes("expected string, received undefined")).toBe(false);
         }
       }
     }
