@@ -3,7 +3,7 @@ import { requireApiRole } from "@/lib/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { adminAdActionSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
-import { normalizeShopeeUrl } from "@/lib/shopee";
+import { normalizeDestinationUrl } from "@/lib/shopee";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
@@ -20,10 +20,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!ad.cover_image_path) {
       return NextResponse.json({ error: "โฆษณาต้องมีรูปหน้าปกก่อนอนุมัติ" }, { status: 409 });
     }
-    try {
-      normalizeShopeeUrl(ad.destination_url);
-    } catch {
-      return NextResponse.json({ error: "ลิงก์ปลายทางไม่ผ่านข้อกำหนดความปลอดภัย" }, { status: 409 });
+    if (ad.destination_url) {
+      try {
+        normalizeDestinationUrl(ad.destination_url);
+      } catch {
+        return NextResponse.json({ error: "ลิงก์ปลายทางไม่ผ่านข้อกำหนดความปลอดภัย" }, { status: 409 });
+      }
     }
   }
   if (parsed.data.action === "approve" && (!shop || shop.status !== "approved" || shop.subscription_status !== "active" || (shop.subscription_ends_at && new Date(shop.subscription_ends_at) <= new Date()))) {

@@ -86,15 +86,17 @@ export function SponsoredAdSection({ ads }: Props) {
               {/* Price & Action CTA */}
               <div className="pt-3 border-t border-line flex items-center justify-between">
                 <span className="text-sm font-medium text-charcoal font-mono">{ad.price_text || "ดูรายละเอียด"}</span>
-                <Link
-                  href={`/go/ad/${ad.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <span>เปิดดูใน Shopee</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
+                {ad.destination_url ? (
+                  <Link
+                    href={`/go/ad/${ad.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>ไปยังร้านค้า</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                ) : null}
               </div>
             </div>
           );

@@ -20,7 +20,7 @@ type EditorAd = {
   description: string;
   ad_type: string;
   price_text: string | null;
-  destination_url: string;
+  destination_url: string | null;
   cover_image_path: string | null;
   starts_at: string | null;
   ends_at: string | null;
@@ -275,15 +275,14 @@ export function AdEditor({
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-muted uppercase mb-1">ลิงก์สินค้า หรือหน้าร้านบน Shopee *</label>
-              <p className="text-xs text-muted mb-2">คัดลอกลิงก์จาก Shopee แล้ววางที่นี่ ระบบจะตรวจสอบให้ก่อนเผยแพร่</p>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">ลิงก์ร้านค้าหรือหน้าสินค้า (ไม่บังคับ)</label>
+              <p className="text-xs text-muted mb-2">ใส่ลิงก์หน้าสินค้า หน้าร้าน หรือช่องทางสั่งซื้อของคุณได้ ผู้ดูแลจะตรวจสอบก่อนเผยแพร่ หากไม่ใส่ โฆษณาจะไม่มีปุ่มไปยังร้านค้า</p>
               <input
                 name="destinationUrl"
                 type="text"
                 value={destinationUrl}
                 onChange={(e) => setDestinationUrl(e.target.value)}
-                required
-                placeholder="https://shopee.co.th/product/..."
+                placeholder="https://example.com/product"
                 className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
               />
             </div>
@@ -533,10 +532,12 @@ export function AdEditor({
 
             <div className="pt-3 border-t border-line flex items-center justify-between">
               <span className="text-xs font-medium text-charcoal font-mono">{priceText || "฿ 1,290"}</span>
-              <span className="px-3 py-1.5 bg-charcoal text-white text-[10px] font-medium inline-flex items-center gap-1">
-                <span> Shopee</span>
-                <ExternalLink className="w-3 h-3" />
-              </span>
+              {destinationUrl && destinationUrl.trim().startsWith("https://") ? (
+                <span className="px-3 py-1.5 bg-charcoal text-white text-[10px] font-medium inline-flex items-center gap-1">
+                  <span>ไปยังร้านค้า</span>
+                  <ExternalLink className="w-3 h-3" />
+                </span>
+              ) : null}
             </div>
           </div>
 

@@ -19,6 +19,13 @@ const staticAssetRepairMigration = readFileSync(
   ),
   "utf8",
 ).toLowerCase();
+const optionalDestinationMigration = readFileSync(
+  new URL(
+    "../../supabase/migrations/20260730221500_optional_ad_destination_url.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
 
 const exposedTables = [
   "profiles",
@@ -88,5 +95,11 @@ describe("database migration security invariants", () => {
     expect(staticAssetRepairMigration).not.toMatch(
       /p_path like '\/demo-assets\/%'/,
     );
+  });
+
+  it("makes destination_url optional and removes Shopee domain requirement", () => {
+    expect(optionalDestinationMigration).toContain("alter table public.ads alter column destination_url drop not null");
+    expect(optionalDestinationMigration).toContain("destination_url is null or char_length(destination_url) <= 2048");
+    expect(optionalDestinationMigration).not.toContain("shopee.co.th");
   });
 });

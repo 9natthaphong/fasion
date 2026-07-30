@@ -30,7 +30,7 @@ export default async function MerchantDashboardPage() {
         <StatCard label="โฆษณา active" value={String(active)} />
         <StatCard label="Impressions" value={(impressions ?? 0).toLocaleString("th-TH")} />
         <StatCard label="ถูกใจ" value={(likes ?? 0).toLocaleString("th-TH")} />
-        <StatCard label="คลิก Shopee" value={(clicks ?? 0).toLocaleString("th-TH")} hint={`CTR ${formatCtr(clicks ?? 0, impressions ?? 0)}`} />
+        <StatCard label="คลิกไปยังร้านค้า" value={(clicks ?? 0).toLocaleString("th-TH")} hint={`CTR ลิงก์ปลายทาง ${formatCtr(clicks ?? 0, impressions ?? 0)}`} />
       </div>
       <div className="editorial-note">
         <h2>สถานะการเผยแพร่</h2>

@@ -47,7 +47,7 @@ export interface Ad {
   description: string;
   ad_type: AdType;
   price_text: string | null;
-  destination_url: string;
+  destination_url: string | null;
   cover_image_path: string | null;
   image_alt?: string;
   status: AdStatus;
