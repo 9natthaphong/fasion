@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
+import { canReadAdAsset } from "@/lib/protected-assets";
 
 const buckets = new Set(["avatars", "shop-assets", "ad-assets", "wardrobe-assets"]);
 
@@ -64,6 +65,6 @@ async function canReadAsset(
   if (!ad) return false;
   const shop = Array.isArray(ad.shops) ? ad.shops[0] : ad.shops;
   if (user?.role === "merchant" && shop?.owner_id === user.id) return true;
-  return ad.status === "active" && (!ad.starts_at || new Date(ad.starts_at) <= new Date()) && (!ad.ends_at || new Date(ad.ends_at) > new Date()) && shop?.status === "approved" && shop?.subscription_status === "active" && (!shop.subscription_ends_at || new Date(shop.subscription_ends_at) > new Date());
+  return canReadAdAsset(user, { ...ad, shops: shop });
 }
 

@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { AdminActionForm } from "@/components/admin-action-form";
 import { StatusBadge } from "@/components/ui";
@@ -7,6 +6,7 @@ import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { resolveAdCoverUrl, resolveAdImageUrl, resolveShopAssetUrl } from "@/lib/assets";
 import { ImagePreviewModal } from "@/components/admin/image-preview-modal";
+import { AdminAssetImage } from "@/components/admin/admin-asset-image";
 import { PurchaseInfoText } from "@/components/purchase-info-text";
 import { resolvePurchaseInfo } from "@/lib/purchase-info";
 import type { FashionTag } from "@/lib/types";
@@ -125,7 +125,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
             {resolvedCoverUrl ? (
               <div className="space-y-2">
                 <div className="relative aspect-[4/3] sm:aspect-[16/10] bg-charcoal overflow-hidden border border-line flex items-center justify-center">
-                  <Image
+                  <AdminAssetImage
                     src={resolvedCoverUrl}
                     alt={ad.image_alt || ad.title}
                     fill
@@ -162,7 +162,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
                 {resolvedGallery.map((img) => (
                   <div key={img.id} className="border border-line bg-background p-2 space-y-2">
                     <div className="relative aspect-[3/4] bg-charcoal overflow-hidden border border-line flex items-center justify-center">
-                      <Image
+                      <AdminAssetImage
                         src={img.resolvedUrl}
                         alt={img.alt_text || `Ad image ${img.sort_order}`}
                         fill
@@ -197,7 +197,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
             <div className="border border-line bg-paper p-4 space-y-3">
               <div className="flex items-center gap-3">
                 {resolvedShopLogoUrl ? (
-                  <Image
+                  <AdminAssetImage
                     src={resolvedShopLogoUrl}
                     alt={shopData.name}
                     width={40}
