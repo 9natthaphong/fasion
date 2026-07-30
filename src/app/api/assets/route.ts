@@ -12,11 +12,13 @@ export async function GET(request: Request) {
   const path = url.searchParams.get("path");
   if (!bucket || !path || !buckets.has(bucket)) return new NextResponse(null, { status: 400 });
   
-  const validPathPattern = bucket === "wardrobe-assets"
-    ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp)$/i
-    : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp)$/i;
+  if (path.includes("..") || path.includes("\\") || /[\0\r\n\t<>"']/.test(path) || path.startsWith("/")) {
+    return new NextResponse(null, { status: 400 });
+  }
 
+  const validPathPattern = /^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_.-]+)+$/;
   if (!validPathPattern.test(path)) return new NextResponse(null, { status: 400 });
+
   const admin = getAdminClient();
   const user = await getCurrentUser();
   const allowed = await canReadAsset(admin, bucket, path, user);

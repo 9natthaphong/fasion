@@ -54,7 +54,8 @@ export function WardrobeItemCard({ item }: Props) {
   };
 
   const badge = statusBadges[item.availability_status] ?? statusBadges.available;
-  const imageSrc = item.signed_image_url || "/demo-assets/ad-linen-shirt.jpg";
+  const initialImageSrc = item.signed_image_url || "/demo-assets/ad-linen-shirt.jpg";
+  const [displayImageSrc, setDisplayImageSrc] = useState(initialImageSrc);
 
   return (
     <Link
@@ -64,9 +65,11 @@ export function WardrobeItemCard({ item }: Props) {
       {/* Image Container */}
       <div className="aspect-[3/4] relative bg-background border border-line overflow-hidden">
         <Image
-          src={imageSrc}
+          src={displayImageSrc}
           alt={item.name || "เสื้อผ้าส่วนตัว"}
           fill
+          unoptimized
+          onError={() => setDisplayImageSrc("/demo-assets/ad-linen-shirt.jpg")}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />

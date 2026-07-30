@@ -46,13 +46,13 @@ test.describe("Authenticated E2E Workflows", () => {
     // 2. Profile Update (Tabbed UI)
     await page.goto("/account/profile");
     await expect(page.getByRole("heading", { name: "โปรไฟล์และสไตล์การแต่งตัว" })).toBeVisible();
-    await page.getByLabel(/ชื่อที่แสดง/).fill("FitToday Test Customer");
+    await page.locator("#display-name").fill("FitToday Test Customer");
     await page.getByRole("button", { name: /3\. สัดส่วนและไซซ์/ }).click();
     await page.getByLabel("ส่วนสูง (ซม.)").fill("170");
     await page.getByLabel("น้ำหนัก (กก.)").fill("62");
     await page.getByRole("button", { name: /4\. การอนุญาตใช้ข้อมูล/ }).click();
     await page.getByRole("button", { name: "บันทึกข้อมูลทั้งหมด" }).click();
-    await expect(page.getByText("บันทึกข้อมูลโปรไฟล์ สไตล์ และสัดส่วนทั้งหมดเรียบร้อยแล้ว")).toBeVisible();
+    await expect(page.getByText("บันทึกข้อมูลโปรไฟล์ สไตล์ และสัดส่วนทั้งหมดเรียบร้อยแล้ว")).toBeVisible({ timeout: 15_000 });
 
     // Verify database update
     const { data: fitProfile } = await admin

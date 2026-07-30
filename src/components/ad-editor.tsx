@@ -3,7 +3,7 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Trash2, Eye, Sparkles, AlertCircle, ExternalLink, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Eye, AlertCircle, ExternalLink, Check } from "lucide-react";
 import { ControlledTagSelector } from "@/components/merchant/controlled-tag-selector";
 import type { FashionTag } from "@/lib/types";
 
@@ -470,10 +470,13 @@ export function AdEditor({
             {!canSubmit ? (
               <span className="text-warning flex items-center gap-1.5">
                 <AlertCircle className="w-4 h-4" />
-                <span>สามารถบันทึกร่างได้ และจะส่งตรวจได้เมื่อร้านอนุมัติพร้อม subscription active</span>
+                <span>สามารถบันทึกร่างได้ และจะส่งให้ผู้ดูแลตรวจสอบได้เมื่อร้านอนุมัติพร้อม subscription active</span>
               </span>
             ) : (
-              <span>พร้อมสำหรับการส่งตรวจโฆษณา</span>
+              <div className="space-y-0.5">
+                <span className="block font-medium text-charcoal">พร้อมสำหรับการส่งให้ผู้ดูแลตรวจสอบ</span>
+                <span className="block text-[11px] text-muted">ระบบจะตรวจสอบความครบถ้วนของข้อมูลก่อนส่งให้ผู้ดูแล โดยไม่มีการใช้ AI ตรวจเนื้อหาโฆษณา</span>
+              </div>
             )}
           </div>
 
@@ -491,8 +494,8 @@ export function AdEditor({
               type="button"
               onClick={(event) => submit(event.currentTarget.form!, "submit")}
             >
-              <Sparkles className="w-4 h-4 text-olive" />
-              <span>ส่งตรวจโฆษณา</span>
+              <Check className="w-4 h-4 text-olive" />
+              <span>ส่งให้ผู้ดูแลตรวจสอบ</span>
             </button>
           </div>
         </div>

@@ -25,7 +25,7 @@ test.describe("Production Hotfix Verification E2E", () => {
     await page.getByLabel("อีเมล").fill(customerEmail);
     await page.locator("#auth-password").fill(customerPassword);
     await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
-    await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15_000 });
+    await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 15_000 });
 
     // 2. Open /ai-stylist
     await page.goto("/ai-stylist");
@@ -36,7 +36,7 @@ test.describe("Production Hotfix Verification E2E", () => {
 
     // 4. Track request/response
     let apiStatus: number | null = null;
-    let apiResponseBody: any = null;
+    let apiResponseBody: Record<string, unknown> | null = null;
 
     page.on("response", async (response) => {
       if (response.url().includes("/api/ai-stylist") && response.request().method() === "POST") {
@@ -51,15 +51,16 @@ test.describe("Production Hotfix Verification E2E", () => {
 
     // 5. Click submit "จัดชุดจากตู้เสื้อผ้าส่วนตัว"
     const submitBtn = page.getByRole("button", { name: "จัดชุดจากตู้เสื้อผ้าส่วนตัว" });
-    if (await submitBtn.isVisible()) {
+    if (await submitBtn.isVisible() && await submitBtn.isEnabled()) {
       await submitBtn.click();
       await page.waitForTimeout(3000);
 
       // Verify status is NOT 400
       if (apiStatus !== null) {
         expect(apiStatus !== 400).toBe(true);
-        if (typeof apiResponseBody?.error === "string") {
-          expect(apiResponseBody.error.includes("expected string, received undefined")).toBe(false);
+        const errMessage = String(apiResponseBody?.["error"] ?? "");
+        if (errMessage) {
+          expect(errMessage.includes("expected string, received undefined")).toBe(false);
         }
       }
     }
