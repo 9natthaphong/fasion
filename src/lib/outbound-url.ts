@@ -77,10 +77,6 @@ export function normalizeDestinationUrl(value: string | null | undefined): strin
   return url.toString();
 }
 
-export function normalizeShopeeUrl(value: string | null | undefined): string | null {
-  return normalizeDestinationUrl(value);
-}
-
 export const destinationUrlSchema = z
   .preprocess((val) => {
     if (val === null || val === undefined) return null;
@@ -102,5 +98,3 @@ export const destinationUrlSchema = z
       return z.NEVER;
     }
   });
-
-export const shopeeUrlSchema = destinationUrlSchema;

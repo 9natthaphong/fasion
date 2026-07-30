@@ -34,6 +34,7 @@ export default async function AdminShopDetailPage({ params }: { params: Promise<
   const resolvedCover = resolveShopAssetUrl(shop.cover_path);
   const rawProfile = Array.isArray(shop.profiles) ? shop.profiles[0] : shop.profiles;
   const ownerName = (rawProfile as { display_name?: string | null } | null)?.display_name;
+  const websiteUrl = shop.shopee_url as string | null;
 
   return (
     <section className="dashboard-section space-y-6">
@@ -108,12 +109,12 @@ export default async function AdminShopDetailPage({ params }: { params: Promise<
           <div>
             <dt className="flex items-center gap-1.5 text-muted">
               <Globe className="w-3.5 h-3.5 text-olive" />
-              Shopee Store URL
+              เว็บไซต์ร้านค้า
             </dt>
             <dd className="break-all pt-1 font-mono text-[11px]">
-              {shop.shopee_url ? (
-                <a href={shop.shopee_url} target="_blank" rel="noreferrer" className="text-olive hover:underline">
-                  {shop.shopee_url}
+              {websiteUrl ? (
+                <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-olive hover:underline">
+                  {websiteUrl}
                 </a>
               ) : (
                 "—"

@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Info, ExternalLink, ShieldCheck } from "lucide-react";
+import { PurchaseInfoText } from "@/components/purchase-info-text";
+import { resolvePurchaseInfo } from "@/lib/purchase-info";
 import type { PersonalizedAd } from "@/lib/types";
 
 interface Props {
@@ -46,6 +48,7 @@ export function SponsoredAdSection({ ads }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {ads.map((ad) => {
           const coverUrl = ad.cover_image_path || "/demo-assets/ad-linen-shirt.jpg";
+          const purchaseInfo = resolvePurchaseInfo(ad.purchase_info, ad.destination_url);
           return (
             <div key={ad.id} className="border border-line bg-paper p-4 space-y-3 flex flex-col justify-between relative group hover:border-charcoal transition-colors">
               <div className="space-y-3">
@@ -81,12 +84,24 @@ export function SponsoredAdSection({ ads }: Props) {
                     ))}
                   </div>
                 )}
+
+                {purchaseInfo ? (
+                  <div className="pt-2 border-t border-line/60 space-y-1">
+                    <span className="block text-[10px] font-mono text-muted uppercase">
+                      ช่องทางสั่งซื้อ
+                    </span>
+                    <PurchaseInfoText
+                      value={purchaseInfo}
+                      className="text-xs text-charcoal whitespace-pre-wrap break-words line-clamp-3"
+                    />
+                  </div>
+                ) : null}
               </div>
 
               {/* Price & Action CTA */}
               <div className="pt-3 border-t border-line flex items-center justify-between">
                 <span className="text-sm font-medium text-charcoal font-mono">{ad.price_text || "ดูรายละเอียด"}</span>
-                {ad.destination_url ? (
+                {ad.destination_url && !ad.is_demo ? (
                   <Link
                     href={`/go/ad/${ad.id}`}
                     target="_blank"

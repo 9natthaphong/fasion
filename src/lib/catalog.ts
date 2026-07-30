@@ -20,6 +20,10 @@ function assetUrl(bucket: "shop-assets" | "ad-assets", path: string | null) {
 function mapShop(row: Record<string, unknown>): Shop {
   return {
     ...(row as unknown as Shop),
+    website_url:
+      (row.website_url as string | null | undefined) ??
+      (row.shopee_url as string | null | undefined) ??
+      null,
     logo_path: assetUrl("shop-assets", row.logo_path as string | null),
     cover_path: assetUrl("shop-assets", row.cover_path as string | null),
   };
@@ -34,6 +38,10 @@ function mapAd(row: Record<string, unknown>): Ad {
       : undefined;
   return {
     ...(row as unknown as Ad),
+    purchase_info:
+      row.is_demo === true
+        ? "สินค้าตัวอย่าง — ติดต่อร้านค้าเพื่อสอบถามรายละเอียด"
+        : (row.purchase_info as string | null),
     cover_image_path: assetUrl(
       "ad-assets",
       demoCover ?? (row.cover_image_path as string | null),

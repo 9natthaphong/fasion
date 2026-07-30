@@ -7,8 +7,10 @@ import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { resolveAdCoverUrl, resolveAdImageUrl, resolveShopAssetUrl } from "@/lib/assets";
 import { ImagePreviewModal } from "@/components/admin/image-preview-modal";
+import { PurchaseInfoText } from "@/components/purchase-info-text";
+import { resolvePurchaseInfo } from "@/lib/purchase-info";
 import type { FashionTag } from "@/lib/types";
-import { ImageIcon, ExternalLink, Store, Tag } from "lucide-react";
+import { ImageIcon, Store, Tag } from "lucide-react";
 
 export default async function AdminAdDetailPage({ params }: { params: Promise<{ id: string }> }) {
   if (!isSupabaseAdminConfigured()) {
@@ -74,14 +76,14 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
 
   const totalImageCount = (resolvedCoverUrl ? 1 : 0) + resolvedGallery.length;
 
-  const host = (() => {
-    if (!ad.destination_url) return null;
-    try {
-      return new URL(ad.destination_url).hostname;
-    } catch {
-      return "URL ไม่ถูกต้อง";
-    }
-  })();
+  /**
+   * Effective purchase information for admin display.
+   * Priority: purchase_info > destination_url (legacy) > null.
+   */
+  const effectivePurchaseInfo = resolvePurchaseInfo(
+    (ad as { purchase_info?: string | null }).purchase_info,
+    ad.destination_url,
+  );
 
   const fashionTags: FashionTag[] = (ad.ad_fashion_tags || [])
     .map((item: { fashion_tags: unknown }) => item.fashion_tags as FashionTag)
@@ -262,36 +264,18 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
               )}
 
               <div className="border-t border-line/60 pt-3">
-                <dt className="font-semibold text-charcoal text-xs mb-1">ปลายทางภายนอก</dt>
+                <dt className="font-semibold text-charcoal text-xs mb-1">ช่องทางสั่งซื้อ / ข้อมูลจากร้านค้า</dt>
                 <dd className="pt-1">
-                  {ad.destination_url ? (
-                    <div className="space-y-2 bg-paper p-3 border border-line">
-                      <div>
-                        <span className="block text-[11px] text-muted font-mono uppercase">URL ปลายทาง:</span>
-                        <span className="select-all font-mono text-xs text-charcoal break-all">{ad.destination_url}</span>
-                      </div>
-                      <div>
-                        <span className="block text-[11px] text-muted font-mono uppercase">Hostname:</span>
-                        <span className="font-mono text-xs font-semibold text-olive">{host}</span>
-                      </div>
-                      <div className="pt-1">
-                        <a
-                          href={ad.destination_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-                        >
-                          <span>เปิดตรวจสอบในแท็บใหม่</span>
-                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                        </a>
-                      </div>
-                      <p className="text-[11px] text-warning font-medium pt-1">
-                        ลิงก์นี้เป็นเว็บไซต์ภายนอก กรุณาตรวจสอบความสอดคล้องกับโฆษณาก่อนอนุมัติ
-                      </p>
+                  {effectivePurchaseInfo ? (
+                    <div className="bg-paper p-3 border border-line">
+                      <PurchaseInfoText
+                        value={effectivePurchaseInfo}
+                        className="text-xs text-charcoal whitespace-pre-wrap break-words select-all"
+                      />
                     </div>
                   ) : (
                     <div className="p-3 bg-paper border border-line text-xs text-muted">
-                      ร้านค้าไม่ได้ระบุลิงก์ปลายทาง โฆษณานี้จะแสดงโดยไม่มีปุ่มไปยังร้านค้า
+                      ร้านค้าไม่ได้ระบุช่องทางสั่งซื้อ
                     </div>
                   )}
                 </dd>
@@ -311,7 +295,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
           {/* Moderation Action Form */}
           <div className="border border-line bg-paper p-4 space-y-3">
             <h3 className="text-sm font-semibold text-charcoal">ดำเนินการการตรวจสอบ</h3>
-            <p className="text-xs text-muted">ตรวจสอบรูปภาพ รายละเอียด หมวดหมู่ ระยะเวลา และลิงก์ปลายทางก่อนอนุมัติ</p>
+            <p className="text-xs text-muted">ตรวจสอบรูปภาพ รายละเอียด หมวดหมู่ ระยะเวลา และข้อมูลจากร้านค้าก่อนอนุมัติ</p>
             <AdminActionForm
               endpoint={`/api/admin/ads/${id}`}
               actions={[

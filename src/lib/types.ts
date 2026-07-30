@@ -30,7 +30,7 @@ export interface Shop {
   description: string;
   logo_path: string | null;
   cover_path: string | null;
-  shopee_url: string | null;
+  website_url: string | null;
   instagram_url: string | null;
   status: "pending" | "approved" | "suspended" | "rejected";
   subscription_status: "inactive" | "active" | "expired";
@@ -47,6 +47,17 @@ export interface Ad {
   description: string;
   ad_type: AdType;
   price_text: string | null;
+  /**
+   * Free-text purchase information field (new ads).
+   * Accepts any human-readable Thai/English text:
+   * shop instructions, Line IDs, Instagram handles, URLs, or null.
+   * Replaces destination_url as the primary merchant purchase channel field.
+   */
+  purchase_info: string | null;
+  /**
+   * Legacy URL field — preserved for backward compatibility.
+   * Read priority: purchase_info ?? destination_url ?? null.
+   */
   destination_url: string | null;
   cover_image_path: string | null;
   image_alt?: string;

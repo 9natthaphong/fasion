@@ -66,7 +66,7 @@ test.describe("Production Hotfix Verification E2E", () => {
     }
   });
 
-  test("merchant ad form has no editable URL SLUG field and accepts plain text Shopee link", async ({ page }) => {
+  test("merchant ad form has purchase_info textarea (not URL input) and no Shopee validation", async ({ page }) => {
     const merchantEmail = process.env.E2E_MERCHANT_EMAIL!;
     const merchantPassword = process.env.E2E_MERCHANT_PASSWORD!;
 
@@ -85,10 +85,26 @@ test.describe("Production Hotfix Verification E2E", () => {
     const slugInput = page.locator('input[name="slug"]');
     await expect(slugInput).toHaveCount(0);
 
-    // 4. Verify Shopee link field has Thai label and text input type
-    const destinationInput = page.locator('input[name="destinationUrl"]');
-    await expect(destinationInput).toBeVisible();
-    await expect(destinationInput).toHaveAttribute("type", "text");
-    await expect(page.getByText("ใส่ลิงก์หน้าสินค้า หน้าร้าน หรือช่องทางสั่งซื้อของคุณได้ ผู้ดูแลจะตรวจสอบก่อนเผยแพร่ หากไม่ใส่ โฆษณาจะไม่มีปุ่มไปยังร้านค้า")).toBeVisible();
+    // 4. Verify purchase_info is a TEXTAREA (not URL input)
+    const purchaseInfoTextarea = page.locator('textarea[name="purchaseInfo"]');
+    await expect(purchaseInfoTextarea).toBeVisible();
+
+    // 5. Verify the new Thai label is present
+    await expect(page.getByText("ช่องทางสั่งซื้อหรือข้อมูลเพิ่มเติม (ไม่บังคับ)")).toBeVisible();
+
+    // 6. Verify the helper text is present
+    await expect(page.getByText("ระบุวิธีสั่งซื้อ ช่องทางติดต่อ ลิงก์ หรือข้อมูลเพิ่มเติมได้ตามต้องการ ผู้ดูแลจะตรวจสอบก่อนเผยแพร่")).toBeVisible();
+
+    // 7. Enter arbitrary Thai plain text (not a URL) and confirm no error
+    await purchaseInfoTextarea.fill("สินค้าทดลอง ติดต่อร้านค้าทาง Line @testshop");
+
+    // 8. Confirm no "ลิงก์ Shopee ไม่ถูกต้อง" or Shopee-related error appears
+    await expect(page.getByText("ลิงก์ Shopee ไม่ถูกต้อง")).toHaveCount(0);
+    await expect(page.getByText("ปลายทาง Shopee")).toHaveCount(0);
+    await expect(page.getByText("ไป Shopee")).toHaveCount(0);
+
+    // 9. Old destinationUrl URL input should not exist
+    const oldUrlInput = page.locator('input[name="destinationUrl"]');
+    await expect(oldUrlInput).toHaveCount(0);
   });
 });

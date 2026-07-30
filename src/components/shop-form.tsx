@@ -2,14 +2,14 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Store, ShoppingBag, Globe, Sparkles, Check } from "lucide-react";
+import { Store, Globe, Sparkles, Check } from "lucide-react";
 
 interface ShopFormProps {
   shop?: {
     name: string;
     slug: string;
     description: string;
-    shopee_url: string | null;
+    website_url: string | null;
     instagram_url: string | null;
   } | null;
   onboarding?: boolean;
@@ -52,7 +52,7 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
             <span>เริ่มต้นเปิดสตูดิโอร้านค้าบน FitToday</span>
           </div>
           <p className="text-muted leading-relaxed">
-            กรอกข้อมูลเบื้องต้นเกี่ยวกับสตูดิโอและแบรนด์ของคุณ ข้อมูลนี้จะใช้แสดงในหน้าโปรไฟล์ร้านและเชื่อมต่อกับลิงก์ Shopee ของคุณ
+            กรอกข้อมูลเบื้องต้นเกี่ยวกับสตูดิโอและแบรนด์ของคุณ ข้อมูลนี้จะใช้แสดงในหน้าโปรไฟล์ร้าน
           </p>
         </div>
       )}
@@ -107,14 +107,14 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-mono text-muted uppercase mb-1 flex items-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5 text-olive" />
-                <span>ลิงก์ Shopee หลักของร้าน</span>
+                <Globe className="w-3.5 h-3.5 text-olive" />
+                <span>เว็บไซต์ร้านค้า (ไม่บังคับ)</span>
               </label>
               <input
-                name="shopeeUrl"
-                defaultValue={shop?.shopee_url ?? ""}
+                name="websiteUrl"
+                defaultValue={shop?.website_url ?? ""}
                 type="url"
-                placeholder="https://shopee.co.th/shop-name"
+                placeholder="https://example.com"
                 className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
               />
             </div>

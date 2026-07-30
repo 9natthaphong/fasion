@@ -17,7 +17,8 @@ export async function POST(request: Request) {
     name: parsed.data.name,
     slug: parsed.data.slug,
     description: parsed.data.description,
-    shopee_url: parsed.data.shopeeUrl || null,
+    // The database column name is retained for legacy compatibility.
+    shopee_url: parsed.data.websiteUrl || null,
     instagram_url: parsed.data.instagramUrl || null,
   };
   const shopId = existing?.id ?? randomUUID();
