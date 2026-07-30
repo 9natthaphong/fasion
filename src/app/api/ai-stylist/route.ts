@@ -39,7 +39,28 @@ export async function POST(request: Request) {
   const rawJson = await request.json().catch(() => null);
   const parsed = wardrobeOutfitInputSchema.safeParse(rawJson);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" }, { status: 400 });
+    const issue = parsed.error.issues[0];
+    const fieldName = issue?.path?.join(".") || "";
+    const fieldLabels: Record<string, string> = {
+      activity: "กิจกรรมที่ไป",
+      weather: "สภาพอากาศ",
+      formality: "ระดับความทางการ",
+      timeOfDay: "ช่วงเวลา",
+      clothingPresentation: "รูปแบบเสื้อผ้า",
+      heightCm: "ส่วนสูง",
+      weightKg: "น้ำหนัก",
+      budget: "งบประมาณ",
+      anchorItem: "ชิ้นหลักที่มีอยู่แล้ว",
+      notes: "หมายเหตุเพิ่มเติม",
+    };
+    const label = fieldLabels[fieldName] || (fieldName ? `ฟิลด์ ${fieldName}` : "ข้อมูล");
+    return NextResponse.json(
+      {
+        code: "invalid_input",
+        error: `ข้อมูล ${label} ไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่อีกครั้ง`,
+      },
+      { status: 400 },
+    );
   }
 
   if (!process.env.OPENAI_API_KEY) {
@@ -82,17 +103,17 @@ export async function POST(request: Request) {
   // Handle Wardrobe Mode
   if (parsed.data.mode === "wardrobe") {
     if (!user) {
-      return NextResponse.json({ error: "กรุณาเข้าสู่ระบบเพื่อใช้งานโหมดตู้เสื้อผ้าส่วนตัว" }, { status: 401 });
+      return NextResponse.json({ error: "กรุณาเข้าสู่ระบบเพื่อใช้งานโหมดตู้เสื้อผ้าส่วนตัว", code: "unauthorized" }, { status: 401 });
     }
 
     const rawUserItems = await getWardrobeItems(user.id, { status: "available" });
     const excludedSet = new Set(parsed.data.excludedItemIds);
     const availableItems = rawUserItems.filter((item) => !excludedSet.has(item.id));
 
-    if (availableItems.length < 2) {
+    if (availableItems.length < 1) {
       return NextResponse.json(
         {
-          error: "ตู้เสื้อผ้าของคุณมีจำนวนน้อยเกินไปสำหรับจัดชุด กรุณาอัปโหลดเสื้อผ้าเพิ่มอย่างน้อย 2 ชิ้น",
+          error: "ตู้เสื้อผ้าของคุณยังไม่มีเสื้อผ้าที่พร้อมใช้งาน กรุณาเพิ่มเสื้อผ้าหรือเปลี่ยนสถานะเสื้อผ้าในตู้ให้เป็นพร้อมใส่ก่อนจัดลุค",
           code: "insufficient_wardrobe_items",
         },
         { status: 400 },

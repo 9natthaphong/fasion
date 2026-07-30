@@ -50,7 +50,6 @@ export function AdEditor({
 
   // Live preview state fields
   const [title, setTitle] = useState(ad?.title || "");
-  const [slug, setSlug] = useState(ad?.slug || "");
   const [description, setDescription] = useState(ad?.description || "");
   const [priceText, setPriceText] = useState(ad?.price_text || "");
   const [destinationUrl, setDestinationUrl] = useState(ad?.destination_url || "");
@@ -136,7 +135,6 @@ export function AdEditor({
     const body = {
       shopId,
       title: title || form.get("title"),
-      slug: slug || form.get("slug"),
       description: description || form.get("description"),
       adType: adType || form.get("adType"),
       priceText: priceText || form.get("priceText") || null,
@@ -200,38 +198,38 @@ export function AdEditor({
           </div>
 
           <div className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-mono text-muted uppercase mb-1">ชื่อโฆษณา / สินค้า *</label>
-                <input
-                  name="title"
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    if (!slug && e.target.value) {
-                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""));
-                    }
-                  }}
-                  required
-                  maxLength={140}
-                  placeholder="เช่น เสื้อเชิ้ตคอตตอนลินินทรงหลวม"
-                  className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-muted uppercase mb-1">URL Slug *</label>
-                <input
-                  name="slug"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  required
-                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-                  placeholder="linen-loose-shirt"
-                  className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">ชื่อโฆษณา / สินค้า *</label>
+              <input
+                name="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                maxLength={140}
+                placeholder="เช่น เสื้อเชิ้ตคอตตอนลินินทรงหลวม"
+                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              />
             </div>
+
+            {ad?.slug && (
+              <div className="p-3 border border-line bg-background text-xs space-y-1">
+                <span className="font-mono text-muted uppercase block">ลิงก์สาธารณะโฆษณา:</span>
+                <div className="flex items-center justify-between gap-2">
+                  <code className="text-charcoal font-mono select-all">/ads/{ad.slug}</code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        navigator.clipboard.writeText(`${window.location.origin}/ads/${ad.slug}`);
+                      }
+                    }}
+                    className="px-2.5 py-1 text-[11px] border border-line hover:bg-paper font-medium transition-colors"
+                  >
+                    คัดลอกลิงก์
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-mono text-muted uppercase mb-1">รายละเอียดสินค้า</label>
@@ -277,10 +275,11 @@ export function AdEditor({
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-muted uppercase mb-1">ลิงก์ไปยังปลายทาง Shopee *</label>
+              <label className="block text-xs font-mono text-muted uppercase mb-1">ลิงก์สินค้า หรือหน้าร้านบน Shopee *</label>
+              <p className="text-xs text-muted mb-2">คัดลอกลิงก์จาก Shopee แล้ววางที่นี่ ระบบจะตรวจสอบให้ก่อนเผยแพร่</p>
               <input
                 name="destinationUrl"
-                type="url"
+                type="text"
                 value={destinationUrl}
                 onChange={(e) => setDestinationUrl(e.target.value)}
                 required

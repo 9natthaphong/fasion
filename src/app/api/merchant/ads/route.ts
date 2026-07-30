@@ -3,6 +3,7 @@ import { requireApiRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { adSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
+import { generateUniqueAdSlug } from "@/lib/slug";
 
 export async function POST(request: Request) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
@@ -15,9 +16,26 @@ export async function POST(request: Request) {
   if (!shop) return NextResponse.json({ error: "ไม่พบร้านหรือคุณไม่มีสิทธิ์" }, { status: 403 });
   if (parsed.data.intent === "submit" && !canSubmit(shop)) return NextResponse.json({ error: "ร้านต้องได้รับอนุมัติและ subscription ต้อง active ก่อนส่งตรวจ" }, { status: 409 });
   if (parsed.data.intent === "submit" && !parsed.data.coverImagePath) return NextResponse.json({ error: "กรุณาอัปโหลดรูปหน้าปกก่อนส่งตรวจ" }, { status: 400 });
+
+  const generatedSlug = await generateUniqueAdSlug(parsed.data.title, async (candidateSlug) => {
+    const { data: existing } = await supabase
+      .from("ads")
+      .select("id")
+      .eq("shop_id", shop.id)
+      .eq("slug", candidateSlug)
+      .maybeSingle();
+    return Boolean(existing);
+  });
+
+  const insertRow = {
+    shop_id: parsed.data.shopId,
+    slug: generatedSlug,
+    ...toAdUpdateRow(parsed.data),
+  };
+
   const { data: ad, error } = await supabase
     .from("ads")
-    .insert(toAdInsertRow(parsed.data))
+    .insert(insertRow)
     .select("id")
     .single();
   if (error) return NextResponse.json({ error: error.code === "23505" ? "Slug โฆษณานี้ถูกใช้ในร้านแล้ว" : "สร้างโฆษณาไม่สำเร็จ" }, { status: 400 });
@@ -49,7 +67,6 @@ export function canSubmit(shop: { status: string; subscription_status: string; s
 export function toAdUpdateRow(data: ReturnType<typeof adSchema.parse>) {
   return {
     title: data.title,
-    slug: data.slug,
     description: data.description,
     ad_type: data.adType,
     price_text: data.priceText,

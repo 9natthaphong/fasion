@@ -11,7 +11,7 @@ function looksLikePrivateIp(hostname: string) {
 export function normalizeShopeeUrl(value: string) {
   let url: URL;
   try {
-    url = new URL(value);
+    url = new URL(value.trim());
   } catch {
     throw new Error("ลิงก์ Shopee ไม่ถูกต้อง");
   }
