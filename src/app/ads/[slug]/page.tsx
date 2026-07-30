@@ -63,11 +63,13 @@ export default async function AdDetailPage({
           <p className="detail-description">{ad.description}</p>
           <strong className="detail-price">{ad.price_text}</strong>
           <div className="detail-actions">
-            {ad.is_demo ? (
-              <span className="button button-solid" aria-disabled="true">Demo — ยังไม่เปิดลิงก์ซื้อ</span>
-            ) : (
-              <Link className="button button-solid" href={`/go/ad/${ad.id}`} prefetch={false}>ไป Shopee ↗</Link>
-            )}
+            {ad.destination_url ? (
+              ad.is_demo ? (
+                <span className="button button-solid" aria-disabled="true">Demo — ยังไม่เปิดลิงก์ซื้อ</span>
+              ) : (
+                <Link className="button button-solid" href={`/go/ad/${ad.id}`} prefetch={false}>ไปยังร้านค้า ↗</Link>
+              )
+            ) : null}
             {ad.is_demo ? (
               <button type="button" className="button button-ghost" disabled>
                 <Heart className="w-4 h-4" aria-hidden="true" />

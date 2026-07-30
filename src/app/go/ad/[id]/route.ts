@@ -6,7 +6,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getDemoAd } from "@/lib/demo-data";
 import { eventSessionCookie, getEventIdentity, isLikelyBot, passRateLimit } from "@/lib/request-security";
-import { normalizeShopeeUrl } from "@/lib/shopee";
+import { normalizeDestinationUrl } from "@/lib/shopee";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,11 +28,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       (!shop.subscription_ends_at || new Date(shop.subscription_ends_at) > new Date()) &&
       isAdCurrentlyPublic(ad.status, ad.starts_at, ad.ends_at)
     ) {
+      if (!ad.destination_url) {
+        return NextResponse.json({ error: "โฆษณานี้ไม่มีลิงก์ปลายทาง" }, { status: 404 });
+      }
       const user = await getCurrentUser();
       const identity = await getEventIdentity(user?.id);
       let destination: string;
       try {
-        destination = normalizeShopeeUrl(ad.destination_url);
+        const norm = normalizeDestinationUrl(ad.destination_url);
+        if (!norm) {
+          return NextResponse.json({ error: "โฆษณานี้ไม่มีลิงก์ปลายทาง" }, { status: 404 });
+        }
+        destination = norm;
       } catch {
         return NextResponse.redirect(new URL("/discover?notice=invalid-destination", request.url), 303);
       }
@@ -66,8 +73,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       (!shop.subscription_ends_at || new Date(shop.subscription_ends_at) > new Date()) &&
       isAdCurrentlyPublic(ad.status, ad.starts_at, ad.ends_at)
     ) {
+      if (!ad.destination_url) {
+        return NextResponse.json({ error: "โฆษณานี้ไม่มีลิงก์ปลายทาง" }, { status: 404 });
+      }
       try {
-        return NextResponse.redirect(normalizeShopeeUrl(ad.destination_url), 303);
+        const norm = normalizeDestinationUrl(ad.destination_url);
+        if (!norm) {
+          return NextResponse.json({ error: "โฆษณานี้ไม่มีลิงก์ปลายทาง" }, { status: 404 });
+        }
+        return NextResponse.redirect(norm, 303);
       } catch {
         return NextResponse.redirect(new URL("/discover?notice=invalid-destination", request.url), 303);
       }
@@ -77,8 +91,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   // Demo fallback
   const demoAd = getDemoAd(id);
   if (demoAd) {
+    if (!demoAd.destination_url) {
+      return NextResponse.json({ error: "โฆษณานี้ไม่มีลิงก์ปลายทาง" }, { status: 404 });
+    }
     try {
-      return NextResponse.redirect(normalizeShopeeUrl(demoAd.destination_url), 303);
+      const norm = normalizeDestinationUrl(demoAd.destination_url);
+      if (!norm) {
+        return NextResponse.json({ error: "โฆษณานี้ไม่มีลิงก์ปลายทาง" }, { status: 404 });
+      }
+      return NextResponse.redirect(norm, 303);
     } catch {
       return NextResponse.redirect(new URL("/discover?notice=invalid-destination", request.url), 303);
     }

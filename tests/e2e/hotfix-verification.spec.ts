@@ -89,6 +89,6 @@ test.describe("Production Hotfix Verification E2E", () => {
     const destinationInput = page.locator('input[name="destinationUrl"]');
     await expect(destinationInput).toBeVisible();
     await expect(destinationInput).toHaveAttribute("type", "text");
-    await expect(page.getByText("คัดลอกลิงก์จาก Shopee แล้ววางที่นี่ ระบบจะตรวจสอบให้ก่อนเผยแพร่")).toBeVisible();
+    await expect(page.getByText("ใส่ลิงก์หน้าสินค้า หน้าร้าน หรือช่องทางสั่งซื้อของคุณได้ ผู้ดูแลจะตรวจสอบก่อนเผยแพร่ หากไม่ใส่ โฆษณาจะไม่มีปุ่มไปยังร้านค้า")).toBeVisible();
   });
 });

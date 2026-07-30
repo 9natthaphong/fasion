@@ -75,6 +75,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
   const totalImageCount = (resolvedCoverUrl ? 1 : 0) + resolvedGallery.length;
 
   const host = (() => {
+    if (!ad.destination_url) return null;
     try {
       return new URL(ad.destination_url).hostname;
     } catch {
@@ -260,19 +261,39 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
 
-              <div>
-                <dt>ลิงก์ปลายทาง (Shopee)</dt>
-                <dd className="break-all pt-1">
-                  <a
-                    href={ad.destination_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-olive hover:underline inline-flex items-center gap-1 font-mono text-[11px]"
-                  >
-                    <span>{ad.destination_url}</span>
-                    <ExternalLink className="w-3 h-3 shrink-0" />
-                  </a>
-                  <span className="block text-[11px] text-muted font-mono mt-0.5">Domain: {host}</span>
+              <div className="border-t border-line/60 pt-3">
+                <dt className="font-semibold text-charcoal text-xs mb-1">ปลายทางภายนอก</dt>
+                <dd className="pt-1">
+                  {ad.destination_url ? (
+                    <div className="space-y-2 bg-paper p-3 border border-line">
+                      <div>
+                        <span className="block text-[11px] text-muted font-mono uppercase">URL ปลายทาง:</span>
+                        <span className="select-all font-mono text-xs text-charcoal break-all">{ad.destination_url}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-muted font-mono uppercase">Hostname:</span>
+                        <span className="font-mono text-xs font-semibold text-olive">{host}</span>
+                      </div>
+                      <div className="pt-1">
+                        <a
+                          href={ad.destination_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                        >
+                          <span>เปิดตรวจสอบในแท็บใหม่</span>
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                        </a>
+                      </div>
+                      <p className="text-[11px] text-warning font-medium pt-1">
+                        ลิงก์นี้เป็นเว็บไซต์ภายนอก กรุณาตรวจสอบความสอดคล้องกับโฆษณาก่อนอนุมัติ
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-paper border border-line text-xs text-muted">
+                      ร้านค้าไม่ได้ระบุลิงก์ปลายทาง โฆษณานี้จะแสดงโดยไม่มีปุ่มไปยังร้านค้า
+                    </div>
+                  )}
                 </dd>
               </div>
 
