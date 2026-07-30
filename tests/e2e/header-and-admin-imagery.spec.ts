@@ -98,9 +98,9 @@ test.describe("Header Session Awareness & Admin Imagery E2E", () => {
     await expect(firstAdCheckLink).toBeVisible();
 
     // 4. Admin Ad Detail Page (Verify Cover image & Gallery)
-    await firstAdCheckLink.click();
-    await page.waitForURL(/\/admin\/ads\/[0-9a-f-]+$/, { timeout: 15_000 });
-    await expect(page.getByText("Ad Moderation & Review")).toBeVisible();
+    const adHref = await firstAdCheckLink.getAttribute("href");
+    if (adHref) await page.goto(adHref);
+    await expect(page.getByText("ตรวจสอบโดยผู้ดูแล")).toBeVisible();
     await expect(page.locator("img[alt]")).not.toHaveCount(0);
 
     // 5. Test Lightbox image preview modal

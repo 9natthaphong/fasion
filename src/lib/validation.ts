@@ -28,15 +28,21 @@ export const profileSchema = z.object({
 
 export const preferencesSchema = z
   .object({
-    heightCm: z.coerce.number().min(80).max(260).nullable(),
-    weightKg: z.coerce.number().min(20).max(350).nullable(),
-    clothingPresentation: z.enum(["menswear", "womenswear", "unisex", "unspecified"]),
-    preferredStyles: z.array(z.string().trim().max(40)).max(12),
-    preferredColors: z.array(z.string().trim().max(40)).max(12),
-    avoidedColors: z.array(z.string().trim().max(40)).max(12),
-    preferredFit: z.enum(["fitted", "relaxed", "unspecified"]),
-    defaultBudget: z.coerce.number().min(0).max(1_000_000).nullable(),
-    saveBodyInformation: z.boolean(),
+    heightCm: z.preprocess((val) => (val === "" || val === undefined ? null : val), z.coerce.number().min(80).max(260).nullable()),
+    weightKg: z.preprocess((val) => (val === "" || val === undefined ? null : val), z.coerce.number().min(20).max(350).nullable()),
+    clothingPresentation: z.preprocess(
+      (val) => (["menswear", "womenswear", "unisex", "unspecified"].includes(val as string) ? val : "unspecified"),
+      z.enum(["menswear", "womenswear", "unisex", "unspecified"]),
+    ),
+    preferredStyles: z.preprocess((val) => (Array.isArray(val) ? val : []), z.array(z.string().trim().max(40)).max(12)),
+    preferredColors: z.preprocess((val) => (Array.isArray(val) ? val : []), z.array(z.string().trim().max(40)).max(12)),
+    avoidedColors: z.preprocess((val) => (Array.isArray(val) ? val : []), z.array(z.string().trim().max(40)).max(12)),
+    preferredFit: z.preprocess(
+      (val) => (["fitted", "relaxed", "unspecified"].includes(val as string) ? val : "unspecified"),
+      z.enum(["fitted", "relaxed", "unspecified"]),
+    ),
+    defaultBudget: z.preprocess((val) => (val === "" || val === undefined ? null : val), z.coerce.number().min(0).max(1_000_000).nullable()),
+    saveBodyInformation: z.preprocess((val) => Boolean(val), z.boolean().default(true)),
   })
   .transform((value) =>
     value.saveBodyInformation
@@ -271,14 +277,16 @@ export const outfitResponseSchema = z
   });
 
 export function isOwnedWardrobeAssetPath(path: string, userId: string): boolean {
+  if (!path || typeof path !== "string") return false;
   const prefix = `${userId}/`;
   if (!path.startsWith(prefix)) return false;
   const rest = path.slice(prefix.length);
+  if (rest.includes("..") || rest.includes("\\") || /[\0\r\n\t<>"']/.test(rest)) return false;
+  if (!/\.(?:jpe?g|png|webp)$/i.test(rest)) return false;
   const parts = rest.split("/");
-  if (parts.length !== 2) return false;
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  const filenameRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/i;
-  return uuidRegex.test(parts[0]) && filenameRegex.test(parts[1]);
+  if (parts.length < 1 || parts.length > 3) return false;
+  const segmentRegex = /^[a-zA-Z0-9_.-]+$/;
+  return parts.every((p) => p.length > 0 && segmentRegex.test(p));
 }
 
 import { normalizeItemType } from "@/lib/clothing-taxonomy";

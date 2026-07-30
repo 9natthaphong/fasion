@@ -90,7 +90,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
     <section className="dashboard-section space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <p className="eyebrow">Ad Moderation & Review</p>
+          <p className="eyebrow">ตรวจสอบโดยผู้ดูแล</p>
           <h1 className="text-2xl sm:text-3xl font-serif">{ad.title}</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -290,6 +290,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
           {/* Moderation Action Form */}
           <div className="border border-line bg-paper p-4 space-y-3">
             <h3 className="text-sm font-semibold text-charcoal">ดำเนินการการตรวจสอบ</h3>
+            <p className="text-xs text-muted">ตรวจสอบรูปภาพ รายละเอียด หมวดหมู่ ระยะเวลา และลิงก์ปลายทางก่อนอนุมัติ</p>
             <AdminActionForm
               endpoint={`/api/admin/ads/${id}`}
               actions={[

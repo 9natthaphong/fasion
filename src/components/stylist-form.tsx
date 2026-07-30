@@ -687,6 +687,11 @@ export function StylistForm({
                                     src={imageSrc}
                                     alt={details?.name || itemRef.role}
                                     fill
+                                    unoptimized
+                                    onError={(e) => {
+                                      const target = e.currentTarget as HTMLImageElement;
+                                      target.src = "/demo-assets/ad-linen-shirt.jpg";
+                                    }}
                                     className="object-cover"
                                   />
                                 </div>

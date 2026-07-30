@@ -118,7 +118,8 @@ export function EditItemForm({ item }: Props) {
     }
   };
 
-  const imageSrc = item.signed_image_url || "/demo-assets/ad-linen-shirt.jpg";
+  const initialImageSrc = item.signed_image_url || "/demo-assets/ad-linen-shirt.jpg";
+  const [displayImageSrc, setDisplayImageSrc] = useState(initialImageSrc);
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -152,7 +153,15 @@ export function EditItemForm({ item }: Props) {
         {/* Left Image View */}
         <div className="lg:col-span-5 space-y-4">
           <div className="aspect-[3/4] relative bg-background border border-line overflow-hidden">
-            <Image src={imageSrc} alt={name || "เสื้อผ้าส่วนตัว"} fill className="object-cover" priority />
+            <Image
+              src={displayImageSrc}
+              alt={name || "เสื้อผ้าส่วนตัว"}
+              fill
+              unoptimized
+              onError={() => setDisplayImageSrc("/demo-assets/ad-linen-shirt.jpg")}
+              className="object-cover"
+              priority
+            />
           </div>
 
           {/* Quick Actions */}
