@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { adSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
 import { generateUniqueAdSlug } from "@/lib/slug";
+import { toAdInsertRow } from "@/lib/merchant-ad-write";
 
 export async function POST(request: Request) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
@@ -28,9 +29,8 @@ export async function POST(request: Request) {
   });
 
   const insertRow = {
-    shop_id: parsed.data.shopId,
+    ...toAdInsertRow(parsed.data),
     slug: generatedSlug,
-    ...toAdUpdateRow(parsed.data),
   };
 
   const { data: ad, error } = await supabase
@@ -62,27 +62,6 @@ export async function POST(request: Request) {
 
 export function canSubmit(shop: { status: string; subscription_status: string; subscription_ends_at: string | null }) {
   return shop.status === "approved" && shop.subscription_status === "active" && (!shop.subscription_ends_at || new Date(shop.subscription_ends_at) > new Date());
-}
-
-export function toAdUpdateRow(data: ReturnType<typeof adSchema.parse>) {
-  return {
-    title: data.title,
-    description: data.description,
-    ad_type: data.adType,
-    price_text: data.priceText,
-    destination_url: data.destinationUrl,
-    cover_image_path: data.coverImagePath,
-    starts_at: data.startsAt,
-    ends_at: data.endsAt,
-    status: "draft",
-  };
-}
-
-export function toAdInsertRow(data: ReturnType<typeof adSchema.parse>) {
-  return {
-    shop_id: data.shopId,
-    ...toAdUpdateRow(data),
-  };
 }
 
 export async function replaceRelations(

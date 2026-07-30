@@ -28,6 +28,10 @@ if (fs.existsSync(testEnvPath)) {
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  // The cinematic fixture serves a large local video. Serial browser work
+  // prevents parallel desktop navigations from saturating the single Next.js
+  // test server and timing out despite the same tests passing in isolation.
+  workers: 1,
   timeout: 60_000,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",

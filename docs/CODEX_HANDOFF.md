@@ -92,8 +92,8 @@ Admin pages และ mutations ตรวจสิทธิ์ซ้ำบน se
 - [`src/lib/supabase/admin.ts`](../src/lib/supabase/admin.ts): service client ประกาศ `server-only`
 - [`src/lib/request-security.ts`](../src/lib/request-security.ts): same-origin validation รองรับ configured origin และ trusted proxy host โดยไม่เปิด origin กว้าง; first-party session ID ต้องเป็น UUID
 - [`src/app/api/merchant/ads/route.ts`](../src/app/api/merchant/ads/route.ts) และ [`src/app/api/merchant/ads/[id]/route.ts`](../src/app/api/merchant/ads/[id]/route.ts): ownership, immutable `shop_id`, asset prefix, cover requirement และ state transition ตรวจที่ server
-- [`src/app/api/admin/ads/[id]/route.ts`](../src/app/api/admin/ads/[id]/route.ts): ตรวจ cover และ Shopee URL ซ้ำก่อน approve
-- [`src/app/go/ad/[id]/route.ts`](../src/app/go/ad/[id]/route.ts): ใช้ destination จาก database, HTTPS Shopee allowlist และบันทึก click ก่อน `303`
+- [`src/app/api/admin/ads/[id]/route.ts`](../src/app/api/admin/ads/[id]/route.ts): ตรวจ cover และ legacy outbound URL ซ้ำก่อน approve โดย `purchase_info` เป็นข้อความที่ผู้ดูแลตรวจเอง
+- [`src/app/go/ad/[id]/route.ts`](../src/app/go/ad/[id]/route.ts): ใช้เฉพาะ legacy destination จาก database ที่ผ่าน HTTPS safety policy และบันทึก click ก่อน `303`; ไม่ redirect จากข้อความ `purchase_info`
 - [`next.config.ts`](../next.config.ts): Production CSP ไม่มี `unsafe-eval`; Development อนุญาตเฉพาะที่ Next/Turbopack ต้องใช้; Supabase origin จำกัดจาก configured project
 - `SUPABASE_SECRET_KEY`, `OPENAI_API_KEY` และ `ADMIN_EMAILS` ใช้เฉพาะ server code; ไม่พบ client import
 

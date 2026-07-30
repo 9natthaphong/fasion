@@ -3,7 +3,7 @@ import { requireApiRole } from "@/lib/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { adminAdActionSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
-import { normalizeDestinationUrl } from "@/lib/shopee";
+import { normalizeDestinationUrl } from "@/lib/outbound-url";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });

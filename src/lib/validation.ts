@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { shopeeUrlSchema } from "@/lib/shopee";
+import { destinationUrlSchema } from "@/lib/outbound-url";
+import { purchaseInfoSchema } from "@/lib/purchase-info";
 
 const email = z.string().trim().email("อีเมลไม่ถูกต้อง").max(254);
 const password = z
@@ -113,7 +114,7 @@ export const shopSchema = z.object({
     .toLowerCase()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "ใช้ a-z, 0-9 และขีดกลางเท่านั้น"),
   description: z.string().trim().max(1500),
-  shopeeUrl: shopeeUrlSchema.optional().or(z.literal("")),
+  websiteUrl: destinationUrlSchema.optional(),
   instagramUrl: z.union([
     z.literal(""),
     z
@@ -144,7 +145,10 @@ export const adSchema = z
       "shop_feature",
     ]),
     priceText: z.string().trim().max(80).nullable(),
-    destinationUrl: shopeeUrlSchema,
+    // purchase_info: free-text optional field for purchase channel / contact info.
+    // Replaces the old destinationUrl-only merchant experience.
+    // Accepts Thai/English plain text, Line IDs, Instagram handles, URLs, or blank.
+    purchaseInfo: purchaseInfoSchema,
     coverImagePath: z.string().trim().max(500).nullable(),
     categoryIds: z.array(z.string().uuid()).min(1).max(5),
     tagIds: z.array(z.string().uuid()).max(20).optional(),

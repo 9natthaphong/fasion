@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { requireApiRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { adSchema } from "@/lib/validation";
-import { canSubmit, toAdUpdateRow } from "../route";
+import { canSubmit } from "../route";
+import { toAdUpdateRow } from "@/lib/merchant-ad-write";
 import { requireSameOrigin } from "@/lib/request-security";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {

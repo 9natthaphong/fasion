@@ -59,7 +59,7 @@ async function main() {
         description: "ร้านค้าทดสอบ E2E สำหรับการอนุมัติโฆษณาและตรวจสอบสิทธิ์แอดมิน",
         logo_path: null,
         cover_path: null,
-        shopee_url: "https://shopee.co.th/fittoday-test-shop",
+        shopee_url: "https://example.com/fittoday-test-shop",
         status: "pending",
         subscription_status: "inactive",
       })

@@ -12,6 +12,8 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { Heart } from "lucide-react";
 import { adTypeLabel, calculateCtr, formatNumber } from "@/lib/format";
+import { PurchaseInfoText } from "@/components/purchase-info-text";
+import { resolvePurchaseInfo } from "@/lib/purchase-info";
 
 export async function generateMetadata({
   params,
@@ -38,6 +40,8 @@ export default async function AdDetailPage({
     liked = Boolean(data);
   }
   const ctr = calculateCtr(ad.clicks ?? 0, ad.impressions ?? 0);
+  const purchaseInfo = resolvePurchaseInfo(ad.purchase_info, ad.destination_url);
+  const hasReviewedLegacyDestination = Boolean(ad.destination_url && !ad.is_demo);
 
   return (
     <>
@@ -63,12 +67,19 @@ export default async function AdDetailPage({
           <p className="detail-description">{ad.description}</p>
           <strong className="detail-price">{ad.price_text}</strong>
           <div className="detail-actions">
-            {ad.destination_url ? (
-              ad.is_demo ? (
-                <span className="button button-solid" aria-disabled="true">Demo — ยังไม่เปิดลิงก์ซื้อ</span>
-              ) : (
-                <Link className="button button-solid" href={`/go/ad/${ad.id}`} prefetch={false}>ไปยังร้านค้า ↗</Link>
-              )
+            {purchaseInfo ? (
+              <div className="purchase-info-block">
+                <p className="text-xs text-muted font-mono uppercase mb-1">ช่องทางสั่งซื้อ</p>
+                <PurchaseInfoText
+                  value={purchaseInfo}
+                  className="text-sm text-charcoal whitespace-pre-wrap break-words"
+                />
+                {hasReviewedLegacyDestination ? (
+                  <a className="button button-solid" href={`/go/ad/${ad.id}`}>
+                    เปิดช่องทางสั่งซื้อ ↗
+                  </a>
+                ) : null}
+              </div>
             ) : null}
             {ad.is_demo ? (
               <button type="button" className="button button-ghost" disabled>

@@ -6,7 +6,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getDemoAd } from "@/lib/demo-data";
 import { eventSessionCookie, getEventIdentity, isLikelyBot, passRateLimit } from "@/lib/request-security";
-import { normalizeDestinationUrl } from "@/lib/shopee";
+import { normalizeDestinationUrl } from "@/lib/outbound-url";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -5,7 +5,7 @@
 FitToday เป็น MVP เว็บภาษาไทยที่แยกสองระบบออกจากกันอย่างชัดเจน:
 
 - AI Stylist สร้างไอเดียแต่งตัว 3 แนวทางจากบริบทของผู้ใช้
-- Fashion Advertising Platform ให้ร้านค้าลงโฆษณาไปยัง Shopee และดู impressions, likes, clicks และ CTR
+- Fashion Advertising Platform ให้ร้านค้าลงโฆษณาพร้อมช่องทางสั่งซื้อแบบข้อความอิสระ และดู impressions, likes, clicks และ CTR
 
 เงินโฆษณาไม่มีผลต่อคำแนะนำจาก AI Stylist และโฆษณาทุกตำแหน่งมีป้ายกำกับ
 
@@ -118,7 +118,7 @@ Endpoint `/api/ai-stylist`:
 - Impression ใช้ `IntersectionObserver`: visible อย่างน้อย 50% ต่อเนื่อง 1 วินาที
 - Server deduplicate ตาม user/first-party anonymous session ภายใน 30 นาที
 - Like ต้องเป็น customer และมี unique constraint `(ad_id, user_id)`
-- `/go/ad/[id]` โหลด URL จากฐานข้อมูล ตรวจสถานะและ allowlist `shopee.co.th`, บันทึก click แล้วจึง redirect
+- `/go/ad/[id]` ใช้เฉพาะ legacy outbound URL ที่ตรวจสอบแล้วจากฐานข้อมูล บันทึก click แล้วจึง redirect; ข้อความ `purchase_info` ไม่ถูกนำไป redirect
 - Client ไม่ส่งยอดรวมหรือ destination URL มาเป็น source of truth
 - CTR = clicks / impressions × 100 และเป็น 0% เมื่อไม่มี impression
 

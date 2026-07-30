@@ -13,7 +13,7 @@ describe("ad relevance and privacy invariants", () => {
       description: "เสื้อเชิ้ตลินินใส่สบาย ระบายอากาศได้ดี",
       adType: "single_product",
       priceText: "790 THB",
-      destinationUrl: "https://shopee.co.th/product/123",
+      purchaseInfo: "ทัก Line @testshop",
       coverImagePath: `${shopId}/123e4567-e89b-12d3-a456-426614174001.jpg`,
       categoryIds: ["123e4567-e89b-12d3-a456-426614174001"],
       tagIds: ["123e4567-e89b-12d3-a456-426614174002"],

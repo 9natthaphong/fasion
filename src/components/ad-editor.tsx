@@ -3,8 +3,9 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Trash2, Eye, AlertCircle, ExternalLink, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Eye, AlertCircle, Check } from "lucide-react";
 import { ControlledTagSelector } from "@/components/merchant/controlled-tag-selector";
+import { PurchaseInfoText } from "@/components/purchase-info-text";
 import type { FashionTag } from "@/lib/types";
 
 function toLocalValue(date: string | null | undefined) {
@@ -20,6 +21,9 @@ type EditorAd = {
   description: string;
   ad_type: string;
   price_text: string | null;
+  /** New free-text purchase channel field. */
+  purchase_info: string | null;
+  /** Legacy URL field – used for backward-compat read only. */
   destination_url: string | null;
   cover_image_path: string | null;
   starts_at: string | null;
@@ -52,7 +56,10 @@ export function AdEditor({
   const [title, setTitle] = useState(ad?.title || "");
   const [description, setDescription] = useState(ad?.description || "");
   const [priceText, setPriceText] = useState(ad?.price_text || "");
-  const [destinationUrl, setDestinationUrl] = useState(ad?.destination_url || "");
+  // purchaseInfo is the new free-text field; falls back to legacy destination_url for existing ads
+  const [purchaseInfo, setPurchaseInfo] = useState(
+    ad?.purchase_info ?? ad?.destination_url ?? "",
+  );
   const [adType, setAdType] = useState(ad?.ad_type || "single_product");
 
   const [uploaded, setUploaded] = useState(
@@ -138,7 +145,7 @@ export function AdEditor({
       description: description || form.get("description"),
       adType: adType || form.get("adType"),
       priceText: priceText || form.get("priceText") || null,
-      destinationUrl: destinationUrl || form.get("destinationUrl"),
+      purchaseInfo: purchaseInfo || form.get("purchaseInfo") || null,
       coverImagePath: coverPath || null,
       categoryIds: form.getAll("categoryIds"),
       tagIds: selectedTagIds,
@@ -194,7 +201,7 @@ export function AdEditor({
         <div className="p-6 sm:p-8 bg-paper border border-line space-y-5">
           <div className="flex items-center justify-between border-b border-line pb-3">
             <span className="font-mono text-xs text-muted uppercase">Step 1 / Basics</span>
-            <span className="text-xs text-olive font-medium">ชื่อ & ลิงก์สินค้า</span>
+            <span className="text-xs text-olive font-medium">ชื่อ & ข้อมูลสั่งซื้อ</span>
           </div>
 
           <div className="space-y-4">
@@ -275,16 +282,20 @@ export function AdEditor({
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-muted uppercase mb-1">ลิงก์ร้านค้าหรือหน้าสินค้า (ไม่บังคับ)</label>
-              <p className="text-xs text-muted mb-2">ใส่ลิงก์หน้าสินค้า หน้าร้าน หรือช่องทางสั่งซื้อของคุณได้ ผู้ดูแลจะตรวจสอบก่อนเผยแพร่ หากไม่ใส่ โฆษณาจะไม่มีปุ่มไปยังร้านค้า</p>
-              <input
-                name="destinationUrl"
-                type="text"
-                value={destinationUrl}
-                onChange={(e) => setDestinationUrl(e.target.value)}
-                placeholder="https://example.com/product"
-                className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none"
+              <label className="block text-xs font-mono text-muted uppercase mb-1">ช่องทางสั่งซื้อหรือข้อมูลเพิ่มเติม (ไม่บังคับ)</label>
+              <p className="text-xs text-muted mb-2">
+                ระบุวิธีสั่งซื้อ ช่องทางติดต่อ ลิงก์ หรือข้อมูลเพิ่มเติมได้ตามต้องการ ผู้ดูแลจะตรวจสอบก่อนเผยแพร่
+              </p>
+              <textarea
+                name="purchaseInfo"
+                value={purchaseInfo}
+                onChange={(e) => setPurchaseInfo(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="เช่น ทัก Line @yourshop, Instagram @yourshop, นัดรับหน้าร้าน หรือ https://example.com"
+                className="w-full p-4 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none resize-none"
               />
+              <p className="text-[11px] text-muted mt-1 text-right">{purchaseInfo.length}/500</p>
             </div>
           </div>
         </div>
@@ -530,14 +541,19 @@ export function AdEditor({
               <p className="text-xs text-muted line-clamp-2">{description || "รายละเอียดสินค้าจะแสดงที่นี่..."}</p>
             </div>
 
-            <div className="pt-3 border-t border-line flex items-center justify-between">
+            <div className="pt-3 border-t border-line space-y-3">
               <span className="text-xs font-medium text-charcoal font-mono">{priceText || "฿ 1,290"}</span>
-              {destinationUrl && destinationUrl.trim().startsWith("https://") ? (
-                <span className="px-3 py-1.5 bg-charcoal text-white text-[10px] font-medium inline-flex items-center gap-1">
-                  <span>ไปยังร้านค้า</span>
-                  <ExternalLink className="w-3 h-3" />
-                </span>
-              ) : null}
+              {purchaseInfo.trim() && (
+                <div className="space-y-1">
+                  <span className="block text-[10px] font-mono text-muted uppercase">
+                    ช่องทางสั่งซื้อ
+                  </span>
+                  <PurchaseInfoText
+                    value={purchaseInfo.trim()}
+                    className="text-xs text-charcoal whitespace-pre-wrap break-words"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

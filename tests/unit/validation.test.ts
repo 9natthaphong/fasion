@@ -69,7 +69,7 @@ describe("input validation", () => {
       saveForNextTime: false,
     }).success).toBe(false);
   });
-  it("validates an ad and canonicalizes its destination", () => {
+  it("validates an ad and normalizes its purchase_info free-text field", () => {
     const parsed = adSchema.parse({
       shopId: "00000000-0000-4000-8000-000000000001",
       title: "ลุคประจำวัน",
@@ -77,7 +77,7 @@ describe("input validation", () => {
       description: "",
       adType: "outfit_set",
       priceText: "1,200 บาท",
-      destinationUrl: "https://shopee.co.th/item#x",
+      purchaseInfo: "  ทัก Line @testshop  ",
       coverImagePath: null,
       categoryIds: ["00000000-0000-4000-8000-000000000002"],
       images: [],
@@ -85,7 +85,8 @@ describe("input validation", () => {
       endsAt: null,
       intent: "draft",
     });
-    expect(parsed.destinationUrl).toBe("https://shopee.co.th/item");
+    // purchaseInfo should be trimmed
+    expect(parsed.purchaseInfo).toBe("ทัก Line @testshop");
   });
   it("rejects ad assets outside the owning shop prefix", () => {
     const result = adSchema.safeParse({
@@ -95,7 +96,7 @@ describe("input validation", () => {
       description: "",
       adType: "outfit_set",
       priceText: null,
-      destinationUrl: "https://shopee.co.th/item",
+      purchaseInfo: null,
       coverImagePath:
         "00000000-0000-4000-8000-000000000099/10000000-0000-4000-8000-000000000001.webp",
       categoryIds: ["00000000-0000-4000-8000-000000000002"],
@@ -112,7 +113,7 @@ describe("input validation", () => {
         name: "FitToday Shop",
         slug: "fittoday-shop",
         description: "",
-        shopeeUrl: "https://shopee.co.th/fittoday",
+        websiteUrl: "https://example.com/fittoday",
         instagramUrl: "",
       }).success,
     ).toBe(true);

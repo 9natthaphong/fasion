@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { normalizeDestinationUrl, normalizeShopeeUrl } from "@/lib/shopee";
+import { normalizeDestinationUrl } from "@/lib/outbound-url";
 
-describe("Destination URL Policy and Validation", () => {
+describe("Legacy outbound URL policy and validation", () => {
   it("normalizes empty string to null", () => {
     expect(normalizeDestinationUrl("")).toBeNull();
     expect(normalizeDestinationUrl(null)).toBeNull();
@@ -13,21 +13,13 @@ describe("Destination URL Policy and Validation", () => {
     expect(normalizeDestinationUrl("\t \n ")).toBeNull();
   });
 
-  it("accepts valid public HTTPS Shopee URLs", () => {
-    expect(normalizeDestinationUrl("https://shopee.co.th/example#details")).toBe("https://shopee.co.th/example");
-    expect(normalizeDestinationUrl("https://seller.shopee.co.th/product")).toBe("https://seller.shopee.co.th/product");
-    expect(normalizeShopeeUrl("https://shopee.co.th/product/123")).toBe("https://shopee.co.th/product/123");
-  });
-
-  it("accepts valid public HTTPS non-Shopee URLs (marketplaces, brand websites, short links)", () => {
+  it("accepts valid public HTTPS URLs", () => {
     expect(normalizeDestinationUrl("https://example.com/product/101")).toBe("https://example.com/product/101");
     expect(normalizeDestinationUrl("https://my-store.co.th/item")).toBe("https://my-store.co.th/item");
-    expect(normalizeDestinationUrl("https://shope.ee/shortlink")).toBe("https://shope.ee/shortlink");
     expect(normalizeDestinationUrl("https://bit.ly/3abcxyz")).toBe("https://bit.ly/3abcxyz");
   });
 
   it("rejects HTTP URLs", () => {
-    expect(() => normalizeDestinationUrl("http://shopee.co.th/item")).toThrow("HTTPS เท่านั้น");
     expect(() => normalizeDestinationUrl("http://example.com/product")).toThrow("HTTPS เท่านั้น");
   });
 

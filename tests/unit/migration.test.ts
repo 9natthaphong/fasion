@@ -26,6 +26,13 @@ const optionalDestinationMigration = readFileSync(
   ),
   "utf8",
 ).toLowerCase();
+const purchaseInfoMigration = readFileSync(
+  new URL(
+    "../../supabase/migrations/20260730234000_add_purchase_info.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
 
 const exposedTables = [
   "profiles",
@@ -101,5 +108,23 @@ describe("database migration security invariants", () => {
     expect(optionalDestinationMigration).toContain("alter table public.ads alter column destination_url drop not null");
     expect(optionalDestinationMigration).toContain("destination_url is null or char_length(destination_url) <= 2048");
     expect(optionalDestinationMigration).not.toContain("shopee.co.th");
+  });
+
+  it("adds purchase_info free-text column and preserves destination_url", () => {
+    // Adds the new column additiviely
+    expect(purchaseInfoMigration).toContain("add column purchase_info");
+    // Adds length constraint
+    expect(purchaseInfoMigration).toContain("ads_purchase_info_length_check");
+    expect(purchaseInfoMigration).toContain("char_length(purchase_info) <= 500");
+    expect(purchaseInfoMigration).toContain("ads_purchase_info_safe_text_check");
+    // Does not drop destination_url (backward compat)
+    expect(purchaseInfoMigration).not.toContain("drop column destination_url");
+    // Does not drop the ads table
+    expect(purchaseInfoMigration).not.toContain("drop table");
+    // Backfills legacy ads
+    expect(purchaseInfoMigration).toContain("purchase_info = destination_url");
+    expect(purchaseInfoMigration).toContain("new.purchase_info is distinct from old.purchase_info");
+    // Does not require shopee
+    expect(purchaseInfoMigration).not.toContain("shopee.co.th");
   });
 });
