@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { StatusBadge } from "@/components/ui";
 import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { resolveAdCoverUrl } from "@/lib/assets";
+import { AdminAssetImage } from "@/components/admin/admin-asset-image";
 import { ImageIcon } from "lucide-react";
 
 export default async function AdminAdsPage() {
@@ -45,7 +45,7 @@ export default async function AdminAdsPage() {
                 {/* Cover Thumbnail */}
                 <div className="relative w-14 h-14 bg-charcoal border border-line shrink-0 overflow-hidden flex items-center justify-center">
                   {resolvedCover ? (
-                    <Image
+                    <AdminAssetImage
                       src={resolvedCover}
                       alt={ad.title}
                       fill

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Maximize2, X } from "lucide-react";
+import { AdminAssetImage } from "@/components/admin/admin-asset-image";
 
 export function ImagePreviewModal({
   src,
@@ -67,7 +67,7 @@ export function ImagePreviewModal({
             </div>
 
             <div className="relative max-h-[70vh] flex items-center justify-center bg-black/40 p-2 overflow-hidden">
-              <Image
+              <AdminAssetImage
                 src={src}
                 alt={alt}
                 width={1200}
