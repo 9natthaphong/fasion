@@ -92,12 +92,20 @@ export function StylistForm({
   } = useForm<StylistFields>({
     defaultValues: {
       mode: initialMode,
+      heightCm: "",
+      weightKg: "",
       clothingPresentation: "unspecified",
       activity: "ไปคาเฟ่",
       formality: "casual",
       weather: "32°C ร้อนชื้น มีแดดจัด",
       timeOfDay: "all_day",
+      preferredStyles: "",
+      preferredColors: "",
+      avoidedColors: "",
       preferredFit: "unspecified",
+      budget: "",
+      anchorItem: "",
+      notes: "",
       saveForNextTime: false,
     },
   });
@@ -173,12 +181,14 @@ export function StylistForm({
       ...values,
       mode,
       excludedItemIds: Array.from(excludedIds),
-      heightCm: values.heightCm ? Number(values.heightCm) : null,
-      weightKg: values.weightKg ? Number(values.weightKg) : null,
-      budget: values.budget ? Number(values.budget) : null,
-      preferredStyles: splitList(values.preferredStyles),
-      preferredColors: splitList(values.preferredColors),
-      avoidedColors: splitList(values.avoidedColors),
+      heightCm: values.heightCm && String(values.heightCm).trim() !== "" ? Number(values.heightCm) : null,
+      weightKg: values.weightKg && String(values.weightKg).trim() !== "" ? Number(values.weightKg) : null,
+      budget: values.budget && String(values.budget).trim() !== "" ? Number(values.budget) : null,
+      anchorItem: values.anchorItem ?? "",
+      notes: values.notes ?? "",
+      preferredStyles: splitList(values.preferredStyles ?? ""),
+      preferredColors: splitList(values.preferredColors ?? ""),
+      avoidedColors: splitList(values.avoidedColors ?? ""),
     };
 
     const response = await fetch("/api/ai-stylist", {

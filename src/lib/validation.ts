@@ -127,7 +127,8 @@ export const adSchema = z
       .string()
       .trim()
       .toLowerCase()
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      .optional(),
     description: z.string().trim().max(3000),
     adType: z.enum([
       "single_product",
@@ -217,21 +218,21 @@ export const adminAdActionSchema = z.object({
 });
 
 export const outfitInputSchema = z.object({
-  heightCm: z.coerce.number().min(80).max(260).nullable(),
-  weightKg: z.coerce.number().min(20).max(350).nullable(),
-  clothingPresentation: z.enum(["menswear", "womenswear", "unisex", "unspecified"]),
-  activity: z.string().trim().min(2).max(100),
-  formality: z.enum(["casual", "smart_casual", "formal"]),
-  weather: z.string().trim().min(2).max(160),
-  timeOfDay: z.enum(["morning", "afternoon", "evening", "all_day"]),
-  preferredStyles: z.array(z.string().trim().max(40)).max(12),
-  preferredColors: z.array(z.string().trim().max(40)).max(12),
-  avoidedColors: z.array(z.string().trim().max(40)).max(12),
-  preferredFit: z.enum(["fitted", "relaxed", "unspecified"]),
-  budget: z.coerce.number().min(0).max(1_000_000).nullable(),
-  anchorItem: z.string().trim().max(300),
-  notes: z.string().trim().max(800),
-  saveForNextTime: z.boolean(),
+  heightCm: z.coerce.number().min(80).max(260).nullable().optional().default(null),
+  weightKg: z.coerce.number().min(20).max(350).nullable().optional().default(null),
+  clothingPresentation: z.enum(["menswear", "womenswear", "unisex", "unspecified"]).default("unspecified"),
+  activity: z.string().trim().min(2, "กรุณาระบุกิจกรรมอย่างน้อย 2 ตัวอักษร").max(100),
+  formality: z.enum(["casual", "smart_casual", "formal"]).default("casual"),
+  weather: z.string().trim().min(2, "กรุณาระบุสภาพอากาศ").max(160),
+  timeOfDay: z.enum(["morning", "afternoon", "evening", "all_day"]).default("all_day"),
+  preferredStyles: z.preprocess((val) => (Array.isArray(val) ? val : []), z.array(z.string().trim().max(40)).max(12)).default([]),
+  preferredColors: z.preprocess((val) => (Array.isArray(val) ? val : []), z.array(z.string().trim().max(40)).max(12)).default([]),
+  avoidedColors: z.preprocess((val) => (Array.isArray(val) ? val : []), z.array(z.string().trim().max(40)).max(12)).default([]),
+  preferredFit: z.enum(["fitted", "relaxed", "unspecified"]).default("unspecified"),
+  budget: z.coerce.number().min(0).max(1_000_000).nullable().optional().default(null),
+  anchorItem: z.preprocess((val) => (val === null || val === undefined ? "" : String(val).trim()), z.string().max(300)).default(""),
+  notes: z.preprocess((val) => (val === null || val === undefined ? "" : String(val).trim()), z.string().max(800)).default(""),
+  saveForNextTime: z.boolean().default(false),
 });
 
 const outfitSuggestionSchema = z.object({

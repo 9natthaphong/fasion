@@ -37,6 +37,19 @@ describe("input validation", () => {
     expect(result.heightCm).toBeNull();
     expect(result.weightKg).toBeNull();
   });
+  it("normalizes optional empty strings and missing body measurements in stylist input", () => {
+    const parsed = outfitInputSchema.parse({
+      activity: "ไปคาเฟ่",
+      weather: "32°C ร้อนชื้น",
+    });
+    expect(parsed.anchorItem).toBe("");
+    expect(parsed.notes).toBe("");
+    expect(parsed.heightCm).toBeNull();
+    expect(parsed.weightKg).toBeNull();
+    expect(parsed.preferredStyles).toEqual([]);
+    expect(parsed.preferredColors).toEqual([]);
+    expect(parsed.avoidedColors).toEqual([]);
+  });
   it("rejects invalid stylist ranges", () => {
     expect(outfitInputSchema.safeParse({
       heightCm: 20,
