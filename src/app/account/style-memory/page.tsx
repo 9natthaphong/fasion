@@ -123,7 +123,7 @@ export default async function StyleMemoryPage() {
                         ลบข้อมูลของวันนี้
                       </button>
                     ) : <div></div>}
-                    <button formAction={saveStyleMemory} className="px-4 py-2 bg-olive-dark text-white rounded-md text-sm font-medium">
+                    <button formAction={saveStyleMemory} className="px-4 py-2 bg-olive-dark text-background rounded-md text-sm font-medium">
                       บันทึกข้อมูล
                     </button>
                   </div>

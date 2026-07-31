@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requirePageRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -18,7 +18,7 @@ export async function approveRequest(requestId: string, userId: string, isFirstM
     throw new Error("Invalid request data.");
   }
 
-  const supabase = await createClient();
+  const adminClient = getAdminClient();
   const price = parsed.data.isFirstMonth ? 9 : 29;
 
   const startsAt = new Date();
@@ -26,9 +26,9 @@ export async function approveRequest(requestId: string, userId: string, isFirstM
   endsAt.setMonth(endsAt.getMonth() + 1);
 
   // Check idempotency
-  const { data: requestCheck } = await supabase
+  const { data: requestCheck } = await adminClient
     .from("customer_subscription_requests")
-    .select("status")
+    .select("status, payment_status")
     .eq("id", parsed.data.requestId)
     .single();
 
@@ -36,12 +36,28 @@ export async function approveRequest(requestId: string, userId: string, isFirstM
     revalidatePath("/admin/subscriptions");
     return;
   }
+  
+  if (requestCheck.payment_status !== "submitted" && requestCheck.payment_status !== "verified") {
+    throw new Error("Payment proof is not ready for approval.");
+  }
+
+  // 0. Update payment proof status to verified
+  await adminClient
+    .from("subscription_payment_proofs")
+    .update({ 
+      status: "verified",
+      reviewed_by: admin.id,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("request_id", parsed.data.requestId)
+    .eq("status", "submitted");
 
   // 1. Update the request status
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await adminClient
     .from("customer_subscription_requests")
     .update({ 
       status: "approved", 
+      payment_status: "verified",
       reviewed_by: admin.id, 
       reviewed_at: new Date().toISOString() 
     })
@@ -51,14 +67,14 @@ export async function approveRequest(requestId: string, userId: string, isFirstM
   if (updateErr) throw new Error("Failed to update request");
 
   // 2. Insert or update the subscription
-  const { data: existingSub } = await supabase
+  const { data: existingSub } = await adminClient
     .from("customer_subscriptions")
     .select("id")
     .eq("user_id", parsed.data.userId)
     .single();
 
   if (existingSub) {
-    await supabase
+    await adminClient
       .from("customer_subscriptions")
       .update({
         plan: "pro",
@@ -72,7 +88,7 @@ export async function approveRequest(requestId: string, userId: string, isFirstM
       })
       .eq("user_id", parsed.data.userId);
   } else {
-    await supabase
+    await adminClient
       .from("customer_subscriptions")
       .insert({
         user_id: parsed.data.userId,
@@ -101,12 +117,61 @@ export async function rejectRequest(requestId: string, reason: string) {
   const parsed = RejectRequestSchema.safeParse({ requestId, reason });
   if (!parsed.success) throw new Error("Invalid request data.");
 
-  const supabase = await createClient();
+  const adminClient = getAdminClient();
 
-  const { error } = await supabase
+  // Update payment proof
+  await adminClient
+    .from("subscription_payment_proofs")
+    .update({ 
+      status: "rejected",
+      rejection_reason: parsed.data.reason,
+      reviewed_by: admin.id,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("request_id", parsed.data.requestId)
+    .eq("status", "submitted");
+
+  const { error } = await adminClient
     .from("customer_subscription_requests")
     .update({ 
       status: "rejected", 
+      payment_status: "not_submitted", // or keep it as submitted/verified depending on design, but prompt says needs_resubmission or rejected
+      admin_note: parsed.data.reason,
+      reviewed_by: admin.id, 
+      reviewed_at: new Date().toISOString() 
+    })
+    .eq("id", parsed.data.requestId)
+    .eq("status", "pending");
+
+  if (!error) {
+    revalidatePath("/admin/subscriptions");
+    revalidatePath("/account/subscription");
+  }
+}
+
+export async function requestResubmission(requestId: string, reason: string) {
+  const admin = await requirePageRole(["admin"], "/login/admin");
+  const parsed = RejectRequestSchema.safeParse({ requestId, reason });
+  if (!parsed.success) throw new Error("Invalid request data.");
+
+  const adminClient = getAdminClient();
+
+  // Update payment proof
+  await adminClient
+    .from("subscription_payment_proofs")
+    .update({ 
+      status: "rejected",
+      rejection_reason: parsed.data.reason,
+      reviewed_by: admin.id,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("request_id", parsed.data.requestId)
+    .eq("status", "submitted");
+
+  const { error } = await adminClient
+    .from("customer_subscription_requests")
+    .update({ 
+      payment_status: "needs_resubmission",
       admin_note: parsed.data.reason,
       reviewed_by: admin.id, 
       reviewed_at: new Date().toISOString() 
@@ -129,9 +194,9 @@ export async function revokeSubscription(subscriptionId: string) {
   const parsed = RevokeSchema.safeParse({ subscriptionId });
   if (!parsed.success) throw new Error("Invalid request data.");
 
-  const supabase = await createClient();
+  const adminClient = getAdminClient();
 
-  await supabase
+  await adminClient
     .from("customer_subscriptions")
     .update({ 
       status: "revoked", 
@@ -140,5 +205,4 @@ export async function revokeSubscription(subscriptionId: string) {
     .eq("id", parsed.data.subscriptionId);
 
   revalidatePath("/admin/subscriptions");
-  // Cannot easily target customer's page since we don't know their user_id here without a select, but it's fine.
 }

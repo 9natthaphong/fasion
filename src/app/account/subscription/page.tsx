@@ -75,7 +75,7 @@ export default async function AccountSubscriptionPage() {
               คำขอของคุณอยู่ระหว่างการพิจารณา (Pending Review)
             </div>
           ) : (
-            <Link href="/pricing" className="inline-block px-4 py-2 bg-olive-dark text-white rounded-md font-medium hover:bg-olive-dark/90 transition-colors">
+            <Link href="/pricing" className="inline-block px-4 py-2 bg-olive-dark text-background rounded-md font-medium hover:bg-olive-dark/90 transition-colors">
               ดูรายละเอียดแพ็กเกจ
             </Link>
           )}

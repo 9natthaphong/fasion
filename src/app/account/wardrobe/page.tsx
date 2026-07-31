@@ -89,7 +89,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           </Link>
           <Link
             href="/account/wardrobe/new"
-            className="px-5 py-3 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
+            className="px-5 py-3 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มเสื้อผ้าใหม่</span>
@@ -123,7 +123,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
                 href={href}
                 className={`px-3 py-1.5 text-xs font-medium border transition-colors ${
                   isActive
-                    ? "bg-charcoal text-white border-charcoal"
+                    ? "bg-charcoal text-background border-charcoal"
                     : "bg-background text-charcoal border-line hover:border-charcoal"
                 }`}
               >
@@ -151,7 +151,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
                   href={href}
                   className={`px-2.5 py-1 rounded-none font-medium transition-colors ${
                     isActive
-                      ? "bg-charcoal text-white"
+                      ? "bg-charcoal text-background"
                       : "text-muted hover:text-charcoal"
                   }`}
                 >
@@ -200,7 +200,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           <div className="pt-2">
             <Link
               href="/account/wardrobe/new"
-              className="px-6 py-3 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
+              className="px-6 py-3 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มเสื้อผ้าชิ้นแรก</span>

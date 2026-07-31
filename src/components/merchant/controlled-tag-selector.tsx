@@ -89,7 +89,7 @@ export function ControlledTagSelector({
                     onClick={() => toggleTag(tag.id)}
                     className={`px-2.5 py-1 text-xs border font-medium transition-colors inline-flex items-center gap-1 ${
                       isSelected
-                        ? "bg-charcoal text-white border-charcoal"
+                        ? "bg-charcoal text-background border-charcoal"
                         : "bg-background text-charcoal border-line hover:border-charcoal"
                     }`}
                   >

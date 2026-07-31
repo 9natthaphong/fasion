@@ -368,7 +368,7 @@ export function AddItemForm() {
                         onClick={() => setItemType(c.type)}
                         className={`px-3 py-1.5 text-xs font-medium border transition-all ${
                           isSelected
-                            ? "bg-charcoal text-white border-charcoal"
+                            ? "bg-charcoal text-background border-charcoal"
                             : "bg-background text-charcoal border-line hover:border-muted"
                         }`}
                       >
@@ -386,7 +386,7 @@ export function AddItemForm() {
               <button
                 type="submit"
                 disabled={isSaving || !name.trim()}
-                className="w-full sm:w-auto px-8 py-3.5 bg-charcoal text-white hover:bg-olive font-semibold text-xs rounded-none transition-colors inline-flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3.5 bg-charcoal text-background hover:bg-olive font-semibold text-xs rounded-none transition-colors inline-flex items-center justify-center gap-2"
               >
                 {isSaving ? (
                   <>
@@ -458,7 +458,7 @@ export function AddItemForm() {
                             onClick={() => setPreferredFit(f.fit)}
                             className={`px-3 py-1.5 text-xs font-medium border transition-colors ${
                               isSelected
-                                ? "bg-charcoal text-white border-charcoal"
+                                ? "bg-charcoal text-background border-charcoal"
                                 : "bg-paper text-charcoal border-line hover:border-muted"
                             }`}
                           >
@@ -500,7 +500,7 @@ export function AddItemForm() {
                             onClick={() => toggleWeather(w.tag)}
                             className={`px-3 py-1.5 text-xs font-medium border transition-colors flex items-center gap-1.5 ${
                               checked
-                                ? "bg-charcoal text-white border-charcoal"
+                                ? "bg-charcoal text-background border-charcoal"
                                 : "bg-paper text-charcoal border-line hover:border-muted"
                             }`}
                           >

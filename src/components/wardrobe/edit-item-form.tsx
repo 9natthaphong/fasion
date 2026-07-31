@@ -181,7 +181,7 @@ export function EditItemForm({ item }: Props) {
                     onClick={() => setAvailabilityStatus(s.status as WardrobeAvailabilityStatus)}
                     className={`px-2 py-2 text-xs font-medium border text-center transition-colors ${
                       isActive
-                        ? "bg-charcoal text-white border-charcoal"
+                        ? "bg-charcoal text-background border-charcoal"
                         : "bg-background text-charcoal border-line hover:border-charcoal"
                     }`}
                   >
@@ -334,7 +334,7 @@ export function EditItemForm({ item }: Props) {
                       onClick={() => toggleWeather(w.tag)}
                       className={`px-3 py-1.5 text-xs font-medium border transition-colors ${
                         checked
-                          ? "bg-charcoal text-white border-charcoal"
+                          ? "bg-charcoal text-background border-charcoal"
                           : "bg-background text-charcoal border-line hover:border-charcoal"
                       }`}
                     >
@@ -360,7 +360,7 @@ export function EditItemForm({ item }: Props) {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-8 py-4 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-8 py-4 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             >
               {isSaving ? (
                 <>
@@ -400,7 +400,7 @@ export function EditItemForm({ item }: Props) {
                 type="button"
                 onClick={() => handleDelete(false)}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-danger text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50"
+                className="px-4 py-2 bg-danger text-background text-xs font-medium hover:bg-red-700 disabled:opacity-50"
               >
                 {isDeleting ? "กำลังลบ..." : "ซ่อนรายการนี้"}
               </button>

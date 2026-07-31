@@ -237,7 +237,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <div className="pt-2">
                 <Link
                   href="/ai-stylist"
-                  className="px-6 py-3 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-2"
+                  className="px-6 py-3 bg-charcoal text-background hover:bg-olive text-xs font-medium inline-flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>ลองเปิดใช้งาน AI Stylist</span>
@@ -343,7 +343,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <div className="pt-2">
                 <Link
                   href="/ai-stylist"
-                  className="px-6 py-3 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-2"
+                  className="px-6 py-3 bg-charcoal text-background hover:bg-olive text-xs font-medium inline-flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>เปิด AI Stylist</span>
@@ -529,7 +529,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <button
                 type="submit"
                 disabled={isRecordingWear}
-                className="px-5 py-2 bg-charcoal text-white text-xs font-medium hover:bg-olive disabled:opacity-50"
+                className="px-5 py-2 bg-charcoal text-background text-xs font-medium hover:bg-olive disabled:opacity-50"
               >
                 {isRecordingWear ? "กำลังบันทึก..." : "บันทึกประวัติการใส่"}
               </button>
@@ -561,7 +561,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
                       onClick={() => setFeedbackRating(item.rating as "liked" | "neutral" | "disliked")}
                       className={`p-3 text-xs font-medium border text-center transition-colors flex items-center gap-1.5 ${
                         isActive
-                          ? "bg-charcoal text-white border-charcoal"
+                          ? "bg-charcoal text-background border-charcoal"
                           : "bg-paper text-charcoal border-line hover:border-charcoal"
                       }`}
                     >
@@ -592,7 +592,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
                         onClick={() => toggleFeedbackTag(t.tag)}
                         className={`px-2.5 py-1 text-xs border font-medium transition-colors ${
                           checked
-                            ? "bg-charcoal text-white border-charcoal"
+                            ? "bg-charcoal text-background border-charcoal"
                             : "bg-paper text-charcoal border-line hover:border-charcoal"
                         }`}
                       >
@@ -626,7 +626,7 @@ export function OutfitsManager({ initialAIHistory, initialSavedOutfits, initialW
               <button
                 type="submit"
                 disabled={isSubmittingFeedback}
-                className="px-5 py-2 bg-charcoal text-white text-xs font-medium hover:bg-olive disabled:opacity-50"
+                className="px-5 py-2 bg-charcoal text-background text-xs font-medium hover:bg-olive disabled:opacity-50"
               >
                 {isSubmittingFeedback ? "กำลังส่ง..." : "ส่งข้อเสนอแนะ"}
               </button>

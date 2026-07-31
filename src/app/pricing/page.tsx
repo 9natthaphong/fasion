@@ -45,7 +45,7 @@ export default async function PricingPage() {
                 บัญชีปัจจุบันของคุณ
               </Link>
             ) : (
-              <Link href="/register" className="block w-full py-3 px-4 bg-olive-dark text-white text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+              <Link href="/register" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                 สมัครสมาชิกฟรี
               </Link>
             )}
@@ -54,7 +54,7 @@ export default async function PricingPage() {
 
         {/* Pro Plan */}
         <div className="border-2 border-olive-dark rounded-xl p-8 bg-olive-pale/30 shadow-md flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-olive-dark text-white text-xs font-bold px-3 py-1 rounded-bl-lg">แนะนำ</div>
+          <div className="absolute top-0 right-0 bg-olive-dark text-background text-xs font-bold px-3 py-1 rounded-bl-lg">แนะนำ</div>
           <h2 className="text-2xl font-bold mb-2 text-olive-dark">Pro</h2>
           <p className="text-muted-foreground mb-6 h-12">YourStylist ที่จดจำกิจวัตรและช่วยวางแผนชุดให้คุณทั้งสัปดาห์</p>
           
@@ -74,16 +74,16 @@ export default async function PricingPage() {
           
           <div className="mt-auto">
             {!user ? (
-              <Link href="/login" className="block w-full py-3 px-4 bg-olive-dark text-white text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+              <Link href="/login" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                 เข้าสู่ระบบเพื่อสมัคร Pro
               </Link>
             ) : isPro ? (
-              <Link href="/account/weekly-planner" className="block w-full py-3 px-4 bg-olive-dark text-white text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+              <Link href="/account/weekly-planner" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                 เข้าสู่ระบบ Pro ของคุณ
               </Link>
             ) : (
               <form action={requestProAccess}>
-                <button type="submit" className="block w-full py-3 px-4 bg-olive-dark text-white text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+                <button type="submit" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                   ขอเปิดใช้งาน Pro
                 </button>
               </form>

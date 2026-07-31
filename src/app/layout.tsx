@@ -29,12 +29,16 @@ export const metadata: Metadata = {
 };
 
 import { getCurrentUser } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const currentUser = await getCurrentUser();
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("appearance_theme")?.value || "system";
+  const accent = cookieStore.get("appearance_accent")?.value || "default";
 
   return (
-    <html lang="th" className={`${notoSansThai.variable} ${notoSerifThai.variable}`}>
+    <html lang="th" className={`${notoSansThai.variable} ${notoSerifThai.variable}`} data-theme={theme} data-accent={accent}>
       <body className="bg-background text-foreground antialiased selection:bg-olive-pale selection:text-olive-dark">
         <a className="skip-link" href="#main">
           ข้ามไปเนื้อหาหลัก

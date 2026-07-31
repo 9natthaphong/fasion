@@ -98,7 +98,7 @@ export function AppearanceSettingsForm({ isPro, currentSettings }: { isPro: bool
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-3 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center"
+            className="px-6 py-3 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center"
           >
             {isPending ? "กำลังบันทึก..." : "บันทึกการตั้งค่าธีม"}
           </button>

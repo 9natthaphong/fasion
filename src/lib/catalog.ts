@@ -70,7 +70,7 @@ export async function getPublicCategories() {
 export async function getPublicAds(limit = 60) {
   if (!isSupabaseConfigured()) return demoAds.slice(0, limit);
   const supabase = await createClient();
-  const { data, error } = await supabase.from("ads").select(adSelect).order("created_at", { ascending: false }).limit(limit);
+  const { data, error } = await supabase.from("ads").select(adSelect).eq("status", "active").order("created_at", { ascending: false }).limit(limit);
   return error || !data?.length ? demoAds.slice(0, limit) : data.map((row) => mapAd(row));
 }
 

@@ -227,7 +227,7 @@ export function StylistForm({
           onClick={() => setMode("general")}
           className={`flex-1 py-3 px-4 text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 ${
             mode === "general"
-              ? "bg-charcoal text-white shadow-sm"
+              ? "bg-charcoal text-background shadow-sm"
               : "text-muted hover:text-charcoal"
           }`}
         >
@@ -240,7 +240,7 @@ export function StylistForm({
           onClick={() => setMode("wardrobe")}
           className={`flex-1 py-3 px-4 text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 ${
             mode === "wardrobe"
-              ? "bg-charcoal text-white shadow-sm"
+              ? "bg-charcoal text-background shadow-sm"
               : "text-muted hover:text-charcoal"
           }`}
         >
@@ -269,7 +269,7 @@ export function StylistForm({
             </div>
             <Link
               href="/account/wardrobe/new"
-              className="text-xs font-semibold px-3 py-1.5 bg-charcoal text-white hover:bg-olive inline-flex items-center gap-1.5 transition-colors"
+              className="text-xs font-semibold px-3 py-1.5 bg-charcoal text-background hover:bg-olive inline-flex items-center gap-1.5 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>เพิ่มเสื้อผ้าชิ้นใหม่</span>
@@ -289,7 +289,7 @@ export function StylistForm({
           ) : wardrobeItems.length === 0 ? (
             <div className="text-xs text-muted space-y-2">
               <p>ยังไม่มีเสื้อผ้าในตู้ส่วนตัว กรุณาเพิ่มรายการเสื้อผ้าก่อนจัดลุค</p>
-              <Link href="/account/wardrobe/new" className="inline-block px-4 py-2 bg-charcoal text-white text-xs font-medium">
+              <Link href="/account/wardrobe/new" className="inline-block px-4 py-2 bg-charcoal text-background text-xs font-medium">
                 + ถ่ายรูปเพิ่มเสื้อผ้าชิ้นแรก
               </Link>
             </div>
@@ -348,7 +348,7 @@ export function StylistForm({
                     onClick={() => setValue("activity", act.id)}
                     className={`p-3.5 text-left border transition-all min-h-[72px] flex flex-col justify-between ${
                       isSelected
-                        ? "border-charcoal bg-charcoal text-white font-medium shadow-sm"
+                        ? "border-charcoal bg-charcoal text-background font-medium shadow-sm"
                         : "border-line bg-background text-charcoal hover:border-muted"
                     }`}
                   >
@@ -383,7 +383,7 @@ export function StylistForm({
                     onClick={() => setValue("weather", w.value)}
                     className={`p-4 border text-left transition-all flex items-center gap-3 ${
                       isSelected
-                        ? "border-charcoal bg-charcoal text-white font-medium"
+                        ? "border-charcoal bg-charcoal text-background font-medium"
                         : "border-line bg-background text-charcoal hover:border-muted"
                     }`}
                   >
@@ -416,7 +416,7 @@ export function StylistForm({
                     onClick={() => setValue("formality", m.id as "casual" | "smart_casual" | "formal")}
                     className={`p-4 text-left border transition-all flex flex-col justify-between space-y-2 min-h-[96px] ${
                       isSelected
-                        ? "border-charcoal bg-charcoal text-white"
+                        ? "border-charcoal bg-charcoal text-background"
                         : "border-line bg-background text-charcoal hover:border-muted"
                     }`}
                   >
@@ -528,7 +528,7 @@ export function StylistForm({
           <button
             type="submit"
             disabled={isSubmitting || (mode === "wardrobe" && wardrobeItems.length < 1)}
-            className="w-full py-5 bg-charcoal text-white hover:bg-olive font-semibold text-sm rounded-none transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+            className="w-full py-5 bg-charcoal text-background hover:bg-olive font-semibold text-sm rounded-none transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
@@ -731,9 +731,9 @@ function splitList(value: string) {
 function getDirectionBadge(direction: string) {
   switch (direction) {
     case "safe":
-      return { label: "ใส่ง่าย (Safe)", bg: "bg-olive-pale", color: "text-olive-dark" };
+      return { label: "ใส่ง่าย (Safe)", bg: "bg-paper", color: "text-charcoal" };
     case "elevated":
-      return { label: "แต่งขึ้น (Elevated)", bg: "bg-charcoal", color: "text-white" };
+      return { label: "แต่งขึ้น (Elevated)", bg: "bg-charcoal", color: "text-background" };
     case "comfortable":
     default:
       return { label: "สบาย (Comfortable)", bg: "bg-background border border-line", color: "text-charcoal" };

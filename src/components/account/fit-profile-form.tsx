@@ -218,7 +218,7 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
                 onClick={() => setActiveTab(s.key as "general" | "styles" | "measurements" | "privacy")}
                 className={`py-3 px-2 text-xs font-medium border text-center transition-colors flex items-center justify-center gap-1.5 ${
                   activeTab === s.key
-                    ? "bg-charcoal text-white border-charcoal"
+                    ? "bg-charcoal text-background border-charcoal"
                     : "bg-background text-charcoal border-line hover:border-charcoal"
                 }`}
               >
@@ -270,7 +270,7 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
               <button
                 type="button"
                 onClick={() => setActiveTab("styles")}
-                className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
+                className="px-6 py-3 bg-charcoal text-background text-xs font-medium inline-flex items-center gap-1.5"
               >
                 <span>ถัดไป: สไตล์และสีที่ชอบ</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -373,7 +373,7 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
               <button
                 type="button"
                 onClick={() => setActiveTab("measurements")}
-                className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
+                className="px-6 py-3 bg-charcoal text-background text-xs font-medium inline-flex items-center gap-1.5"
               >
                 <span>ถัดไป: สัดส่วนและไซซ์</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -511,7 +511,7 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
               <button
                 type="button"
                 onClick={() => setActiveTab("privacy")}
-                className="px-6 py-3 bg-charcoal text-white text-xs font-medium inline-flex items-center gap-1.5"
+                className="px-6 py-3 bg-charcoal text-background text-xs font-medium inline-flex items-center gap-1.5"
               >
                 <span>ถัดไป: การอนุญาตใช้ข้อมูล</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -600,7 +600,7 @@ export function FitProfileForm({ initialDisplayName, initialPreferences, initial
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-8 py-4 bg-charcoal text-white hover:bg-olive text-xs font-medium transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+                  className="px-8 py-4 bg-charcoal text-background hover:bg-olive text-xs font-medium transition-colors inline-flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSaving ? (
                     <>

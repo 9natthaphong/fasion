@@ -67,7 +67,7 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
           {/* Primary Stylist CTA */}
           <Link
             href="/ai-stylist"
-            className="px-4 py-2 bg-charcoal text-white hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-1.5 min-h-[44px]"
+            className="px-4 py-2 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-1.5 min-h-[44px]"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>เลือกชุดวันนี้</span>

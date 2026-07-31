@@ -258,7 +258,7 @@ export function ProfileForm({ initial }: ProfileFormProps) {
         <button
           type="submit"
           disabled={pending}
-          className="px-8 py-4 bg-charcoal text-white hover:bg-olive font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+          className="px-8 py-4 bg-charcoal text-background hover:bg-olive font-semibold text-xs rounded-none transition-colors disabled:opacity-50 inline-flex items-center gap-2"
         >
           {pending ? "กำลังบันทึก…" : "บันทึกการเปลี่ยนแปลงโปรไฟล์"}
         </button>

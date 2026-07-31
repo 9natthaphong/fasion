@@ -22,7 +22,7 @@ export async function requestProAccess() {
     .single();
 
   if (existing) {
-    redirect("/account/subscription");
+    redirect("/account/subscription/payment");
   }
 
   const { error } = await supabase
@@ -39,5 +39,5 @@ export async function requestProAccess() {
   }
 
   revalidatePath("/account/subscription");
-  redirect("/account/subscription");
+  redirect("/account/subscription/payment");
 }

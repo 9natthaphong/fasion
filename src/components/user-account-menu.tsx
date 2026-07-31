@@ -82,7 +82,7 @@ export function UserAccountMenu({ user }: { user: CurrentUser }) {
             className="w-6 h-6 rounded-full object-cover shrink-0"
           />
         ) : (
-          <span className="w-6 h-6 rounded-full bg-olive text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0">
+          <span className="w-6 h-6 rounded-full bg-olive text-background text-[10px] font-bold inline-flex items-center justify-center shrink-0">
             {initials}
           </span>
         )}

@@ -15,6 +15,10 @@ import { AdCard } from "@/components/ad-card";
 import { ShopCard } from "@/components/shop-card";
 import { getPublicAds, getPublicCategories, getPublicShops } from "@/lib/catalog";
 
+import { getCurrentUser } from "@/lib/auth";
+import { getCustomerEntitlements } from "@/lib/entitlements";
+import { createClient } from "@/lib/supabase/server";
+
 const directions = [
   {
     code: "01",
@@ -49,6 +53,26 @@ const directions = [
 ] as const;
 
 export default async function HomePage() {
+  const user = await getCurrentUser();
+  let isPro = false;
+  let isPending = false;
+
+  if (user) {
+    const entitlements = await getCustomerEntitlements(user.id);
+    isPro = entitlements.isProActive;
+    
+    if (!isPro) {
+      const supabase = await createClient();
+      const { data: request } = await supabase
+        .from("customer_subscription_requests")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "pending")
+        .single();
+      isPending = !!request;
+    }
+  }
+
   const [ads, categories, shops] = await Promise.all([
     getPublicAds(8),
     getPublicCategories(),
@@ -264,6 +288,83 @@ export default async function HomePage() {
             {shops.map((shop) => (
               <ShopCard shop={shop} key={shop.id} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-pricing py-16 bg-muted/30" aria-labelledby="pricing-title">
+        <div className="container">
+          <header className="mb-12 text-center">
+            <h2 id="pricing-title" className="text-3xl font-serif font-bold text-olive-dark mb-4">เลือกรูปแบบที่เหมาะกับคุณ</h2>
+            <p className="text-muted-foreground">ไม่มีระบบตัดเงินอัตโนมัติ ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล</p>
+          </header>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Card */}
+            <div className="border border-border rounded-xl p-8 bg-card shadow-sm flex flex-col">
+              <h3 className="text-2xl font-bold mb-2">Free</h3>
+              <p className="text-muted-foreground mb-6 h-12">เริ่มจัดตู้เสื้อผ้าและรับคำแนะนำพื้นฐานได้ฟรี</p>
+              <div className="text-3xl font-bold mb-8">0 บาท <span className="text-lg font-normal text-muted-foreground">/ เดือน</span></div>
+              
+              <ul className="space-y-4 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>ใช้งานตู้เสื้อผ้าส่วนตัว</span></li>
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>ขอคำแนะนำ AI Stylist แบบพื้นฐาน</span></li>
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>บันทึกลุคและประวัติการสวมใส่</span></li>
+              </ul>
+              
+              <div className="mt-auto">
+                <Link href={user ? "/account" : "/register"} className="block w-full py-3 px-4 bg-secondary text-secondary-foreground text-center rounded-lg font-medium hover:bg-secondary/80 transition-colors">
+                  เริ่มใช้งานฟรี
+                </Link>
+              </div>
+            </div>
+
+            {/* Pro Card */}
+            <div className="border-2 border-olive-dark rounded-xl p-8 bg-olive-pale/30 shadow-md flex flex-col relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-olive-dark text-background text-xs font-bold px-3 py-1 rounded-bl-lg">แนะนำ</div>
+              <h3 className="text-2xl font-bold mb-2 text-olive-dark">Pro</h3>
+              <p className="text-muted-foreground mb-6 h-12">YourStylist ที่จดจำกิจวัตรและช่วยวางแผนชุดให้คุณทั้งสัปดาห์</p>
+              
+              <div className="mb-2">
+                <div className="text-3xl font-bold text-olive-dark">29 บาท <span className="text-lg font-normal text-muted-foreground">/ เดือน</span></div>
+                <div className="text-sm font-medium text-destructive mt-1">เดือนแรก 9 บาท</div>
+              </div>
+              <div className="text-xs text-muted-foreground mb-8">ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล ไม่มีการตัดเงินอัตโนมัติ</div>
+              
+              <ul className="space-y-4 mb-8 flex-1 text-sm">
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>Weekly Style Memory</span></li>
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>Weekly Outfit Planner</span></li>
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>Smart Repeat Avoidance</span></li>
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>Advanced wardrobe insights</span></li>
+                <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>Theme customization</span></li>
+              </ul>
+              
+              <div className="mt-auto">
+                {!user ? (
+                  <Link href="/login" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+                    เข้าสู่ระบบเพื่ออัปเกรด
+                  </Link>
+                ) : isPro ? (
+                  <div className="block w-full py-3 px-4 bg-olive-pale text-olive-dark border border-olive-dark text-center rounded-lg font-medium">
+                    คุณเป็นสมาชิก Pro แล้ว
+                  </div>
+                ) : isPending ? (
+                  <Link href="/account/subscription/payment" className="block w-full py-3 px-4 bg-secondary text-secondary-foreground text-center rounded-lg font-medium">
+                    กำลังรอตรวจสอบ
+                  </Link>
+                ) : (
+                  <form action={async () => {
+                    "use server";
+                    const { requestProAccess } = await import("@/app/pricing/actions");
+                    await requestProAccess();
+                  }}>
+                    <button type="submit" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+                      อัปเกรดเป็น Pro
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>

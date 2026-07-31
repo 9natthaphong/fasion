@@ -61,7 +61,7 @@ export function AdminDeletionRequestCard({ requestId, userId, createdAt, userDis
             type="button"
             onClick={handleProcess}
             disabled={isProcessing}
-            className="px-4 py-2 bg-danger text-white text-xs font-medium hover:bg-danger/90 inline-flex items-center gap-1.5 disabled:opacity-50"
+            className="px-4 py-2 bg-danger text-background text-xs font-medium hover:bg-danger/90 inline-flex items-center gap-1.5 disabled:opacity-50"
           >
             {isProcessing ? (
               <>

@@ -205,7 +205,7 @@ export default async function AdminAdDetailPage({ params }: { params: Promise<{ 
                     className="w-10 h-10 rounded-full object-cover border border-line"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-olive text-white font-serif flex items-center justify-center text-sm font-bold">
+                  <div className="w-10 h-10 rounded-full bg-olive text-background font-serif flex items-center justify-center text-sm font-bold">
                     {shopData.name.slice(0, 1)}
                   </div>
                 )}

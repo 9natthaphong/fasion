@@ -1,16 +1,32 @@
 import { requirePageRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { approveRequest, rejectRequest, revokeSubscription } from "./actions";
+import { getAdminClient } from "@/lib/supabase/admin";
+import { approveRequest, rejectRequest, revokeSubscription, requestResubmission } from "./actions";
 import { formatDate } from "@/lib/format";
+import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = { title: "Subscriptions | Admin" };
 
 export default async function AdminSubscriptionsPage() {
   await requirePageRole(["admin"], "/login/admin");
-  const supabase = await createClient();
+  const adminClient = getAdminClient();
 
-  type SubscriptionRequest = { id: string; user_id: string; status: string; created_at: string; profiles?: { display_name: string } };
-  type ActiveSubscription = { id: string; user_id: string; status: string; starts_at: string; ends_at: string; profiles?: { display_name: string } };
+  type SubscriptionRequest = { 
+    id: string; 
+    user_id: string; 
+    status: string; 
+    payment_status: string;
+    created_at: string; 
+    profiles?: { display_name: string } 
+  };
+  type ActiveSubscription = { 
+    id: string; 
+    user_id: string; 
+    status: string; 
+    starts_at: string; 
+    ends_at: string; 
+    profiles?: { display_name: string } 
+  };
 
   let requestsErrorMsg = "";
   let activeSubsErrorMsg = "";
@@ -18,11 +34,10 @@ export default async function AdminSubscriptionsPage() {
   let activeSubsWithProfiles: ActiveSubscription[] = [];
 
   try {
-    // 1. Fetch requests without profile join to bypass RLS issues
-    const { data: requests, error: requestsError } = await supabase
+    // 1. Fetch requests bypassing RLS
+    const { data: requests, error: requestsError } = await adminClient
       .from("customer_subscription_requests")
       .select("*")
-      .eq("status", "pending")
       .order("created_at", { ascending: false });
 
     if (requestsError) {
@@ -30,8 +45,8 @@ export default async function AdminSubscriptionsPage() {
       requestsErrorMsg = "ไม่สามารถโหลดข้อมูลคำขอได้ กรุณาลองใหม่อีกครั้ง";
     }
 
-    // 2. Fetch active subscriptions without profile join
-    const { data: activeSubs, error: subsError } = await supabase
+    // 2. Fetch active subscriptions bypassing RLS
+    const { data: activeSubs, error: subsError } = await adminClient
       .from("customer_subscriptions")
       .select("*")
       .eq("status", "active")
@@ -43,9 +58,6 @@ export default async function AdminSubscriptionsPage() {
     }
 
     // 3. Resolve profiles safely using server-side adminClient
-    const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
-    
-    // Extract unique user IDs
     const userIds = new Set<string>();
     requests?.forEach(r => userIds.add(r.user_id));
     activeSubs?.forEach(s => userIds.add(s.user_id));
@@ -76,6 +88,11 @@ export default async function AdminSubscriptionsPage() {
     requestsErrorMsg = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
   }
 
+  const pendingSlip = requestsWithProfiles.filter(r => r.status === 'pending' && r.payment_status === 'not_submitted');
+  const awaitingReview = requestsWithProfiles.filter(r => r.status === 'pending' && r.payment_status === 'submitted');
+  const needsResubmission = requestsWithProfiles.filter(r => r.status === 'pending' && r.payment_status === 'needs_resubmission');
+  const history = requestsWithProfiles.filter(r => r.status === 'active' || r.status === 'rejected');
+
   return (
     <div>
       <header className="dashboard-heading mb-8">
@@ -83,42 +100,80 @@ export default async function AdminSubscriptionsPage() {
         <p>จัดการคำขอเปิดใช้งานและสิทธิ์สมาชิกของลูกค้า</p>
       </header>
 
+      {requestsErrorMsg && (
+        <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
+          {requestsErrorMsg}
+        </div>
+      )}
+
       <section className="mb-12">
-        <h2 className="text-xl font-bold mb-4">คำขอที่รออนุมัติ ({requestsWithProfiles.length})</h2>
-        {requestsErrorMsg ? (
-          <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
-            {requestsErrorMsg}
-          </div>
-        ) : requestsWithProfiles.length > 0 ? (
+        <h2 className="text-xl font-bold mb-4 text-[var(--accent-color,theme(colors.olive.dark))]">รอตรวจสอบสลิป ({awaitingReview.length})</h2>
+        {awaitingReview.length > 0 ? (
           <div className="space-y-4">
-            {requestsWithProfiles.map(req => (
+            {awaitingReview.map(req => (
               <div key={req.id} className="p-4 border rounded-lg bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                  <div className="font-medium">{req.profiles?.display_name || "Unknown User"}</div>
+                  <div className="font-medium text-foreground">{req.profiles?.display_name || "Unknown User"}</div>
                   <div className="text-sm text-muted-foreground">User ID: {req.user_id}</div>
                   <div className="text-sm text-muted-foreground">เวลาขอ: {formatDate(req.created_at)}</div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <form action={async () => { "use server"; await approveRequest(req.id, req.user_id, true) }}>
-                    <button type="submit" className="px-3 py-1 bg-olive-dark text-white rounded text-sm whitespace-nowrap">อนุมัติ (เดือนแรก 9 บ.)</button>
-                  </form>
-                  <form action={async () => { "use server"; await approveRequest(req.id, req.user_id, false) }}>
-                    <button type="submit" className="px-3 py-1 bg-olive-dark/80 text-white rounded text-sm whitespace-nowrap">อนุมัติ (ปกติ 29 บ.)</button>
-                  </form>
-                  <form action={async () => { "use server"; await rejectRequest(req.id, "ไม่อนุมัติ") }}>
-                    <button type="submit" className="px-3 py-1 bg-destructive text-white rounded text-sm">ปฏิเสธ</button>
-                  </form>
+                <div>
+                  <Link href={`/admin/subscriptions/${req.id}`} className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm hover:opacity-90">ตรวจสอบ</Link>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="p-4 text-center text-muted-foreground border rounded-lg">ไม่มีคำขอที่รออนุมัติ</div>
+          <div className="p-4 text-center text-muted-foreground border rounded-lg">ไม่มีสลิปที่รอตรวจสอบ</div>
         )}
       </section>
 
-      <section>
-        <h2 className="text-xl font-bold mb-4">สมาชิก Pro ที่ใช้งานอยู่ ({activeSubsWithProfiles.length})</h2>
+      <section className="mb-12">
+        <h2 className="text-xl font-bold mb-4 text-[var(--accent-color,theme(colors.olive.dark))]">รอแนบสลิป ({pendingSlip.length})</h2>
+        {pendingSlip.length > 0 ? (
+          <div className="space-y-4">
+            {pendingSlip.map(req => (
+              <div key={req.id} className="p-4 border rounded-lg bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <div className="font-medium text-foreground">{req.profiles?.display_name || "Unknown User"}</div>
+                  <div className="text-sm text-muted-foreground">User ID: {req.user_id}</div>
+                  <div className="text-sm text-muted-foreground">เวลาขอ: {formatDate(req.created_at)}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">กำลังรอผู้ใช้แนบสลิป</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-muted-foreground border rounded-lg">ไม่มีคำขอที่รอแนบสลิป</div>
+        )}
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-xl font-bold mb-4 text-[var(--accent-color,theme(colors.olive.dark))]">ต้องส่งใหม่ ({needsResubmission.length})</h2>
+        {needsResubmission.length > 0 ? (
+          <div className="space-y-4">
+            {needsResubmission.map(req => (
+              <div key={req.id} className="p-4 border rounded-lg bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <div className="font-medium text-foreground">{req.profiles?.display_name || "Unknown User"}</div>
+                  <div className="text-sm text-muted-foreground">User ID: {req.user_id}</div>
+                  <div className="text-sm text-muted-foreground">เวลาขอ: {formatDate(req.created_at)}</div>
+                </div>
+                <div>
+                  <Link href={`/admin/subscriptions/${req.id}`} className="text-sm text-primary hover:underline">ดูรายละเอียด</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-muted-foreground border rounded-lg">ไม่มีคำขอที่ต้องส่งสลิปใหม่</div>
+        )}
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-xl font-bold mb-4 text-[var(--accent-color,theme(colors.olive.dark))]">สมาชิก Pro ที่ใช้งานอยู่ ({activeSubsWithProfiles.length})</h2>
         {activeSubsErrorMsg && (
           <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
             {activeSubsErrorMsg}
@@ -139,16 +194,16 @@ export default async function AdminSubscriptionsPage() {
               {activeSubsWithProfiles.map(sub => (
                 <tr key={sub.id} className="border-b last:border-0 bg-card">
                   <td className="px-4 py-3">
-                    <div className="font-medium">{sub.profiles?.display_name || "Unknown"}</div>
+                    <div className="font-medium text-foreground">{sub.profiles?.display_name || "Unknown"}</div>
                     <div className="text-xs text-muted-foreground">{sub.user_id}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-olive-pale text-olive-dark rounded-full text-xs font-medium">
+                    <span className="px-2 py-1 bg-[var(--accent-color,theme(colors.olive.dark))] text-primary-foreground rounded-full text-xs font-medium">
                       Active
                     </span>
                   </td>
-                  <td className="px-4 py-3">{formatDate(sub.starts_at)}</td>
-                  <td className="px-4 py-3">{formatDate(sub.ends_at)}</td>
+                  <td className="px-4 py-3 text-foreground">{formatDate(sub.starts_at)}</td>
+                  <td className="px-4 py-3 text-foreground">{formatDate(sub.ends_at)}</td>
                   <td className="px-4 py-3">
                     <form action={async () => { "use server"; await revokeSubscription(sub.id) }}>
                       <button type="submit" className="text-destructive hover:underline text-xs">ระงับสิทธิ์</button>
@@ -163,6 +218,27 @@ export default async function AdminSubscriptionsPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-xl font-bold mb-4 text-[var(--accent-color,theme(colors.olive.dark))]">ประวัติการอนุมัติ/ปฏิเสธ</h2>
+        <div className="space-y-4">
+          {history.slice(0, 10).map(req => (
+            <div key={req.id} className="p-4 border rounded-lg bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+              <div>
+                <div className="font-medium text-foreground">{req.profiles?.display_name || "Unknown User"}</div>
+                <div className="text-sm text-muted-foreground">User ID: {req.user_id}</div>
+                <div className="text-sm text-muted-foreground">สถานะ: {req.status === 'active' ? 'อนุมัติ' : 'ปฏิเสธ'}</div>
+              </div>
+              <div>
+                <Link href={`/admin/subscriptions/${req.id}`} className="text-sm text-primary hover:underline">ดูรายละเอียด</Link>
+              </div>
+            </div>
+          ))}
+          {history.length === 0 && (
+            <div className="p-4 text-center text-muted-foreground border rounded-lg">ไม่มีประวัติ</div>
+          )}
         </div>
       </section>
     </div>

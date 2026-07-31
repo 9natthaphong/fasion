@@ -79,7 +79,7 @@ export default async function CategoryPage({
             <div className="pt-2">
               <Link
                 href="/discover"
-                className="px-6 py-3 bg-charcoal text-white hover:bg-olive text-xs font-medium inline-flex items-center gap-2 transition-colors"
+                className="px-6 py-3 bg-charcoal text-background hover:bg-olive text-xs font-medium inline-flex items-center gap-2 transition-colors"
               >
                 <span>ดูสินค้าทุกหมวดหมู่</span>
               </Link>

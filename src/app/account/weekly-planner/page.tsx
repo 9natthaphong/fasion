@@ -53,7 +53,7 @@ export default async function WeeklyPlannerPage() {
       </header>
 
       <div className="flex justify-end mb-6">
-        <button className="px-4 py-2 bg-olive-dark text-white rounded-md text-sm font-medium hover:bg-olive-dark/90">
+        <button className="px-4 py-2 bg-olive-dark text-background rounded-md text-sm font-medium hover:bg-olive-dark/90">
           สร้างแผนสำหรับสัปดาห์นี้
         </button>
       </div>
