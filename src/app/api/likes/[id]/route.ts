@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireApiRole } from "@/lib/auth";
+import { requireCustomerExperienceApi } from "@/lib/auth";
 import { requireSameOrigin } from "@/lib/request-security";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
   const { id } = await params;
-  const auth = await requireApiRole(["customer"]);
+  const auth = await requireCustomerExperienceApi();
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const supabase = await createClient();
   const { error } = await supabase.from("ad_likes").insert({ ad_id: id, user_id: auth.user.id });
@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
   const { id } = await params;
-  const auth = await requireApiRole(["customer"]);
+  const auth = await requireCustomerExperienceApi();
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const supabase = await createClient();
   const { error } = await supabase.from("ad_likes").delete().eq("ad_id", id).eq("user_id", auth.user.id);

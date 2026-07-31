@@ -1,4 +1,4 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomerEntitlements } from "@/lib/entitlements";
 import { LockKeyhole } from "lucide-react";
@@ -16,8 +16,8 @@ const WEEKDAYS = [
 ];
 
 export default async function WeeklyPlannerPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
-  const entitlements = await getCustomerEntitlements(user.id);
+  const user = await requireCustomerExperiencePage("/login/customer");
+  const entitlements = await getCustomerEntitlements(user.id, user.role);
 
   if (!entitlements.isProActive) {
     return (

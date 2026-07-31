@@ -1,4 +1,4 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { getAIHistory, getSavedOutfits, getWearLogs } from "@/lib/saved-outfits";
 import { OutfitsManager } from "@/components/account/outfits-manager";
 import { Sparkles } from "lucide-react";
@@ -6,7 +6,7 @@ import { Sparkles } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function OutfitsPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
 
   const [aiHistory, savedOutfits, wearLogs] = await Promise.all([
     getAIHistory(user.id),

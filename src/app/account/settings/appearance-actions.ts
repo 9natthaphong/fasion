@@ -1,16 +1,17 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function saveAppearanceSettings(formData: FormData) {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const theme = formData.get("theme") as string;
   const accent = formData.get("accent") as string;
 
-  const supabase = await createClient();
+  const supabase = user.role === "admin" ? getAdminClient() : await createClient();
   
   await supabase
     .from("customer_preferences")

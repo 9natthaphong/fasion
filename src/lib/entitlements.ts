@@ -1,6 +1,11 @@
 import { createClient } from "./supabase/server";
+import { hasProductProEntitlement } from "@/lib/capabilities";
+import type { UserRole } from "@/lib/types";
 
-export async function getCustomerEntitlements(userId: string) {
+export async function getCustomerEntitlements(userId: string, role: UserRole = "customer") {
+  if (role === "admin") {
+    return { isProActive: true, plan: "pro", status: "active" };
+  }
   const supabase = await createClient();
   const { data: subscription } = await supabase
     .from("customer_subscriptions")
@@ -8,10 +13,7 @@ export async function getCustomerEntitlements(userId: string) {
     .eq("user_id", userId)
     .single();
 
-  const isProActive =
-    subscription?.plan === "pro" &&
-    subscription?.status === "active" &&
-    (!subscription?.ends_at || new Date(subscription.ends_at) > new Date());
+  const isProActive = hasProductProEntitlement(role, subscription);
 
   return {
     isProActive,
@@ -20,8 +22,8 @@ export async function getCustomerEntitlements(userId: string) {
   };
 }
 
-export async function requireActivePro(userId: string) {
-  const entitlements = await getCustomerEntitlements(userId);
+export async function requireActivePro(userId: string, role: UserRole = "customer") {
+  const entitlements = await getCustomerEntitlements(userId, role);
   if (!entitlements.isProActive) {
     throw new Error("Pro membership required");
   }

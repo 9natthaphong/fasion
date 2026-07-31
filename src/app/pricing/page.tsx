@@ -13,7 +13,7 @@ export default async function PricingPage() {
   
   let isPro = false;
   if (user) {
-    const entitlements = await getCustomerEntitlements(user.id);
+    const entitlements = await getCustomerEntitlements(user.id, user.role);
     isPro = entitlements.isProActive;
   }
 

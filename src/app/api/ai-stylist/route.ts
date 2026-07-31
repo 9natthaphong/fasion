@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { canAccessCustomerExperience } from "@/lib/capabilities";
 import { isSupabaseAdminConfigured } from "@/lib/env";
 import { getEventIdentity, passRateLimit, requireSameOrigin } from "@/lib/request-security";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -65,6 +66,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const user = await getCurrentUser();
+  if (parsed.data.mode === "wardrobe" && (!user || !canAccessCustomerExperience(user.role))) {
+    return NextResponse.json({ error: "กรุณาเข้าสู่ระบบเพื่อใช้โหมดตู้เสื้อผ้าส่วนตัว" }, { status: user ? 403 : 401 });
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { code: "configuration_missing", error: "AI Stylist ยังไม่ได้ตั้งค่าใน environment นี้" },
@@ -72,7 +78,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await getCurrentUser();
   const identity = await getEventIdentity(user?.id);
 
   if (
@@ -103,7 +108,7 @@ export async function POST(request: Request) {
   let proContext = "";
   let proNotes = "";
   if (user) {
-    const entitlements = await getCustomerEntitlements(user.id);
+    const entitlements = await getCustomerEntitlements(user.id, user.role);
     if (entitlements.isProActive) {
       // Resolve day in Bangkok
       const bkkDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
@@ -342,7 +347,7 @@ export async function POST(request: Request) {
     const storedInput = parsed.data.saveForNextTime ? parsed.data : { ...parsed.data, heightCm: null, weightKg: null };
     const { data: saved } = await admin.from("outfit_requests").insert({ user_id: user?.id ?? null, input_data: storedInput }).select("id").single();
     if (saved) await admin.from("outfit_results").insert({ request_id: saved.id, model_name: process.env.OPENAI_MODEL || "gpt-4o-mini", result_data: finalResult });
-    if (user?.role === "customer" && parsed.data.saveForNextTime) {
+    if (user && canAccessCustomerExperience(user.role) && parsed.data.saveForNextTime) {
       await admin.from("customer_preferences").upsert({
         user_id: user.id,
         height_cm: parsed.data.heightCm,

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, Filter, Heart, Shirt, Sparkles } from "lucide-react";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { getWardrobeItems } from "@/lib/wardrobe";
 import { WardrobeItemCard } from "@/components/wardrobe/wardrobe-item-card";
 import { WardrobeInsightsPanel } from "@/components/wardrobe/wardrobe-insights-panel";
@@ -19,7 +19,7 @@ interface PageProps {
 }
 
 export default async function WardrobePage({ searchParams }: PageProps) {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const params = await searchParams;
 
   const filters = parseWardrobeFilters(params);
@@ -38,7 +38,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           status: currentStatus,
           favoriteOnly,
         }),
-    getCustomerEntitlements(user.id),
+    getCustomerEntitlements(user.id, user.role),
   ]);
 
   const isPro = entitlements.isProActive;

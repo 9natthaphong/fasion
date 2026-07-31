@@ -1,5 +1,5 @@
 import { DashboardNav } from "@/components/dashboard-nav";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 
 const links = [
   { href: "/account", label: "ภาพรวม" },
@@ -16,10 +16,15 @@ const links = [
 export const dynamic = "force-dynamic";
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   return (
     <div className="dashboard-shell container">
       <DashboardNav title="บัญชีลูกค้า" links={links} />
+      {user.role === "admin" && (
+        <div className="mb-4 inline-flex min-h-9 items-center rounded-full border border-olive/30 bg-olive-pale/30 px-3 text-xs font-medium text-olive-dark">
+          โหมดทดสอบผู้ดูแล
+        </div>
+      )}
       <div className="dashboard-content">{children}</div>
     </div>
   );

@@ -1,11 +1,11 @@
 import { AdCard } from "@/components/ad-card";
 import { EmptyState } from "@/components/ui";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Ad } from "@/lib/types";
 
 export default async function LikesPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const supabase = await createClient();
   const { data } = await supabase
     .from("ad_likes")
@@ -44,4 +44,3 @@ export default async function LikesPage() {
     </>
   );
 }
-

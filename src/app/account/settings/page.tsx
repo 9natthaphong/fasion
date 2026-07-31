@@ -1,4 +1,4 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { getFitProfile } from "@/lib/fit-profile";
 import { PrivacySettingsForm } from "@/components/account/privacy-settings-form";
 import { AccountDeletionForm } from "@/components/account-deletion-form";
@@ -10,9 +10,9 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export default async function AccountSettingsPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const fitProfile = await getFitProfile(user.id);
-  const entitlements = await getCustomerEntitlements(user.id);
+  const entitlements = await getCustomerEntitlements(user.id, user.role);
   
   const supabase = await createClient();
   const { data: prefs } = await supabase
@@ -60,7 +60,13 @@ export default async function AccountSettingsPage() {
           </p>
         </div>
 
-        <AccountDeletionForm />
+        {user.role === "admin" ? (
+          <p className="rounded-lg border border-olive/20 bg-olive-pale/20 p-4 text-sm text-muted-foreground">
+            บัญชีผู้ดูแลใช้สำหรับทดสอบระบบ จึงไม่สามารถส่งคำขอลบบัญชีผ่านมุมมองลูกค้าได้
+          </p>
+        ) : (
+          <AccountDeletionForm />
+        )}
       </div>
     </div>
   );

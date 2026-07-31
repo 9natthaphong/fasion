@@ -1,4 +1,4 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomerEntitlements } from "@/lib/entitlements";
 import Link from "next/link";
@@ -8,9 +8,29 @@ export const metadata = {
   title: "Subscription | Account",
 };
 
-export default async function AccountSubscriptionPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
-  const entitlements = await getCustomerEntitlements(user.id);
+export default async function AccountSubscriptionPage({ searchParams }: { searchParams?: Promise<{ adminMode?: string }> }) {
+  const user = await requireCustomerExperiencePage("/login/customer");
+  const entitlements = await getCustomerEntitlements(user.id, user.role);
+  if (user.role === "admin") {
+    const params = searchParams ? await searchParams : {};
+    return (
+      <div className="max-w-2xl">
+        <header className="dashboard-heading mb-8">
+          <h1>การเป็นสมาชิก</h1>
+          <p>จัดการแพ็กเกจ YourStylist ของคุณ</p>
+        </header>
+        {params.adminMode === "1" && (
+          <div className="mb-6 rounded-lg border border-olive/30 bg-olive-pale/30 p-4 text-sm text-olive-dark">
+            มุมมองผู้ดูแลไม่สามารถส่งคำขอชำระเงินหรือแนบสลิปได้ ใช้บัญชีลูกค้าทดสอบสำหรับการทดสอบการชำระเงินจริง
+          </div>
+        )}
+        <div className="content-card rounded-xl border p-6">
+          <h2 className="mb-3 text-xl font-bold">แพ็กเกจปัจจุบัน: Pro</h2>
+          <p className="text-muted-foreground">บัญชีผู้ดูแลมีสิทธิ์ Pro สำหรับการทดสอบระบบ</p>
+        </div>
+      </div>
+    );
+  }
   const supabase = await createClient();
 
   const { data: request } = await supabase
