@@ -10,6 +10,8 @@ const hasCredentials = Boolean(
     process.env.E2E_ADMIN_EMAIL &&
     process.env.E2E_ADMIN_PASSWORD &&
     process.env.E2E_ADMIN_USER_ID &&
+    process.env.E2E_MERCHANT_EMAIL &&
+    process.env.E2E_MERCHANT_PASSWORD &&
     process.env.SUPABASE_SECRET_KEY &&
     (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
 );
@@ -22,7 +24,7 @@ function serviceClient(): SupabaseClient {
   );
 }
 
-function authenticatedAdminClient(): SupabaseClient {
+function authenticatedPublicClient(): SupabaseClient {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
@@ -69,11 +71,12 @@ test.describe("Membership lifecycle", () => {
     );
   });
 
-  test("customer upload navigates, admin approves atomically, and Pro activates", async ({ page, browser }) => {
+  test("customer upload navigates, admin approves atomically, and Pro activates", async ({ page, browser, request: apiRequest }) => {
     const customerUserId = process.env.E2E_CUSTOMER_USER_ID!;
     const adminUserId = process.env.E2E_ADMIN_USER_ID!;
     const admin = serviceClient();
     const consoleErrors: string[] = [];
+    const adminConsoleErrors: string[] = [];
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
@@ -81,6 +84,9 @@ test.describe("Membership lifecycle", () => {
     let requestId: string | null = null;
     const adminContext = await browser.newContext();
     const adminPage = await adminContext.newPage();
+    adminPage.on("console", (message) => {
+      if (message.type() === "error") adminConsoleErrors.push(message.text());
+    });
 
     try {
       await cleanupCustomerData(admin, customerUserId);
@@ -99,6 +105,13 @@ test.describe("Membership lifecycle", () => {
       const qr = page.getByAltText("Payment QR Code");
       await expect(qr).toBeVisible();
       await expect.poll(() => qr.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+      const qrResponse = await apiRequest.get(new URL("/images/fittoday/forpayment.jpg", page.url()).toString());
+      expect(qrResponse.status()).toBe(200);
+      expect(qrResponse.headers()["content-type"]).toMatch(/^image\//);
+      const qrDownloadPromise = page.waitForEvent("download");
+      await page.locator('a[download="fittoday-payment-qr.jpg"]').click();
+      const qrDownload = await qrDownloadPromise;
+      expect(qrDownload.suggestedFilename()).toBe("fittoday-payment-qr.jpg");
 
       await page.locator('input[type="file"]').setInputFiles(
         path.resolve("tests/fixtures/payment-slip.jpg"),
@@ -127,6 +140,28 @@ test.describe("Membership lifecycle", () => {
         .single();
       expect(proofError).toBeNull();
       expect(proof?.expected_amount_thb).toBe(9);
+      expect(proof?.storage_path).toBeTruthy();
+
+      const storagePath = proof!.storage_path
+        .split("/")
+        .map((segment: string) => encodeURIComponent(segment))
+        .join("/");
+      const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/payment-slips/${storagePath}`;
+      const anonymousResponse = await apiRequest.get(storageUrl);
+      expect(anonymousResponse.status()).not.toBe(200);
+
+      const unrelated = authenticatedPublicClient();
+      const { error: unrelatedSignInError } = await unrelated.auth.signInWithPassword({
+        email: process.env.E2E_MERCHANT_EMAIL!,
+        password: process.env.E2E_MERCHANT_PASSWORD!,
+      });
+      expect(unrelatedSignInError).toBeNull();
+      const { data: unrelatedSlip, error: unrelatedSlipError } = await unrelated.storage
+        .from("payment-slips")
+        .download(proof!.storage_path);
+      expect(unrelatedSlip).toBeNull();
+      expect(unrelatedSlipError).not.toBeNull();
+      await unrelated.auth.signOut();
 
       await login(
         adminPage,
@@ -154,7 +189,7 @@ test.describe("Membership lifecycle", () => {
 
       // Re-run the RPC through a real authenticated admin session. The
       // forward-fix should return already_approved without another mutation.
-      const adminSession = authenticatedAdminClient();
+      const adminSession = authenticatedPublicClient();
       const { error: signInError } = await adminSession.auth.signInWithPassword({
         email: process.env.E2E_ADMIN_EMAIL!,
         password: process.env.E2E_ADMIN_PASSWORD!,
@@ -183,6 +218,7 @@ test.describe("Membership lifecycle", () => {
       await adminContext.close();
       await cleanupCustomerData(admin, customerUserId);
       expect(consoleErrors).toEqual([]);
+      expect(adminConsoleErrors).toEqual([]);
     }
   });
 });
