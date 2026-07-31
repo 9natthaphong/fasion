@@ -107,7 +107,8 @@ test.describe("account shell responsive layout and themes", () => {
     for (const theme of themes) {
       await applyAppearance(page, theme);
       for (const route of routes) {
-        await page.goto(route, { waitUntil: "networkidle" });
+        await page.goto(route, { waitUntil: "domcontentloaded" });
+        await page.locator(".dashboard-content").waitFor({ state: "visible" });
         const metrics = await getLayoutMetrics(page);
         if (testInfo.project.name === "chromium" && route === "/account/style-memory" && theme.name === "dark-olive") {
           await page.screenshot({ path: `test-results/account-style-memory-${theme.name}.png`, fullPage: true });
@@ -148,7 +149,8 @@ test.describe("account shell responsive layout and themes", () => {
       await page.setViewportSize(viewport);
       for (const theme of themes.slice(0, 2)) {
         await applyAppearance(page, theme);
-        await page.goto("/account/style-memory", { waitUntil: "networkidle" });
+        await page.goto("/account/style-memory", { waitUntil: "domcontentloaded" });
+        await page.locator(".dashboard-content").waitFor({ state: "visible" });
         const metrics = await getLayoutMetrics(page);
         await page.screenshot({ path: `test-results/account-style-memory-${viewport.name}-${theme.name}.png`, fullPage: true });
         expect(metrics.scrollWidth, `${viewport.name} ${theme.name} has horizontal overflow`).toBeLessThanOrEqual(metrics.viewportWidth + 1);
