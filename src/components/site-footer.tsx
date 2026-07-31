@@ -5,7 +5,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="container footer-grid">
         <div>
-          <div className="wordmark">FITTODAY</div>
+          <div className="wordmark">YOURSTYLIST</div>
           <p>วันนี้จะไปไหน ให้ AI ช่วยเลือกชุด</p>
         </div>
         <nav aria-label="ลิงก์ส่วนท้าย">

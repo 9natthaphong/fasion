@@ -50,30 +50,25 @@ test.describe("Membership Lifecycle E2E Workflows", () => {
     await expect(page.getByRole("button", { name: "ขอเปิดใช้งาน Pro" })).toBeVisible();
     await page.getByRole("button", { name: "ขอเปิดใช้งาน Pro" }).click();
     await page.waitForURL("**/account/subscription");
-    await expect(page.getByText("สถานะ: รอการอนุมัติ")).toBeVisible();
+    await expect(page.getByText("คำขอของคุณอยู่ระหว่างการพิจารณา (Pending Review)")).toBeVisible();
 
     // 2. Admin approves Pro
     const adminContext = await browser.newContext();
     const adminPage = await adminContext.newPage();
     
-    await adminPage.goto("/login/customer");
+    await adminPage.goto("/login/admin"); // admin login is usually /login/admin
     await adminPage.getByLabel("อีเมล").fill(adminEmail);
     await adminPage.locator("#auth-password").fill(adminPassword);
     await adminPage.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
     await adminPage.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15_000 });
     
     await adminPage.goto("/admin/subscriptions");
-    await expect(adminPage.getByText(customerEmail)).toBeVisible();
-    await adminPage.getByRole("button", { name: "อนุมัติ Pro" }).first().click();
+    await expect(adminPage.getByText("คำขอที่รออนุมัติ")).toBeVisible();
+    await adminPage.getByRole("button", { name: "อนุมัติ (เดือนแรก 9 บ.)" }).first().click();
     
-    // Fill approval form
-    await adminPage.getByLabel("ราคา (THB)").fill("9");
-    await adminPage.getByLabel("ราคาพิเศษเดือนแรก?").check();
-    await adminPage.getByRole("button", { name: "บันทึกการอนุมัติ" }).click();
-
     // 3. Customer accesses Pro features
     await page.goto("/account/subscription");
-    await expect(page.getByText("แผนของคุณ: Pro")).toBeVisible();
+    await expect(page.getByText("แพ็กเกจปัจจุบัน: Pro")).toBeVisible();
     
     // Weekly Planner
     await page.goto("/account/weekly-planner");
@@ -82,11 +77,10 @@ test.describe("Membership Lifecycle E2E Workflows", () => {
     // Style Memory
     await page.goto("/account/style-memory");
     await expect(page.getByText("บันทึกสไตล์ประจำสัปดาห์")).toBeVisible();
-    await page.getByRole("button", { name: "บันทึกข้อมูล" }).first().click();
 
     // 4. Admin revokes Pro
     await adminPage.goto("/admin/subscriptions");
-    await adminPage.getByRole("button", { name: "ยกเลิก (Revoke)" }).first().click();
+    await adminPage.getByRole("button", { name: "ระงับสิทธิ์" }).first().click();
     
     // 5. Customer loses access
     await page.goto("/account/weekly-planner");
