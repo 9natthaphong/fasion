@@ -144,6 +144,11 @@ test.describe("account shell responsive layout and themes", () => {
   test("keeps style memory usable at tablet and small mobile sizes", async ({ page }) => {
     test.setTimeout(120_000);
     await loginAdmin(page);
+    const errors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text());
+    });
+    page.on("pageerror", (error) => errors.push(error.message));
     const viewports = [
       { name: "tablet", width: 1024, height: 768 },
       { name: "mobile", width: 390, height: 844 },
@@ -163,5 +168,6 @@ test.describe("account shell responsive layout and themes", () => {
         expect(metrics.titleLogoutOverlap, `${viewport.name} ${theme.name} logout overlaps content`).toBe(false);
       }
     }
+    expect(errors, `mobile browser errors: ${errors.join(" | ")}`).toEqual([]);
   });
 });
