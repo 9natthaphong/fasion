@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const supabase = await createClient();
   const [{ count: outfitCount }, { count: likeCount }, { count: wardrobeCount }] = await Promise.all([
     supabase

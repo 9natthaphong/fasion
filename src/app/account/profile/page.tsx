@@ -1,4 +1,4 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { getFitProfile } from "@/lib/fit-profile";
 import { createClient } from "@/lib/supabase/server";
 import { FitProfileForm } from "@/components/account/fit-profile-form";
@@ -7,7 +7,7 @@ import { UserCheck } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const supabase = await createClient();
 
   const [{ data: profileRow }, { data: prefRow }, fitProfile] = await Promise.all([

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePageRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { canCancelInvalidSubscriptionRequest } from "@/lib/subscription-queue";
 
 const ApproveRequestSchema = z.object({
   requestId: z.string().uuid(),
@@ -130,6 +131,67 @@ export async function requestResubmission(requestId: string, reason: string) {
 const RevokeSchema = z.object({
   subscriptionId: z.string().uuid(),
 });
+
+const CancelInvalidRequestSchema = z.object({
+  requestId: z.string().uuid(),
+});
+
+/**
+ * Server Actions receive Next.js' built-in same-origin/CSRF protection. This
+ * action is deliberately narrower than rejection: it can only mark a
+ * pending request with no payment proof as rejected and never deletes data.
+ */
+export async function cancelInvalidRequest(requestId: string) {
+  const admin = await requirePageRole(["admin"], "/login/admin");
+  const parsed = CancelInvalidRequestSchema.safeParse({ requestId });
+  if (!parsed.success) throw new Error("Invalid request data.");
+
+  const adminClient = getAdminClient();
+  const { data: request, error: requestError } = await adminClient
+    .from("customer_subscription_requests")
+    .select("id, user_id, status, payment_status")
+    .eq("id", parsed.data.requestId)
+    .maybeSingle();
+
+  if (requestError || !request) throw new Error("ไม่พบคำขอสมาชิก");
+  if (!canCancelInvalidSubscriptionRequest({ ...request, hasProof: false })) throw new Error("ยกเลิกได้เฉพาะคำขอที่ยังไม่มีสลิปเท่านั้น");
+
+  const { data: proof, error: proofError } = await adminClient
+    .from("subscription_payment_proofs")
+    .select("id")
+    .eq("request_id", request.id)
+    .limit(1)
+    .maybeSingle();
+  if (proofError) throw new Error("ตรวจสอบหลักฐานการชำระเงินไม่สำเร็จ");
+  if (proof) throw new Error("คำขอนี้มีหลักฐานการชำระเงินแล้ว");
+
+  const now = new Date().toISOString();
+  const note = "ยกเลิกคำขอของบัญชีผู้ดูแลระบบ";
+  const { error: updateError } = await adminClient
+    .from("customer_subscription_requests")
+    .update({
+      status: "rejected",
+      admin_note: note,
+      reviewed_by: admin.id,
+      reviewed_at: now,
+    })
+    .eq("id", request.id)
+    .eq("status", "pending")
+    .eq("payment_status", "not_submitted");
+  if (updateError) throw new Error("ยกเลิกคำขอไม่สำเร็จ");
+
+  await adminClient.rpc("record_admin_audit", {
+    p_actor_id: admin.id,
+    p_action: "cancel_invalid_subscription_request",
+    p_entity_type: "customer_subscription_requests",
+    p_entity_id: request.id,
+    p_before_data: request,
+    p_after_data: { ...request, status: "rejected", admin_note: note },
+  });
+
+  revalidatePath("/admin/subscriptions");
+  revalidatePath("/account/subscription");
+}
 
 export async function revokeSubscription(subscriptionId: string) {
   await requirePageRole(["admin"], "/login/admin");

@@ -1,11 +1,11 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { AddItemForm } from "@/components/wardrobe/add-item-form";
 import { Shirt } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewWardrobeItemPage() {
-  await requirePageRole(["customer"], "/login/customer");
+  await requireCustomerExperiencePage("/login/customer");
 
   return (
     <div className="space-y-8">

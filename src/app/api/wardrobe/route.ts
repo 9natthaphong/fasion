@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireCustomerExperienceApi } from "@/lib/auth";
 import { requireSameOrigin } from "@/lib/request-security";
 import { wardrobeItemSchema } from "@/lib/validation";
 import { createWardrobeItem, getWardrobeItems } from "@/lib/wardrobe";
 import type { WardrobeAvailabilityStatus, WardrobeItemType } from "@/lib/types";
 
 export async function GET(request: Request) {
-  const user = await getCurrentUser();
+  const user = (await requireCustomerExperienceApi()).user;
   if (!user) {
     return NextResponse.json({ error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" }, { status: 401 });
   }
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
   }
 
-  const user = await getCurrentUser();
+  const user = (await requireCustomerExperienceApi()).user;
   if (!user) {
     return NextResponse.json({ error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" }, { status: 401 });
   }

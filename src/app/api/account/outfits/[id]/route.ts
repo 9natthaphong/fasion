@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiRole } from "@/lib/auth";
+import { requireCustomerExperienceApi } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { requireSameOrigin } from "@/lib/request-security";
 import { z } from "zod";
@@ -16,7 +16,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
   }
 
-  const auth = await requireApiRole(["customer"]);
+  const auth = await requireCustomerExperienceApi();
   if (!auth.user) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }

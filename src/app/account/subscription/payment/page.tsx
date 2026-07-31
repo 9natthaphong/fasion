@@ -1,4 +1,4 @@
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomerEntitlements } from "@/lib/entitlements";
 import { redirect } from "next/navigation";
@@ -7,8 +7,11 @@ import PaymentForm from "./PaymentForm";
 export const metadata = { title: "Payment | YourStylist" };
 
 export default async function PaymentPage() {
-  const user = await requirePageRole(["customer"], "/login/customer");
-  const entitlements = await getCustomerEntitlements(user.id);
+  const user = await requireCustomerExperiencePage("/login/customer");
+  if (user.role === "admin") {
+    redirect("/account/subscription?adminMode=1");
+  }
+  const entitlements = await getCustomerEntitlements(user.id, user.role);
   
   if (entitlements.isProActive) {
     redirect("/account/subscription");

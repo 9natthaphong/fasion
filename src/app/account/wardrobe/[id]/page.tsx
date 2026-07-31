@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { getWardrobeItem } from "@/lib/wardrobe";
 import { EditItemForm } from "@/components/wardrobe/edit-item-form";
 import { Shirt } from "lucide-react";
@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export default async function WardrobeItemDetailPage({ params }: PageProps) {
-  const user = await requirePageRole(["customer"], "/login/customer");
+  const user = await requireCustomerExperiencePage("/login/customer");
   const { id } = await params;
 
   const item = await getWardrobeItem(id, user.id);

@@ -1,13 +1,13 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requirePageRole } from "@/lib/auth";
+import { requireCustomerExperiencePage } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { requireActivePro } from "@/lib/entitlements";
 
 export async function saveStyleMemory(formData: FormData) {
-  const user = await requirePageRole(["customer"], "/login/customer");
-  await requireActivePro(user.id);
+  const user = await requireCustomerExperiencePage("/login/customer");
+  await requireActivePro(user.id, user.role);
   const supabase = await createClient();
 
   const weekdayStr = formData.get("weekday") as string;
@@ -45,8 +45,8 @@ export async function saveStyleMemory(formData: FormData) {
 }
 
 export async function clearStyleMemory(weekday: number) {
-  const user = await requirePageRole(["customer"], "/login/customer");
-  await requireActivePro(user.id);
+  const user = await requireCustomerExperiencePage("/login/customer");
+  await requireActivePro(user.id, user.role);
   const supabase = await createClient();
 
   await supabase.from("weekly_style_memories").delete().eq("user_id", user.id).eq("weekday", weekday);

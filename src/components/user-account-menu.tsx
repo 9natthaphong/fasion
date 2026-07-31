@@ -166,13 +166,22 @@ export function UserAccountMenu({ user }: { user: CurrentUser }) {
             {user.role === "admin" && (
               <>
                 <Link
+                  href="/account"
+                  onClick={() => setIsOpen(false)}
+                  role="menuitem"
+                  className="flex items-center gap-2 px-3 py-2.5 text-charcoal hover:bg-paper font-medium min-h-[44px] transition-colors"
+                >
+                  <User className="w-4 h-4 text-muted" />
+                  <span>มุมมองลูกค้า</span>
+                </Link>
+                <Link
                   href="/admin"
                   onClick={() => setIsOpen(false)}
                   role="menuitem"
                   className="flex items-center gap-2 px-3 py-2.5 text-charcoal hover:bg-paper font-medium min-h-[44px] transition-colors"
                 >
                   <Shield className="w-4 h-4 text-muted" />
-                  <span>Admin Console</span>
+                  <span>แผงผู้ดูแล</span>
                 </Link>
                 <Link
                   href="/admin/shops"

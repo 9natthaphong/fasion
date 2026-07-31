@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiRole } from "@/lib/auth";
+import { requireCustomerExperienceApi } from "@/lib/auth";
 import { saveOutfitFeedback } from "@/lib/saved-outfits";
 import { requireSameOrigin } from "@/lib/request-security";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
   }
 
-  const auth = await requireApiRole(["customer"]);
+  const auth = await requireCustomerExperienceApi();
   if (!auth.user) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }

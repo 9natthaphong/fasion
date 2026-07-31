@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireApiRole } from "@/lib/auth";
+import { requireCustomerExperienceApi } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { preferencesSchema, profileSchema } from "@/lib/validation";
 import { requireSameOrigin } from "@/lib/request-security";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function PATCH(request: Request) {
   if (!(await requireSameOrigin(request))) return NextResponse.json({ error: "Origin ไม่ถูกต้อง" }, { status: 403 });
-  const auth = await requireApiRole(["customer"]);
+  const auth = await requireCustomerExperienceApi();
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const body = await request.json().catch(() => null);
   const profile = profileSchema.safeParse(body);
@@ -17,7 +18,7 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
-  const supabase = await createClient();
+  const supabase = auth.user.role === "admin" ? getAdminClient() : await createClient();
   const profileResult = await supabase
     .from("profiles")
     .update({ display_name: profile.data.displayName })

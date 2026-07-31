@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAdminEmails, isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types";
+import { canAccessCustomerExperience } from "@/lib/capabilities";
 
 export interface CurrentUser {
   id: string;
@@ -69,3 +70,21 @@ export async function requireApiRole(allowed: UserRole[]) {
   }
   return { user, error: null, status: 200 as const };
 }
+
+export async function requireCustomerExperiencePage(loginPath = "/login/customer") {
+  const user = await getCurrentUser();
+  if (!user) redirect(loginPath);
+  if (!canAccessCustomerExperience(user.role)) redirect("/");
+  return user;
+}
+
+export async function requireCustomerExperienceApi() {
+  const user = await getCurrentUser();
+  if (!user) return { user: null, error: "กรุณาเข้าสู่ระบบ", status: 401 as const };
+  if (!canAccessCustomerExperience(user.role)) {
+    return { user: null, error: "คุณไม่มีสิทธิ์ดำเนินการนี้", status: 403 as const };
+  }
+  return { user, error: null, status: 200 as const };
+}
+
+export { canAccessCustomerExperience, canManageAdmin } from "@/lib/capabilities";
