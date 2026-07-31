@@ -6,15 +6,16 @@ import { approveRequest, rejectRequest, requestResubmission } from "../actions";
 
 export const metadata = { title: "Request Details | Admin" };
 
-export default async function RequestDetailPage({ params }: { params: { id: string } }) {
+export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePageRole(["admin"], "/login/admin");
   const adminClient = getAdminClient();
+  const { id } = await params;
 
   // Fetch the request
   const { data: request, error: reqError } = await adminClient
     .from("customer_subscription_requests")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (reqError || !request) {
@@ -32,7 +33,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
   const { data: currentProof } = await adminClient
     .from("subscription_payment_proofs")
     .select("*")
-    .eq("request_id", params.id)
+    .eq("request_id", id)
     .eq("status", "submitted")
     .single();
 
@@ -40,7 +41,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
   await adminClient
     .from("subscription_payment_proofs")
     .select("id")
-    .eq("request_id", params.id)
+    .eq("request_id", id)
     .neq("status", "submitted")
     .order("created_at", { ascending: false });
 
@@ -103,7 +104,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
               {request.payment_status === "submitted" && currentProof ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground mb-2">กรุณาตรวจสอบสลิปว่ายอดเงินตรงกับ {expectedAmount} บาท ก่อนอนุมัติ</p>
-                  <form action={async () => { "use server"; await approveRequest(request.id, request.user_id, !hasPastPro); }}>
+                  <form action={async () => { "use server"; await approveRequest(request.id, request.user_id); }}>
                     <button type="submit" className="w-full px-4 py-2 bg-[var(--accent-color,theme(colors.olive.dark))] text-primary-foreground rounded hover:opacity-90">
                       ยืนยันสลิปและอนุมัติ Pro
                     </button>
@@ -154,8 +155,10 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
                   <p>ขนาด: {(currentProof.file_size_bytes / 1024).toFixed(2)} KB</p>
                 </div>
                 <div className="relative w-full border rounded bg-muted flex items-center justify-center overflow-hidden" style={{ minHeight: "400px" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={signedUrl} alt="Payment Proof" className="max-w-full max-h-[800px] object-contain cursor-pointer" onClick={(e) => { e.currentTarget.requestFullscreen?.() }} />
+                  <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block max-w-full max-h-[800px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={signedUrl} alt="Payment Proof" className="max-w-full max-h-[800px] object-contain cursor-pointer" />
+                  </a>
                 </div>
                 <p className="text-xs text-center text-muted-foreground">คลิกที่รูปเพื่อขยายใหญ่</p>
               </div>

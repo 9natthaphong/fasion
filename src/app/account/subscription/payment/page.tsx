@@ -105,10 +105,10 @@ export default async function PaymentPage() {
               <p className="font-medium text-destructive mb-2">ต้องส่งสลิปใหม่</p>
               <p className="text-sm text-destructive/80 mb-2">{request.admin_note}</p>
             </div>
-            <PaymentForm requestId={request.id} expectedAmount={expectedAmount} userId={user.id} />
+            <PaymentForm requestId={request.id} />
           </div>
         ) : (
-          <PaymentForm requestId={request.id} expectedAmount={expectedAmount} userId={user.id} />
+          <PaymentForm requestId={request.id} />
         )}
       </div>
     </div>

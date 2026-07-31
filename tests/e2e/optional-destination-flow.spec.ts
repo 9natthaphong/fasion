@@ -42,7 +42,9 @@ test.describe("Merchant purchase information", () => {
 
     await purchaseInfo.fill("สินค้าทดลอง ติดต่อร้านค้าทาง Line @testshop");
     await expect(
-      page.getByText("สินค้าทดลอง ติดต่อร้านค้าทาง Line @testshop"),
+      page
+        .getByRole("paragraph")
+        .filter({ hasText: "สินค้าทดลอง ติดต่อร้านค้าทาง Line @testshop" }),
     ).toBeVisible();
 
     await expect(page.getByText("ลิงก์ Shopee ไม่ถูกต้อง")).toHaveCount(0);

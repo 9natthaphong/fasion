@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { uploadPaymentSlip } from "./actions";
 
-export default function PaymentForm({ requestId, expectedAmount }: { requestId: string, expectedAmount: number, userId: string }) {
+export default function PaymentForm({ requestId }: { requestId: string }) {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -20,11 +28,15 @@ export default function PaymentForm({ requestId, expectedAmount }: { requestId: 
 
     if (selected.size > 5 * 1024 * 1024) {
       setError("ไฟล์มีขนาดเกิน 5MB");
+      setFile(null);
+      setPreview(null);
       return;
     }
     
     if (!selected.type.startsWith("image/")) {
       setError("กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น");
+      setFile(null);
+      setPreview(null);
       return;
     }
 
@@ -52,16 +64,19 @@ export default function PaymentForm({ requestId, expectedAmount }: { requestId: 
       const formData = new FormData();
       formData.append("slip", file);
       formData.append("requestId", requestId);
-      formData.append("expectedAmount", expectedAmount.toString());
 
       const result = await uploadPaymentSlip(formData);
       
-      if (result?.error) {
+      if (!result.ok) {
         setError(result.error);
         setIsSubmitting(false);
         return;
       }
-      // Server action redirects on success; this line only reached on unexpected non-error non-redirect.
+
+      // This component invokes the action manually, so navigation belongs to
+      // the client handler rather than redirect() inside the action.
+      router.replace("/account/subscription?slip=submitted");
+      router.refresh();
     } catch {
       setError("เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่");
       setIsSubmitting(false);

@@ -1,42 +1,59 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-  process.env.SUPABASE_SECRET_KEY ?? ''
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  process.env.SUPABASE_SECRET_KEY ?? "",
 );
 
-async function setup() {
-  // Create admin
-  const { data: adminData, error: adminErr } = await supabase.auth.admin.createUser({
-    email: 'e2e_admin@example.com',
-    password: 'password123',
-    email_confirm: true,
-  });
-  if (adminErr && !adminErr.message.includes('already registered')) console.error(adminErr);
-
-  const { data: customerData, error: customerErr } = await supabase.auth.admin.createUser({
-    email: 'e2e_customer@example.com',
-    password: 'password123',
-    email_confirm: true,
-  });
-  if (customerErr && !customerErr.message.includes('already registered')) console.error(customerErr);
-
-  if (adminData?.user) {
-    await supabase.from('profiles').upsert({ id: adminData.user.id, role: 'admin', display_name: 'E2E Admin' });
-  } else {
-    const { data: adminUsers } = await supabase.auth.admin.listUsers();
-    const adminUser = adminUsers?.users.find(u => u.email === 'e2e_admin@example.com');
-    if (adminUser) await supabase.from('profiles').upsert({ id: adminUser.id, role: 'admin', display_name: 'E2E Admin' });
-  }
-
-  if (customerData?.user) {
-    await supabase.from('profiles').upsert({ id: customerData.user.id, role: 'customer', display_name: 'E2E Customer' });
-  } else {
-    const { data: customerUsers } = await supabase.auth.admin.listUsers();
-    const customerUser = customerUsers?.users.find(u => u.email === 'e2e_customer@example.com');
-    if (customerUser) await supabase.from('profiles').upsert({ id: customerUser.id, role: 'customer', display_name: 'E2E Customer' });
-  }
-
-  console.log('Users setup complete.');
+const required = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SECRET_KEY",
+  "E2E_ADMIN_EMAIL",
+  "E2E_ADMIN_PASSWORD",
+  "E2E_CUSTOMER_EMAIL",
+  "E2E_CUSTOMER_PASSWORD",
+];
+for (const key of required) {
+  if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
 }
-setup();
+
+const accounts = [
+  { role: "admin", email: process.env.E2E_ADMIN_EMAIL, password: process.env.E2E_ADMIN_PASSWORD },
+  { role: "customer", email: process.env.E2E_CUSTOMER_EMAIL, password: process.env.E2E_CUSTOMER_PASSWORD },
+];
+
+async function setup() {
+  for (const account of accounts) {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: account.email,
+      password: account.password,
+      email_confirm: true,
+    });
+    if (error && !error.message.includes("already registered")) throw error;
+
+    let user = data.user;
+    if (!user) {
+      const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+      if (listError) throw listError;
+      user = users.users.find(
+        (candidate) => candidate.email?.toLowerCase() === account.email?.toLowerCase(),
+      );
+    }
+    if (!user) throw new Error(`Unable to resolve E2E ${account.role} account`);
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, role: account.role, display_name: `E2E ${account.role}` });
+    if (profileError) throw profileError;
+  }
+
+  console.log("Users setup complete.");
+}
+
+setup().catch((error) => {
+  console.error(
+    "E2E user setup failed:",
+    error instanceof Error ? error.message : "unknown error",
+  );
+  process.exitCode = 1;
+});
