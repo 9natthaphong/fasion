@@ -15,6 +15,8 @@ import {
 } from "@/lib/validation";
 import { getWardrobeItems, wardrobeAssetUrl } from "@/lib/wardrobe";
 import type { WardrobeOutfitResponse, WardrobeItem, OutfitResponse } from "@/lib/types";
+import { getCustomerEntitlements } from "@/lib/entitlements";
+import { getRecentWears, buildRepeatAvoidancePromptContext } from "@/lib/smart-repeat";
 
 const generalSystemPrompt = `คุณคือสไตลิสต์ภาษาไทยที่สุภาพ ให้คำแนะนำแฟชั่นตามกิจกรรม อากาศ ความสบาย ความชอบ และงบประมาณ
 ต้องตอบ 3 ชุดที่ต่างกันจริงและมี direction ตามลำดับ safe, elevated, comfortable
@@ -98,6 +100,35 @@ export async function POST(request: Request) {
     }
   }
 
+  let proContext = "";
+  let proNotes = "";
+  if (user) {
+    const entitlements = await getCustomerEntitlements(user.id);
+    if (entitlements.isProActive) {
+      // Resolve day in Bangkok
+      const bkkDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+      const weekday = bkkDate.getDay() || 7; // 1-7, 1=Monday
+      
+      const admin = getAdminClient();
+      const { data: memory } = await admin
+        .from("weekly_style_memories")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("weekday", weekday)
+        .eq("is_active", true)
+        .eq("use_for_ai", true)
+        .single();
+        
+      if (memory) {
+        proContext += `[Weekly Style Memory For Today]: Activity: ${memory.usual_activity}, Time: ${memory.time_of_day}, Location: ${memory.location_context}, Formality: ${memory.formality}, Styles: ${memory.preferred_styles.join(", ")}. Use this as baseline context if the user doesn't specify otherwise.\n`;
+        proNotes = "คำแนะนำนี้อ้างอิงกิจวัตรที่คุณบันทึกไว้สำหรับวันนี้";
+      }
+      
+      const { recentlyWornItemIds } = await getRecentWears(user.id);
+      proContext += buildRepeatAvoidancePromptContext(recentlyWornItemIds, "balanced");
+    }
+  }
+
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 1, timeout: 25_000 });
 
   // Handle Wardrobe Mode
@@ -160,7 +191,7 @@ export async function POST(request: Request) {
             model: process.env.OPENAI_MODEL || "gpt-4o-mini",
             store: false,
             input: [
-              { role: "system", content: wardrobeSystemPrompt },
+              { role: "system", content: wardrobeSystemPrompt + "\n" + proContext },
               { role: "user", content: inputPrompt },
             ],
             text: { format: zodTextFormat(wardrobeOutfitResponseSchema, "fittoday_wardrobe_outfits") },
@@ -212,7 +243,7 @@ export async function POST(request: Request) {
     });
 
     const finalWardrobeResult: WardrobeOutfitResponse = {
-      summary: wardrobeResult.summary,
+      summary: wardrobeResult.summary + (proNotes ? `\n\n${proNotes}` : ""),
       outfits: validatedOutfits,
       generalTips: wardrobeResult.generalTips,
       sponsoredAds,
@@ -276,7 +307,7 @@ export async function POST(request: Request) {
           model: process.env.OPENAI_MODEL || "gpt-4o-mini",
           store: false,
           input: [
-            { role: "system", content: generalSystemPrompt },
+            { role: "system", content: generalSystemPrompt + "\n" + proContext },
             { role: "user", content: `สร้างคำแนะนำจากข้อมูลต่อไปนี้:\n${JSON.stringify(inputPromptData)}` },
           ],
           text: { format: zodTextFormat(outfitResponseSchema, "fittoday_outfits") },
@@ -302,6 +333,7 @@ export async function POST(request: Request) {
 
   const finalResult: OutfitResponse = {
     ...result,
+    summary: result.summary + (proNotes ? `\n\n${proNotes}` : ""),
     sponsoredAds,
   };
 

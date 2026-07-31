@@ -21,11 +21,11 @@ const notoSerifThai = Noto_Serif_Thai({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
-    default: "FitToday — วันนี้จะไปไหน ให้ AI ช่วยเลือกชุด",
-    template: "%s | FitToday",
+    default: "YourStylist — สไตลิสต์ส่วนตัวที่ยิ่งใช้ ยิ่งรู้จักคุณ",
+    template: "%s | YourStylist",
   },
   description:
-    "AI Stylist ภาษาไทยและพื้นที่ค้นหาแฟชั่นจากร้านค้า โดยแยกคำแนะนำ AI ออกจากโฆษณาอย่างชัดเจน",
+    "ช่วยเลือกชุดจากเสื้อผ้าที่คุณมี พร้อมจดจำกิจวัตรและสไตล์ในแต่ละวัน",
 };
 
 import { getCurrentUser } from "@/lib/auth";

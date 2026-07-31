@@ -14,7 +14,7 @@ export function AuthPage({
       <div className="auth-intro">
         <p className="eyebrow">{customer ? "Customer account" : "Merchant account"}</p>
         <h1>
-          {mode === "login" ? "ยินดีต้อนรับกลับ" : customer ? "เริ่มแต่งตัวให้วันนี้" : "เปิดร้านบน FitToday"}
+          {mode === "login" ? "ยินดีต้อนรับกลับ" : customer ? "เริ่มแต่งตัวให้วันนี้" : "เปิดร้านบน YourStylist"}
         </h1>
         <p>
           {customer

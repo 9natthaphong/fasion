@@ -285,7 +285,7 @@ export default async function HomePage() {
               <li><span>03</span> เจ้าของร้านเห็นเฉพาะข้อมูลของร้านตัวเอง</li>
             </ul>
             <Link href="/register/merchant" className="merchant-story-action">
-              เปิดพื้นที่ร้านบน FitToday
+              เปิดพื้นที่ร้านบน YourStylist
               <ArrowRight aria-hidden="true" />
             </Link>
           </div>

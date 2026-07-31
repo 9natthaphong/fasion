@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { StylistForm } from "@/components/stylist-form";
 import { EditorialPageIntro } from "@/components/ui";
 
-export const metadata: Metadata = { title: "AI Stylist — FitToday" };
+export const metadata: Metadata = { title: "AI Stylist — YourStylist" };
 
 interface PageProps {
   searchParams: Promise<{ mode?: string }>;

@@ -5,6 +5,7 @@ import { getWardrobeItems } from "@/lib/wardrobe";
 import { WardrobeItemCard } from "@/components/wardrobe/wardrobe-item-card";
 import { WardrobeInsightsPanel } from "@/components/wardrobe/wardrobe-insights-panel";
 import { parseWardrobeFilters } from "@/lib/wardrobe-filters";
+import { getCustomerEntitlements } from "@/lib/entitlements";
 import type { WardrobeItemType, WardrobeAvailabilityStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
     favoriteOnly,
   } = filters;
 
-  const [allItems, items] = await Promise.all([
+  const [allItems, items, entitlements] = await Promise.all([
     getWardrobeItems(user.id, {}),
     filters.invalid
       ? Promise.resolve([])
@@ -37,7 +38,10 @@ export default async function WardrobePage({ searchParams }: PageProps) {
           status: currentStatus,
           favoriteOnly,
         }),
+    getCustomerEntitlements(user.id),
   ]);
+
+  const isPro = entitlements.isProActive;
 
   const categories: { key: WardrobeItemType | "all"; label: string }[] = [
     { key: "all", label: "ทั้งหมด" },
@@ -94,7 +98,7 @@ export default async function WardrobePage({ searchParams }: PageProps) {
       </div>
 
       {/* Wardrobe Insights Intelligence Panel */}
-      <WardrobeInsightsPanel items={allItems} />
+      <WardrobeInsightsPanel items={allItems} isPro={isPro} />
 
       {/* Filter Toolbar */}
       <div className="space-y-4 bg-paper border border-line p-4 sm:p-5">

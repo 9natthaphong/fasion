@@ -49,7 +49,7 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
         <div className="p-5 border border-olive/30 bg-olive-pale/30 text-xs text-charcoal space-y-2">
           <div className="flex items-center gap-2 font-mono uppercase font-semibold text-olive">
             <Store className="w-4 h-4" />
-            <span>เริ่มต้นเปิดสตูดิโอร้านค้าบน FitToday</span>
+            <span>เริ่มต้นเปิดสตูดิโอร้านค้าบน YourStylist</span>
           </div>
           <p className="text-muted leading-relaxed">
             กรอกข้อมูลเบื้องต้นเกี่ยวกับสตูดิโอและแบรนด์ของคุณ ข้อมูลนี้จะใช้แสดงในหน้าโปรไฟล์ร้าน

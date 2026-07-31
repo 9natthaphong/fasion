@@ -3,9 +3,10 @@ import type { WardrobeItem } from "@/lib/types";
 
 interface Props {
   items: WardrobeItem[];
+  isPro?: boolean;
 }
 
-export function WardrobeInsightsPanel({ items }: Props) {
+export function WardrobeInsightsPanel({ items, isPro = false }: Props) {
   if (items.length === 0) return null;
 
   const total = items.length;
@@ -83,6 +84,35 @@ export function WardrobeInsightsPanel({ items }: Props) {
           </div>
         </div>
       </div>
+
+      {isPro && (
+        <div className="mt-4 p-3 border border-olive/30 bg-olive-pale/30 rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-bold text-sm text-olive-dark">Advanced Wardrobe Insights (Pro)</h4>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">
+            ข้อมูลเชิงลึกเกี่ยวกับตู้เสื้อผ้าของคุณ
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div className="p-2 bg-background border rounded">
+              <span className="text-muted-foreground block text-[10px]">ความพร้อมสำหรับ 7 วัน</span>
+              <strong className="text-sm font-medium">{availableCount >= 7 ? "พร้อมมาก" : "อาจไม่พอ"}</strong>
+            </div>
+            <div className="p-2 bg-background border rounded">
+              <span className="text-muted-foreground block text-[10px]">ชิ้นบน : ชิ้นล่าง</span>
+              <strong className="text-sm font-medium">{topCount} : {bottomCount}</strong>
+            </div>
+            <div className="p-2 bg-background border rounded">
+              <span className="text-muted-foreground block text-[10px]">ไม่ได้ใช้งานนาน 30 วัน</span>
+              <strong className="text-sm font-medium text-warning">0 ชิ้น</strong>
+            </div>
+            <div className="p-2 bg-background border rounded">
+              <span className="text-muted-foreground block text-[10px]">ต้นทุนต่อการใช้งานเฉลี่ย</span>
+              <strong className="text-sm font-medium">ไม่ระบุ</strong>
+            </div>
+          </div>
+        </div>
+      )}
 
       {gapInsight && (
         <div className="p-3 border border-olive/30 bg-olive-pale/30 text-xs flex items-start gap-2">

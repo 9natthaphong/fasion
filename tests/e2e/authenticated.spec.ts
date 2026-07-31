@@ -46,7 +46,7 @@ test.describe("Authenticated E2E Workflows", () => {
     // 2. Profile Update (Tabbed UI)
     await page.goto("/account/profile");
     await expect(page.getByRole("heading", { name: "โปรไฟล์และสไตล์การแต่งตัว" })).toBeVisible();
-    await page.locator("#display-name").fill("FitToday Test Customer");
+    await page.locator("#display-name").fill("YourStylist Test Customer");
     await page.getByRole("button", { name: /3\. สัดส่วนและไซซ์/ }).click();
     await page.getByLabel("ส่วนสูง (ซม.)").fill("170");
     await page.getByLabel("น้ำหนัก (กก.)").fill("62");
@@ -128,7 +128,7 @@ test.describe("Authenticated E2E Workflows", () => {
     await expect(page).toHaveURL(/\/merchant$/);
 
     // 2. Verify Merchant Studio access
-    await expect(page.getByRole("heading", { name: "FitToday Test Merchant Shop" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "YourStylist Test Merchant Shop" })).toBeVisible();
 
     // 3. View Shop Settings or Merchant Analytics
     await page.goto("/merchant/analytics");

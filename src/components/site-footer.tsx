@@ -16,7 +16,7 @@ export function SiteFooter() {
         <nav aria-label="ข้อมูลทางกฎหมาย">
           <Link href="/privacy">ความเป็นส่วนตัว</Link>
           <Link href="/terms">ข้อกำหนดการใช้งาน</Link>
-          <span>© 2026 FitToday</span>
+          <span>© 2026 YourStylist</span>
         </nav>
       </div>
     </footer>

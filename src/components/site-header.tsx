@@ -29,8 +29,8 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-line">
       <div className="container flex items-center justify-between h-16">
-        <Link href="/" className="font-serif text-2xl tracking-tight text-charcoal hover:opacity-90 transition-opacity" aria-label="FitToday หน้าหลัก">
-          FitToday
+        <Link href="/" className="font-serif text-2xl tracking-tight text-charcoal hover:opacity-90 transition-opacity" aria-label="YourStylist หน้าหลัก">
+          YourStylist
         </Link>
 
         {/* Desktop Main Navigation */}
