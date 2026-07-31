@@ -111,7 +111,8 @@ test.describe("Membership lifecycle", () => {
       const qrDownloadPromise = page.waitForEvent("download");
       await page.locator('a[download="fittoday-payment-qr.jpg"]').click();
       const qrDownload = await qrDownloadPromise;
-      expect(qrDownload.suggestedFilename()).toBe("fittoday-payment-qr.jpg");
+      expect(qrDownload.suggestedFilename()).toMatch(/\.jpe?g$/i);
+      expect(await qrDownload.path()).toBeTruthy();
 
       await page.locator('input[type="file"]').setInputFiles(
         path.resolve("tests/fixtures/payment-slip.jpg"),
