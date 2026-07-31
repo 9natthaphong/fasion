@@ -64,12 +64,15 @@ export default async function AdminSubscriptionsPage() {
     
     let profileMap: Record<string, string> = {};
     if (userIds.size > 0) {
-      const { data: profiles } = await adminClient
+      const { data: profiles, error: profileError } = await adminClient
         .from("profiles")
         .select("id, display_name")
         .in("id", Array.from(userIds));
         
-      if (profiles) {
+      if (profileError) {
+        console.error("Admin profile query error:", profileError);
+        requestsErrorMsg = "ไม่สามารถโหลดข้อมูลผู้ใช้ได้";
+      } else if (profiles) {
         profileMap = profiles.reduce((acc, p) => ({...acc, [p.id]: p.display_name}), {});
       }
     }
@@ -100,13 +103,18 @@ export default async function AdminSubscriptionsPage() {
         <p>จัดการคำขอเปิดใช้งานและสิทธิ์สมาชิกของลูกค้า</p>
       </header>
 
-      {requestsErrorMsg && (
-        <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
-          {requestsErrorMsg}
+      {(requestsErrorMsg || activeSubsErrorMsg) && (
+        <div className="p-4 mb-8 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
+          <p className="font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+          <p>{requestsErrorMsg}</p>
+          <p>{activeSubsErrorMsg}</p>
+          <p className="mt-4 text-sm opacity-80">โปรดลองรีเฟรชหน้าใหม่อีกครั้ง</p>
         </div>
       )}
 
-      <section className="mb-12">
+      {!(requestsErrorMsg || activeSubsErrorMsg) && (
+        <>
+          <section className="mb-12">
         <h2 className="text-xl font-bold mb-4 text-[var(--accent-color,theme(colors.olive.dark))]">รอตรวจสอบสลิป ({awaitingReview.length})</h2>
         {awaitingReview.length > 0 ? (
           <div className="space-y-4">
@@ -241,6 +249,8 @@ export default async function AdminSubscriptionsPage() {
           )}
         </div>
       </section>
+      </>
+    )}
     </div>
   );
 }
