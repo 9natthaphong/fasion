@@ -1,6 +1,7 @@
 "use server";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { requirePageRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -8,23 +9,28 @@ import { z } from "zod";
 const ApproveRequestSchema = z.object({
   requestId: z.string().uuid(),
   userId: z.string().uuid(),
-  isFirstMonth: z.boolean(),
 });
 
-export async function approveRequest(requestId: string, userId: string, isFirstMonth: boolean) {
+export async function approveRequest(requestId: string, userId: string) {
   const admin = await requirePageRole(["admin"], "/login/admin");
-  const parsed = ApproveRequestSchema.safeParse({ requestId, userId, isFirstMonth });
+  const parsed = ApproveRequestSchema.safeParse({ requestId, userId });
   if (!parsed.success) {
     throw new Error("Invalid request data.");
   }
 
-  const adminClient = getAdminClient();
+  // Use the authenticated SSR client for the RPC so auth.uid() and the
+  // database admin check refer to the signed-in administrator. The RPC is
+  // SECURITY DEFINER and owns the transaction; the service-role client must
+  // not be used as a substitute for the caller identity.
+  const supabase = await createClient();
 
   // Execute atomic approval RPC
-  const { data: rpcResult, error: rpcError } = await adminClient.rpc('approve_subscription_request', {
+  const { data: rpcResult, error: rpcError } = await supabase.rpc('approve_subscription_request', {
     p_request_id: parsed.data.requestId,
     p_user_id: parsed.data.userId,
-    p_is_first_month: parsed.data.isFirstMonth,
+    // Kept for the already-deployed RPC signature; the forward-fix migration
+    // ignores this legacy hint and derives pricing from locked DB state.
+    p_is_first_month: false,
     p_admin_id: admin.id
   });
 
