@@ -9,17 +9,72 @@ export default async function AdminSubscriptionsPage() {
   await requirePageRole(["admin"], "/login/admin");
   const supabase = await createClient();
 
-  const { data: requests } = await supabase
-    .from("customer_subscription_requests")
-    .select("*, profiles(display_name)")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  type SubscriptionRequest = { id: string; user_id: string; status: string; created_at: string; profiles?: { display_name: string } };
+  type ActiveSubscription = { id: string; user_id: string; status: string; starts_at: string; ends_at: string; profiles?: { display_name: string } };
 
-  const { data: activeSubs } = await supabase
-    .from("customer_subscriptions")
-    .select("*, profiles(display_name)")
-    .eq("status", "active")
-    .order("updated_at", { ascending: false });
+  let requestsErrorMsg = "";
+  let activeSubsErrorMsg = "";
+  let requestsWithProfiles: SubscriptionRequest[] = [];
+  let activeSubsWithProfiles: ActiveSubscription[] = [];
+
+  try {
+    // 1. Fetch requests without profile join to bypass RLS issues
+    const { data: requests, error: requestsError } = await supabase
+      .from("customer_subscription_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (requestsError) {
+      console.error("Admin subscriptions query error:", requestsError);
+      requestsErrorMsg = "ไม่สามารถโหลดข้อมูลคำขอได้ กรุณาลองใหม่อีกครั้ง";
+    }
+
+    // 2. Fetch active subscriptions without profile join
+    const { data: activeSubs, error: subsError } = await supabase
+      .from("customer_subscriptions")
+      .select("*")
+      .eq("status", "active")
+      .order("updated_at", { ascending: false });
+
+    if (subsError) {
+      console.error("Admin active subs query error:", subsError);
+      activeSubsErrorMsg = "ไม่สามารถโหลดข้อมูลสมาชิก Pro ได้";
+    }
+
+    // 3. Resolve profiles safely using server-side adminClient
+    const adminClient = (await import("@/lib/supabase/admin")).getAdminClient();
+    
+    // Extract unique user IDs
+    const userIds = new Set<string>();
+    requests?.forEach(r => userIds.add(r.user_id));
+    activeSubs?.forEach(s => userIds.add(s.user_id));
+    
+    let profileMap: Record<string, string> = {};
+    if (userIds.size > 0) {
+      const { data: profiles } = await adminClient
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", Array.from(userIds));
+        
+      if (profiles) {
+        profileMap = profiles.reduce((acc, p) => ({...acc, [p.id]: p.display_name}), {});
+      }
+    }
+
+    requestsWithProfiles = (requests || []).map(r => ({
+      ...r,
+      profiles: { display_name: profileMap[r.user_id] || "Unknown User" }
+    }));
+
+    activeSubsWithProfiles = (activeSubs || []).map(s => ({
+      ...s,
+      profiles: { display_name: profileMap[s.user_id] || "Unknown User" }
+    }));
+  } catch (err) {
+    console.error("Unexpected error fetching admin subscriptions:", err);
+    requestsErrorMsg = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+  }
 
   return (
     <div>
@@ -29,10 +84,14 @@ export default async function AdminSubscriptionsPage() {
       </header>
 
       <section className="mb-12">
-        <h2 className="text-xl font-bold mb-4">คำขอที่รออนุมัติ ({requests?.length || 0})</h2>
-        {requests && requests.length > 0 ? (
+        <h2 className="text-xl font-bold mb-4">คำขอที่รออนุมัติ ({requestsWithProfiles.length})</h2>
+        {requestsErrorMsg ? (
+          <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
+            {requestsErrorMsg}
+          </div>
+        ) : requestsWithProfiles.length > 0 ? (
           <div className="space-y-4">
-            {requests.map(req => (
+            {requestsWithProfiles.map(req => (
               <div key={req.id} className="p-4 border rounded-lg bg-card flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                   <div className="font-medium">{req.profiles?.display_name || "Unknown User"}</div>
@@ -40,10 +99,10 @@ export default async function AdminSubscriptionsPage() {
                   <div className="text-sm text-muted-foreground">เวลาขอ: {formatDate(req.created_at)}</div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <form action={async () => { "use server"; await approveRequest(req.id, req.user_id, 9, true) }}>
+                  <form action={async () => { "use server"; await approveRequest(req.id, req.user_id, true) }}>
                     <button type="submit" className="px-3 py-1 bg-olive-dark text-white rounded text-sm whitespace-nowrap">อนุมัติ (เดือนแรก 9 บ.)</button>
                   </form>
-                  <form action={async () => { "use server"; await approveRequest(req.id, req.user_id, 29, false) }}>
+                  <form action={async () => { "use server"; await approveRequest(req.id, req.user_id, false) }}>
                     <button type="submit" className="px-3 py-1 bg-olive-dark/80 text-white rounded text-sm whitespace-nowrap">อนุมัติ (ปกติ 29 บ.)</button>
                   </form>
                   <form action={async () => { "use server"; await rejectRequest(req.id, "ไม่อนุมัติ") }}>
@@ -59,7 +118,12 @@ export default async function AdminSubscriptionsPage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-bold mb-4">สมาชิก Pro ที่ใช้งานอยู่ ({activeSubs?.length || 0})</h2>
+        <h2 className="text-xl font-bold mb-4">สมาชิก Pro ที่ใช้งานอยู่ ({activeSubsWithProfiles.length})</h2>
+        {activeSubsErrorMsg && (
+          <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
+            {activeSubsErrorMsg}
+          </div>
+        )}
         <div className="overflow-x-auto border rounded-lg">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-muted-foreground bg-muted">
@@ -72,7 +136,7 @@ export default async function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody>
-              {activeSubs?.map(sub => (
+              {activeSubsWithProfiles.map(sub => (
                 <tr key={sub.id} className="border-b last:border-0 bg-card">
                   <td className="px-4 py-3">
                     <div className="font-medium">{sub.profiles?.display_name || "Unknown"}</div>
@@ -92,7 +156,7 @@ export default async function AdminSubscriptionsPage() {
                   </td>
                 </tr>
               ))}
-              {(!activeSubs || activeSubs.length === 0) && (
+              {activeSubsWithProfiles.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">ยังไม่มีสมาชิก Pro</td>
                 </tr>

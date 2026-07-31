@@ -89,7 +89,7 @@ export function ShopForm({ shop, onboarding = false }: ShopFormProps) {
               placeholder="quiet-form"
               className="w-full px-4 py-3 border border-line bg-background text-sm text-charcoal focus:border-charcoal outline-none font-mono"
             />
-            <small className="text-[11px] text-muted block mt-1">ใช้เป็นส่วนหนึ่งของที่อยู่ URL ร้านค้า เช่น fittoday.app/shops/{slug || "shop-name"}</small>
+            <small className="text-[11px] text-muted block mt-1">ใช้เป็นส่วนหนึ่งของที่อยู่ URL ร้านค้า เช่น yourstylist.app/shops/{slug || "shop-name"}</small>
           </div>
 
           <div>

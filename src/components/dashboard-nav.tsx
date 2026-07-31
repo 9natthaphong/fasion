@@ -10,7 +10,7 @@ export function DashboardNav({
   return (
     <aside className="dashboard-nav">
       <Link href="/" className="wordmark">
-        FITTODAY
+        YOURSTYLIST
       </Link>
       <div>
         <p className="dashboard-nav-title">{title}</p>
