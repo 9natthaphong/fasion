@@ -19,7 +19,7 @@ const storyCopy = [
   {
     id: "opening",
     index: "01 / 05",
-    eyebrow: "FIT TODAY / AI STYLIST",
+    eyebrow: "YOURSTYLIST / AI STYLIST",
     title: "วันนี้จะไปไหน?",
     body: "เริ่มจากสิ่งที่คุณมีอยู่แล้ว ให้กลายเป็นลุคที่เหมาะกับวันนี้",
   },
