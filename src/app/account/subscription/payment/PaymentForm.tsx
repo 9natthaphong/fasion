@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { uploadPaymentSlip } from "./actions";
 
-export default function PaymentForm({ requestId, expectedAmount, userId }: { requestId: string, expectedAmount: number, userId: string }) {
+export default function PaymentForm({ requestId, expectedAmount }: { requestId: string, expectedAmount: number, userId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -59,9 +59,10 @@ export default function PaymentForm({ requestId, expectedAmount, userId }: { req
       if (result?.error) {
         setError(result.error);
         setIsSubmitting(false);
+        return;
       }
-      // If success, the server action will redirect or revalidate the page.
-    } catch (err) {
+      // Server action redirects on success; this line only reached on unexpected non-error non-redirect.
+    } catch {
       setError("เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่");
       setIsSubmitting(false);
     }
@@ -90,6 +91,7 @@ export default function PaymentForm({ requestId, expectedAmount, userId }: { req
         <div className="mt-4">
           <p className="text-sm font-medium mb-2">ภาพตัวอย่าง:</p>
           <div className="relative border rounded p-2 bg-muted/50 inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="Slip preview" className="max-w-[200px] h-auto object-contain rounded" />
           </div>
           <p className="text-xs text-muted-foreground mt-1">ไฟล์: {file?.name} ({(file!.size / 1024).toFixed(1)} KB)</p>

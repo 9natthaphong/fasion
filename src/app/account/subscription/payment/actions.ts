@@ -3,6 +3,7 @@
 import { requirePageRole } from "@/lib/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function uploadPaymentSlip(formData: FormData) {
   const user = await requirePageRole(["customer"], "/login/customer");
@@ -92,5 +93,5 @@ export async function uploadPaymentSlip(formData: FormData) {
   revalidatePath("/account/subscription/payment");
   revalidatePath("/account/subscription");
   revalidatePath("/admin/subscriptions");
-  return { success: true };
+  redirect("/account/subscription");
 }

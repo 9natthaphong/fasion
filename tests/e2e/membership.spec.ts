@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import * as fs from "fs";
 
 const hasCredentials = Boolean(
   process.env.RUN_AUTHENTICATED_E2E === "1" &&
@@ -35,7 +36,11 @@ test.describe("Membership Lifecycle E2E Workflows", () => {
     
     const admin = adminClient();
 
-    // Reset state for this user (delete subscription and requests)
+    // Reset state for this user (delete subscription, requests, and proofs)
+    const reqList = await admin.from("customer_subscription_requests").select("id").eq("user_id", customerUserId);
+    for (const req of (reqList.data ?? [])) {
+      await admin.from("subscription_payment_proofs").delete().eq("request_id", req.id);
+    }
     await admin.from("customer_subscriptions").delete().eq("user_id", customerUserId);
     await admin.from("customer_subscription_requests").delete().eq("user_id", customerUserId);
 
@@ -49,8 +54,20 @@ test.describe("Membership Lifecycle E2E Workflows", () => {
     await page.goto("/pricing");
     await expect(page.getByRole("button", { name: "ขอเปิดใช้งาน Pro" })).toBeVisible();
     await page.getByRole("button", { name: "ขอเปิดใช้งาน Pro" }).click();
+    await page.waitForURL("**/account/subscription/payment", { timeout: 20_000 });
+    await expect(page.getByText("อัปโหลดสลิปการโอนเงิน")).toBeVisible();
+    // Write temp test slip file
+    const testSlipPath = 'test-slip.jpg';
+    fs.writeFileSync(testSlipPath, Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64'));
+    await page.locator('input[type="file"]').setInputFiles(testSlipPath);
+    await page.getByLabel("ฉันตรวจสอบยอดและข้อมูลการโอนแล้ว").check();
+    await page.getByRole("button", { name: "ส่งเพื่อตรวจสอบ" }).click();
+
     await page.waitForURL("**/account/subscription");
     await expect(page.getByText("คำขอของคุณอยู่ระหว่างการพิจารณา (Pending Review)")).toBeVisible();
+    
+    // Clean up test file
+    fs.unlinkSync(testSlipPath);
 
     // 2. Admin approves Pro
     const adminContext = await browser.newContext();

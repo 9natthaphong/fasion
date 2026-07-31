@@ -1,7 +1,6 @@
 import { requirePageRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomerEntitlements } from "@/lib/entitlements";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import PaymentForm from "./PaymentForm";
 
@@ -79,7 +78,8 @@ export default async function PaymentPage() {
         
         <div className="bg-white p-4 rounded-lg inline-block mx-auto mb-4 border shadow-sm">
           <a href="/images/fittoday/forpayment.jpg" target="_blank" rel="noopener noreferrer">
-            <img src="/images/fittoday/forpayment.jpg" alt="Payment QR Code" className="w-64 h-auto mx-auto object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/fittoday/forpayment.jpg" alt="Payment QR Code" className="w-64 h-auto mx-auto object-contain rounded" />
           </a>
         </div>
         

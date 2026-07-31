@@ -3,14 +3,12 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { formatDate } from "@/lib/format";
 import Link from "next/link";
 import { approveRequest, rejectRequest, requestResubmission } from "../actions";
-import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Request Details | Admin" };
 
 export default async function RequestDetailPage({ params }: { params: { id: string } }) {
   await requirePageRole(["admin"], "/login/admin");
   const adminClient = getAdminClient();
-  const supabase = await createClient(); // for asset url signing if needed
 
   // Fetch the request
   const { data: request, error: reqError } = await adminClient
@@ -38,10 +36,10 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
     .eq("status", "submitted")
     .single();
 
-  // Fetch historical proofs
-  const { data: oldProofs } = await adminClient
+  // Fetch historical proofs (for audit, not displayed in list view)
+  await adminClient
     .from("subscription_payment_proofs")
-    .select("*")
+    .select("id")
     .eq("request_id", params.id)
     .neq("status", "submitted")
     .order("created_at", { ascending: false });
@@ -65,12 +63,6 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
     if (data?.signedUrl) signedUrl = data.signedUrl;
   }
 
-  const maskEmail = (email?: string) => {
-    if (!email) return "N/A";
-    const [name, domain] = email.split("@");
-    if (!domain) return email;
-    return `${name.substring(0, 2)}***@${domain}`;
-  };
 
   return (
     <div>
@@ -137,7 +129,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
             <h2 className="text-lg font-bold mb-4">ประวัติการเป็น Pro</h2>
             {subHistory && subHistory.length > 0 ? (
               <ul className="space-y-2 text-sm">
-                {subHistory.map((sh, idx) => (
+                {subHistory.map((sh) => (
                   <li key={sh.id} className="pb-2 border-b last:border-0">
                     <div>สถานะ: {sh.status}</div>
                     <div>เริ่ม: {formatDate(sh.starts_at)}</div>
@@ -162,6 +154,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
                   <p>ขนาด: {(currentProof.file_size_bytes / 1024).toFixed(2)} KB</p>
                 </div>
                 <div className="relative w-full border rounded bg-muted flex items-center justify-center overflow-hidden" style={{ minHeight: "400px" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={signedUrl} alt="Payment Proof" className="max-w-full max-h-[800px] object-contain cursor-pointer" onClick={(e) => { e.currentTarget.requestFullscreen?.() }} />
                 </div>
                 <p className="text-xs text-center text-muted-foreground">คลิกที่รูปเพื่อขยายใหญ่</p>

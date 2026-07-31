@@ -1,9 +1,8 @@
 import { requirePageRole } from "@/lib/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { approveRequest, rejectRequest, revokeSubscription, requestResubmission } from "./actions";
+import { revokeSubscription } from "./actions";
 import { formatDate } from "@/lib/format";
 import Link from "next/link";
-import Image from "next/image";
 
 export const metadata = { title: "Subscriptions | Admin" };
 

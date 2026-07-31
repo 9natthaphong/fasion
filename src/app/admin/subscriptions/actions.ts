@@ -19,88 +19,24 @@ export async function approveRequest(requestId: string, userId: string, isFirstM
   }
 
   const adminClient = getAdminClient();
-  const price = parsed.data.isFirstMonth ? 9 : 29;
 
-  const startsAt = new Date();
-  const endsAt = new Date();
-  endsAt.setMonth(endsAt.getMonth() + 1);
+  // Execute atomic approval RPC
+  const { data: rpcResult, error: rpcError } = await adminClient.rpc('approve_subscription_request', {
+    p_request_id: parsed.data.requestId,
+    p_user_id: parsed.data.userId,
+    p_is_first_month: parsed.data.isFirstMonth,
+    p_admin_id: admin.id
+  });
 
-  // Check idempotency
-  const { data: requestCheck } = await adminClient
-    .from("customer_subscription_requests")
-    .select("status, payment_status")
-    .eq("id", parsed.data.requestId)
-    .single();
+  if (rpcError) {
+    console.error("Atomic approval failed:", rpcError);
+    throw new Error("Failed to approve request: " + rpcError.message);
+  }
 
-  if (!requestCheck || requestCheck.status !== "pending") {
+  if (rpcResult?.status === 'already_approved') {
+    // Idempotent: already processed
     revalidatePath("/admin/subscriptions");
     return;
-  }
-  
-  if (requestCheck.payment_status !== "submitted" && requestCheck.payment_status !== "verified") {
-    throw new Error("Payment proof is not ready for approval.");
-  }
-
-  // 0. Update payment proof status to verified
-  await adminClient
-    .from("subscription_payment_proofs")
-    .update({ 
-      status: "verified",
-      reviewed_by: admin.id,
-      reviewed_at: new Date().toISOString()
-    })
-    .eq("request_id", parsed.data.requestId)
-    .eq("status", "submitted");
-
-  // 1. Update the request status
-  const { error: updateErr } = await adminClient
-    .from("customer_subscription_requests")
-    .update({ 
-      status: "approved", 
-      payment_status: "verified",
-      reviewed_by: admin.id, 
-      reviewed_at: new Date().toISOString() 
-    })
-    .eq("id", parsed.data.requestId)
-    .eq("status", "pending");
-
-  if (updateErr) throw new Error("Failed to update request");
-
-  // 2. Insert or update the subscription
-  const { data: existingSub } = await adminClient
-    .from("customer_subscriptions")
-    .select("id")
-    .eq("user_id", parsed.data.userId)
-    .single();
-
-  if (existingSub) {
-    await adminClient
-      .from("customer_subscriptions")
-      .update({
-        plan: "pro",
-        status: "active",
-        approved_price_thb: price,
-        is_first_month_offer: parsed.data.isFirstMonth,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        approved_by: admin.id,
-        approved_at: new Date().toISOString()
-      })
-      .eq("user_id", parsed.data.userId);
-  } else {
-    await adminClient
-      .from("customer_subscriptions")
-      .insert({
-        user_id: parsed.data.userId,
-        plan: "pro",
-        status: "active",
-        approved_price_thb: price,
-        is_first_month_offer: parsed.data.isFirstMonth,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        approved_by: admin.id,
-        approved_at: new Date().toISOString()
-      });
   }
 
   revalidatePath("/admin/subscriptions");
