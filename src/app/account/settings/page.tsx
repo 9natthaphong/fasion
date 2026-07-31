@@ -2,13 +2,24 @@ import { requirePageRole } from "@/lib/auth";
 import { getFitProfile } from "@/lib/fit-profile";
 import { PrivacySettingsForm } from "@/components/account/privacy-settings-form";
 import { AccountDeletionForm } from "@/components/account-deletion-form";
+import { AppearanceSettingsForm } from "@/components/account/appearance-settings-form";
 import { Settings, AlertTriangle } from "lucide-react";
+import { getCustomerEntitlements } from "@/lib/entitlements";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AccountSettingsPage() {
   const user = await requirePageRole(["customer"], "/login/customer");
   const fitProfile = await getFitProfile(user.id);
+  const entitlements = await getCustomerEntitlements(user.id);
+  
+  const supabase = await createClient();
+  const { data: prefs } = await supabase
+    .from("customer_preferences")
+    .select("appearance_theme, appearance_accent")
+    .eq("user_id", user.id)
+    .single();
 
   return (
     <div className="space-y-12 max-w-3xl">
@@ -28,6 +39,12 @@ export default async function AccountSettingsPage() {
 
       {/* Privacy & Personalization Settings */}
       <PrivacySettingsForm initialProfile={fitProfile} />
+
+      {/* Appearance Settings */}
+      <AppearanceSettingsForm 
+        isPro={entitlements.isProActive} 
+        currentSettings={{ theme: prefs?.appearance_theme, accent: prefs?.appearance_accent }} 
+      />
 
       {/* Danger Zone: Account Deletion */}
       <div className="border border-danger/30 bg-paper p-6 sm:p-8 space-y-6">

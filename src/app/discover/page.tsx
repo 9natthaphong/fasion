@@ -5,7 +5,7 @@ import { EditorialPageIntro } from "@/components/ui";
 import { getPublicAds, getPublicCategories } from "@/lib/catalog";
 import { Info } from "lucide-react";
 
-export const metadata: Metadata = { title: "ค้นหาสไตล์และร้านค้า | FitToday" };
+export const metadata: Metadata = { title: "ค้นหาสไตล์และร้านค้า | YourStylist" };
 
 export default async function DiscoverPage() {
   const [ads, categories] = await Promise.all([getPublicAds(), getPublicCategories()]);

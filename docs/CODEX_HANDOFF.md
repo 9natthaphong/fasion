@@ -1,4 +1,4 @@
-# FitToday — Codex handoff
+# YourStylist — Codex handoff
 
 อัปเดตจากการตรวจ source, runtime, Git, browser และ dependency audit เมื่อ 28 กรกฎาคม 2026
 
@@ -38,7 +38,7 @@
   created. Customer, Merchant, Admin, Storage upload, live tracking writes, and
   live AI remain Blocked in this final pass.
 - Connected Supabase tooling exposes only the unrelated `painthai` project, not
-  FitToday reference `pbapddmoprntydpsfirr`; the live migration ledger and
+  YourStylist reference `pbapddmoprntydpsfirr`; the live migration ledger and
   Advisors could not be rechecked.
 - New additive migration
   [`20260728235056_restrict_static_demo_ad_assets.sql`](../supabase/migrations/20260728235056_restrict_static_demo_ad_assets.sql)

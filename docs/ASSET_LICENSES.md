@@ -1,4 +1,4 @@
-# Asset License Inventory — FitToday
+# Asset License Inventory — YourStylist
 
 All media assets included in this repository have been audited for proper licensing, provenance, and commercial compliance.
 
@@ -6,7 +6,7 @@ All media assets included in this repository have been audited for proper licens
 
 ## 1. Generated AI Demo Assets (`public/images/fittoday/`)
 
-These images were generated using Google Native Image Generation tools specifically for FitToday's contemporary Bangkok fashion editorial identity. All prompts excluded real brand logos, trademarks, fake celebrity likenesses, and watermarks.
+These images were generated using Google Native Image Generation tools specifically for YourStylist's contemporary Bangkok fashion editorial identity. All prompts excluded real brand logos, trademarks, fake celebrity likenesses, and watermarks.
 
 | Filename | Generation Date | Purpose | Provenance & License |
 |---|---|---|---|

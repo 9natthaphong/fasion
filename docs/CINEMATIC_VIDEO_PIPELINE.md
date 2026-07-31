@@ -1,4 +1,4 @@
-# FitToday cinematic video pipeline
+# YourStylist cinematic video pipeline
 
 The homepage wardrobe story uses both user-provided source clips as one
 scroll-controlled, silent timeline:

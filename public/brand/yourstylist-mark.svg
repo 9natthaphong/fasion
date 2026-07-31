@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-label="YourStylist Mark">
+  <rect width="512" height="512" fill="#FAF9F6"/>
+  <!-- Y monogram representing fabric folds / collar -->
+  <path d="M156 120 L256 270 L356 120 L310 120 L256 200 L202 120 Z" fill="#2B3A2C"/>
+  <rect x="236" y="270" width="40" height="122" fill="#2B3A2C"/>
+</svg>

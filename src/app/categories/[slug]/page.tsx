@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const category = (await getPublicCategories()).find((item) => item.slug === slug);
-  return { title: category ? `${category.name_th} | FitToday` : "หมวดหมู่" };
+  return { title: category ? `${category.name_th} | YourStylist` : "หมวดหมู่" };
 }
 
 export default async function CategoryPage({
