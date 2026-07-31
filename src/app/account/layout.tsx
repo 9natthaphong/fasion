@@ -20,12 +20,14 @@ export default async function AccountLayout({ children }: { children: React.Reac
   return (
     <div className="dashboard-shell container">
       <DashboardNav title="บัญชีลูกค้า" links={links} />
-      {user.role === "admin" && (
-        <div className="mb-4 inline-flex min-h-9 items-center rounded-full border border-olive/30 bg-olive-pale/30 px-3 text-xs font-medium text-olive-dark">
-          โหมดทดสอบผู้ดูแล
-        </div>
-      )}
-      <div className="dashboard-content">{children}</div>
+      <div className="dashboard-content">
+        {user.role === "admin" && (
+          <div className="mb-4 inline-flex min-h-9 items-center rounded-full border border-olive/30 bg-olive-pale/30 px-3 text-xs font-medium text-olive-dark">
+            โหมดทดสอบผู้ดูแล
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   );
 }
