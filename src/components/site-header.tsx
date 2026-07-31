@@ -28,7 +28,7 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-line">
-      <div className="container flex items-center justify-between h-16">
+      <div className="site-header-inner container flex items-center justify-between h-16">
         <Link href="/" className="font-serif text-2xl tracking-tight text-charcoal hover:opacity-90 transition-opacity" aria-label="YourStylist หน้าหลัก">
           YourStylist
         </Link>
@@ -51,7 +51,7 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
         </nav>
 
         {/* Header Action Area */}
-        <div className="flex items-center gap-3">
+        <div className="site-header-actions flex items-center gap-3">
           {user ? (
             <UserAccountMenu user={user} />
           ) : (
@@ -67,7 +67,7 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
           {/* Primary Stylist CTA */}
           <Link
             href="/ai-stylist"
-            className="px-4 py-2 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-1.5 min-h-[44px]"
+            className="site-header-cta px-4 py-2 bg-charcoal text-background hover:bg-olive font-medium text-xs rounded-none transition-colors inline-flex items-center gap-1.5 min-h-[44px]"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>เลือกชุดวันนี้</span>
