@@ -52,6 +52,7 @@ async function getLayoutMetrics(page: Page) {
     const nav = document.querySelector(".dashboard-nav");
     const content = document.querySelector(".dashboard-content");
     const title = document.querySelector(".dashboard-content h1");
+    const headerActions = document.querySelector<HTMLElement>(".site-header-actions");
     const logout = nav?.querySelector("form") ?? null;
     const decorations = [...document.querySelectorAll<HTMLElement>("[data-account-decoration]")].map((element) => ({
       box: rect(element),
@@ -76,6 +77,8 @@ async function getLayoutMetrics(page: Page) {
       nav: navBox,
       content: contentBox,
       title: titleBox,
+      headerActions: rect(headerActions),
+      headerOverflow: headerActions ? headerActions.scrollWidth - headerActions.clientWidth : 0,
       logout: logoutBox,
       titleLogoutOverlap: overlap,
       titleStyle: title ? {
@@ -121,6 +124,7 @@ test.describe("account shell responsive layout and themes", () => {
         expect(metrics.title!.left, `${route} ${theme.name} title starts before main content`).toBeGreaterThanOrEqual(metrics.content!.left - 1);
         expect(metrics.title!.right, `${route} ${theme.name} title ends outside main content`).toBeLessThanOrEqual(metrics.content!.right + 1);
         expect(metrics.title!.width, `${route} ${theme.name} title is abnormally narrow`).toBeGreaterThan(Math.min(240, metrics.content!.width * 0.5));
+        expect(metrics.headerOverflow, `${route} ${theme.name} header actions overflow`).toBeLessThanOrEqual(1);
         expect(metrics.titleLogoutOverlap, `${route} ${theme.name} logout overlaps content`).toBe(false);
         expect(metrics.decorations.every((decoration) => {
           if (!decoration.box || !decoration.parentBox) return false;
@@ -155,6 +159,7 @@ test.describe("account shell responsive layout and themes", () => {
         await page.screenshot({ path: `test-results/account-style-memory-${viewport.name}-${theme.name}.png`, fullPage: true });
         expect(metrics.scrollWidth, `${viewport.name} ${theme.name} has horizontal overflow`).toBeLessThanOrEqual(metrics.viewportWidth + 1);
         expect(metrics.title!.width, `${viewport.name} ${theme.name} title is abnormally narrow`).toBeGreaterThan(metrics.viewportWidth * 0.55);
+        expect(metrics.headerOverflow, `${viewport.name} ${theme.name} header actions overflow`).toBeLessThanOrEqual(1);
         expect(metrics.titleLogoutOverlap, `${viewport.name} ${theme.name} logout overlaps content`).toBe(false);
       }
     }

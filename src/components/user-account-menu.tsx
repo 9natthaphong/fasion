@@ -86,7 +86,7 @@ export function UserAccountMenu({ user }: { user: CurrentUser }) {
             {initials}
           </span>
         )}
-        <span className="max-w-[120px] truncate font-medium">{displayName}</span>
+        <span className="site-header-account-label max-w-[120px] truncate font-medium">{displayName}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
