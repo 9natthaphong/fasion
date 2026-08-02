@@ -41,7 +41,7 @@ export default async function AdminAdsPage() {
 
           return (
             <article className="data-row flex flex-wrap items-center justify-between gap-4 p-4 border border-line bg-paper" key={ad.id}>
-              <div className="flex items-center gap-4 min-w-0">
+              <div className="flex items-center gap-4 min-w-0 w-full">
                 {/* Cover Thumbnail */}
                 <div className="relative w-14 h-14 bg-charcoal border border-line shrink-0 overflow-hidden flex items-center justify-center">
                   {resolvedCover ? (
@@ -65,7 +65,7 @@ export default async function AdminAdsPage() {
                 </div>
               </div>
 
-              <div className="inline-actions flex items-center gap-3">
+              <div className="inline-actions flex flex-wrap items-center gap-2">
                 <StatusBadge tone={ad.status === "active" ? "success" : ad.status === "rejected" ? "danger" : "warning"}>
                   {ad.status}
                 </StatusBadge>

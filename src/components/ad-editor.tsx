@@ -188,7 +188,7 @@ export function AdEditor({
     : "/demo-assets/ad-linen-shirt.jpg";
 
   return (
-    <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+    <div className="grid xl:grid-cols-[1fr_360px] gap-8 items-start">
       {/* Main Ad Creation Form */}
       <form
         className="space-y-8"
