@@ -24,7 +24,7 @@ const hasCredentials = Boolean(
     process.env.E2E_ADMIN_PASSWORD
 );
 
-async function login(page: any, route: string, email: string, password: string) {
+async function login(page: unknown, route: string, email: string, password: string) {
   await page.goto(route);
   await page.getByLabel("อีเมล").fill(email);
   await page.locator("#auth-password").fill(password);
@@ -32,32 +32,16 @@ async function login(page: any, route: string, email: string, password: string) 
   await page.waitForURL((url: URL) => !url.pathname.startsWith("/login"), { timeout: 15_000 });
 }
 
-// Compute luminance for WCAG contrast
-function getLuminance(r: number, g: number, b: number) {
-  const a = [r, g, b].map(function (v) {
-    v /= 255;
-    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  });
-  return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-}
-
-// Calculate contrast ratio
-function getContrastRatio(l1: number, l2: number) {
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
 test.describe("Deep UX/UI Audit across Roles, Viewports, and Themes", () => {
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach(({}) => {
     test.skip(
       !hasCredentials,
       "Authenticated E2E requires RUN_AUTHENTICATED_E2E=1 and test accounts."
     );
   });
 
-  const runAuditForRoutes = async (page: any, routes: string[], rolePrefix: string) => {
-    let contrastResults: any[] = [];
+  const runAuditForRoutes = async (page: Page, routes: string[], rolePrefix: string) => {
+    const contrastResults: unknown[] = [];
     
     for (const route of routes) {
       for (const viewport of viewports) {
@@ -67,7 +51,7 @@ test.describe("Deep UX/UI Audit across Roles, Viewports, and Themes", () => {
           await page.goto(route);
           
           // Apply theme
-          await page.evaluate(({ theme, accent }: any) => {
+          await page.evaluate(({ theme, accent }: unknown) => {
             document.documentElement.setAttribute("data-theme", theme);
             document.documentElement.setAttribute("data-accent", accent);
           }, t);
@@ -111,7 +95,7 @@ test.describe("Deep UX/UI Audit across Roles, Viewports, and Themes", () => {
             };
 
             const buttons = Array.from(document.querySelectorAll("button, a.button, a[class*='bg-']"));
-            let results = [];
+            const results = [];
             for (let i = 0; i < Math.min(buttons.length, 3); i++) {
               const el = buttons[i];
               const style = window.getComputedStyle(el);
@@ -153,7 +137,7 @@ test.describe("Deep UX/UI Audit across Roles, Viewports, and Themes", () => {
     // Collect runtime errors
     const errors: string[] = [];
     page.on("pageerror", (err: Error) => errors.push(err.message));
-    page.on("console", (msg: any) => { if (msg.type() === "error" && !msg.text().includes("webpack-hmr")) errors.push(msg.text()); });
+    page.on("console", (msg: unknown) => { if (msg.type() === "error" && !msg.text().includes("webpack-hmr")) errors.push(msg.text()); });
 
     await login(page, "/login/customer", process.env.E2E_CUSTOMER_EMAIL!, process.env.E2E_CUSTOMER_PASSWORD!);
     await expect(page).toHaveURL(/\/account/);
@@ -188,7 +172,7 @@ test.describe("Deep UX/UI Audit across Roles, Viewports, and Themes", () => {
   test("Merchant Routes Audit", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (err: Error) => errors.push(err.message));
-    page.on("console", (msg: any) => { if (msg.type() === "error" && !msg.text().includes("webpack-hmr")) errors.push(msg.text()); });
+    page.on("console", (msg: unknown) => { if (msg.type() === "error" && !msg.text().includes("webpack-hmr")) errors.push(msg.text()); });
 
     await login(page, "/login/merchant", process.env.E2E_MERCHANT_EMAIL!, process.env.E2E_MERCHANT_PASSWORD!);
     await expect(page).toHaveURL(/\/merchant/);
@@ -209,7 +193,7 @@ test.describe("Deep UX/UI Audit across Roles, Viewports, and Themes", () => {
   test("Admin Routes Audit", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (err: Error) => errors.push(err.message));
-    page.on("console", (msg: any) => { if (msg.type() === "error" && !msg.text().includes("webpack-hmr")) errors.push(msg.text()); });
+    page.on("console", (msg: unknown) => { if (msg.type() === "error" && !msg.text().includes("webpack-hmr")) errors.push(msg.text()); });
 
     await login(page, "/login/customer", process.env.E2E_ADMIN_EMAIL!, process.env.E2E_ADMIN_PASSWORD!);
     await expect(page).toHaveURL(/\/admin/);
