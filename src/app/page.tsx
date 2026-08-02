@@ -292,19 +292,19 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="home-pricing py-16 bg-muted/30" aria-labelledby="pricing-title">
+      <section className="home-pricing py-16 bg-paper/50" aria-labelledby="pricing-title">
         <div className="container">
           <header className="mb-12 text-center">
             <h2 id="pricing-title" className="text-3xl font-serif font-bold text-olive-dark mb-4">เลือกรูปแบบที่เหมาะกับคุณ</h2>
-            <p className="text-muted-foreground">ไม่มีระบบตัดเงินอัตโนมัติ ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล</p>
+            <p className="text-muted">ไม่มีระบบตัดเงินอัตโนมัติ ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล</p>
           </header>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Card */}
-            <div className="border border-border rounded-xl p-8 bg-card shadow-sm flex flex-col">
+            <div className="border border-line rounded-xl p-8 bg-paper shadow-sm flex flex-col">
               <h3 className="text-2xl font-bold mb-2">Free</h3>
-              <p className="text-muted-foreground mb-6 h-12">เริ่มจัดตู้เสื้อผ้าและรับคำแนะนำพื้นฐานได้ฟรี</p>
-              <div className="text-3xl font-bold mb-8">0 บาท <span className="text-lg font-normal text-muted-foreground">/ เดือน</span></div>
+              <p className="text-muted mb-6 h-12">เริ่มจัดตู้เสื้อผ้าและรับคำแนะนำพื้นฐานได้ฟรี</p>
+              <div className="text-3xl font-bold mb-8">0 บาท <span className="text-lg font-normal text-muted">/ เดือน</span></div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>ใช้งานตู้เสื้อผ้าส่วนตัว</span></li>
@@ -313,7 +313,7 @@ export default async function HomePage() {
               </ul>
               
               <div className="mt-auto">
-                <Link href={user ? "/account" : "/register"} className="block w-full py-3 px-4 bg-secondary text-secondary-foreground text-center rounded-lg font-medium hover:bg-secondary/80 transition-colors">
+                <Link href={user ? "/account" : "/register"} className="block w-full py-3 px-4 bg-paper border border-line text-charcoal hover:bg-paper-hover text-center rounded-lg font-medium transition-colors">
                   เริ่มใช้งานฟรี
                 </Link>
               </div>
@@ -323,13 +323,13 @@ export default async function HomePage() {
             <div className="border-2 border-olive-dark rounded-xl p-8 bg-olive-pale/30 shadow-md flex flex-col relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-olive-dark text-background text-xs font-bold px-3 py-1 rounded-bl-lg">แนะนำ</div>
               <h3 className="text-2xl font-bold mb-2 text-olive-dark">Pro</h3>
-              <p className="text-muted-foreground mb-6 h-12">YourStylist ที่จดจำกิจวัตรและช่วยวางแผนชุดให้คุณทั้งสัปดาห์</p>
+              <p className="text-muted mb-6 h-12">YourStylist ที่จดจำกิจวัตรและช่วยวางแผนชุดให้คุณทั้งสัปดาห์</p>
               
               <div className="mb-2">
-                <div className="text-3xl font-bold text-olive-dark">29 บาท <span className="text-lg font-normal text-muted-foreground">/ เดือน</span></div>
-                <div className="text-sm font-medium text-destructive mt-1">เดือนแรก 9 บาท</div>
+                <div className="text-3xl font-bold text-olive-dark">29 บาท <span className="text-lg font-normal text-muted">/ เดือน</span></div>
+                <div className="text-sm font-medium text-[#9b3930] mt-1">เดือนแรก 9 บาท</div>
               </div>
-              <div className="text-xs text-muted-foreground mb-8">ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล ไม่มีการตัดเงินอัตโนมัติ</div>
+              <div className="text-xs text-muted mb-8">ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล ไม่มีการตัดเงินอัตโนมัติ</div>
               
               <ul className="space-y-4 mb-8 flex-1 text-sm">
                 <li className="flex items-start gap-3"><Check className="w-4 h-4 text-olive-dark shrink-0 mt-1" /> <span>Weekly Style Memory</span></li>
@@ -341,7 +341,7 @@ export default async function HomePage() {
               
               <div className="mt-auto">
                 {!user ? (
-                  <Link href="/login" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+                  <Link href="/login/customer" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                     เข้าสู่ระบบเพื่ออัปเกรด
                   </Link>
                 ) : isPro ? (
@@ -349,7 +349,7 @@ export default async function HomePage() {
                     คุณเป็นสมาชิก Pro แล้ว
                   </div>
                 ) : isPending ? (
-                  <Link href="/account/subscription/payment" className="block w-full py-3 px-4 bg-secondary text-secondary-foreground text-center rounded-lg font-medium">
+                  <Link href="/account/subscription/payment" className="block w-full py-3 px-4 bg-paper border border-line text-charcoal hover:bg-paper-hover text-center rounded-lg font-medium">
                     กำลังรอตรวจสอบ
                   </Link>
                 ) : (

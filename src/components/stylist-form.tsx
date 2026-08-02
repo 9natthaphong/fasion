@@ -66,7 +66,7 @@ const quickWeathers = [
 const moodOptions = [
   { id: "casual", label: "ใส่ง่าย (Safe)", desc: "เพลย์เซฟด้วยโทนสีนิวทรัล เข้าได้กับทุกสถานการณ์" },
   { id: "smart_casual", label: "แต่งขึ้น (Elevated)", desc: "คัตติ้งเนี้ยบ เพิ่มความมั่นใจและดูมีระดับ" },
-  { id: "formal", label: "สบาย (Comfortable)", desc: "ผ้าระบายอากาศได้ดี เน้นคล่องตัวตลอดวัน" },
+  { id: "formal", label: "สุภาพ/ทางการ (Formal)", desc: "เน้นความเรียบร้อย ภูมิฐาน เหมาะกับโอกาสสำคัญ" },
 ];
 
 export function StylistForm({
