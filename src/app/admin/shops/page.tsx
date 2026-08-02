@@ -39,7 +39,7 @@ export default async function AdminShopsPage() {
 
           return (
             <article className="data-row flex flex-wrap items-center justify-between gap-4 p-4 border border-line bg-paper" key={shop.id}>
-              <div className="flex items-center gap-4 min-w-0">
+              <div className="flex items-center gap-4 min-w-0 w-full">
                 {/* Shop Logo Thumbnail */}
                 <div className="relative w-12 h-12 rounded-full bg-ivory border border-line shrink-0 overflow-hidden flex items-center justify-center">
                   {resolvedLogo ? (

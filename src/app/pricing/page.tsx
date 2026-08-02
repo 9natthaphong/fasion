@@ -41,11 +41,11 @@ export default async function PricingPage() {
           
           <div className="mt-auto">
             {user ? (
-              <Link href="/account" className="block w-full py-3 px-4 bg-secondary text-secondary-foreground text-center rounded-lg font-medium hover:bg-secondary/80 transition-colors">
+              <Link href="/account" className="block w-full py-3 px-4 bg-paper border border-line text-charcoal text-center rounded-lg font-medium hover:bg-paper-hover transition-colors">
                 บัญชีปัจจุบันของคุณ
               </Link>
             ) : (
-              <Link href="/register" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+              <Link href="/register/customer" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                 สมัครสมาชิกฟรี
               </Link>
             )}
@@ -74,7 +74,7 @@ export default async function PricingPage() {
           
           <div className="mt-auto">
             {!user ? (
-              <Link href="/login" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
+              <Link href="/login/customer" className="block w-full py-3 px-4 bg-olive-dark text-background text-center rounded-lg font-medium hover:bg-olive-dark/90 transition-colors">
                 เข้าสู่ระบบเพื่อสมัคร Pro
               </Link>
             ) : isPro ? (

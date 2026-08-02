@@ -35,19 +35,21 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
 
         {/* Desktop Main Navigation */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted" aria-label="เมนูหลัก">
-          {publicLinks.map((link) => {
-            const current = isCurrentRoute(pathname, link.href);
-            return (
-              <Link
-                href={link.href}
-                key={link.href}
-                aria-current={current ? "page" : undefined}
-                className={`transition-colors ${current ? "text-charcoal font-semibold" : "hover:text-charcoal"}`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          {publicLinks
+            .filter((link) => !(user && link.href === "/login/merchant"))
+            .map((link) => {
+              const current = isCurrentRoute(pathname, link.href);
+              return (
+                <Link
+                  href={link.href}
+                  key={link.href}
+                  aria-current={current ? "page" : undefined}
+                  className={`transition-colors ${current ? "text-charcoal font-semibold" : "hover:text-charcoal"}`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Header Action Area */}
@@ -90,15 +92,17 @@ export function SiteHeader({ user }: { user?: CurrentUser | null }) {
               )}
 
               <div className="space-y-2">
-                {publicLinks.map((link) => (
-                  <Link
-                    href={link.href}
-                    key={link.href}
-                    className="block text-sm text-charcoal hover:text-olive py-1"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {publicLinks
+                  .filter((link) => !(user && link.href === "/login/merchant"))
+                  .map((link) => (
+                    <Link
+                      href={link.href}
+                      key={link.href}
+                      className="block text-sm text-charcoal hover:text-olive py-1"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
               </div>
 
               <div className="pt-3 border-t border-line space-y-2">
