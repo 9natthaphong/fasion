@@ -75,10 +75,16 @@ export async function getPublicAds(limit = 60) {
 }
 
 export async function getPublicShops(limit = 20) {
-  if (!isSupabaseConfigured()) return demoShops.slice(0, limit);
+  const approvedDemo = demoShops.filter((s) => s.status === "approved" || s.status === undefined);
+  if (!isSupabaseConfigured()) return approvedDemo.slice(0, limit);
   const supabase = await createClient();
-  const { data, error } = await supabase.from("shops").select("*").order("created_at", { ascending: false }).limit(limit);
-  return error || !data?.length ? demoShops.slice(0, limit) : data.map((row) => mapShop(row));
+  const { data, error } = await supabase
+    .from("shops")
+    .select("*")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return error || !data?.length ? approvedDemo.slice(0, limit) : data.map((row) => mapShop(row));
 }
 
 export async function getPublicAd(slug: string) {

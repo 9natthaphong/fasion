@@ -289,6 +289,10 @@ export default async function HomePage() {
               <ShopCard shop={shop} key={shop.id} />
             ))}
           </div>
+          <Link href="/shops" className="editorial-text-link mt-8">
+            ดูร้านค้าทั้งหมด
+            <ArrowRight aria-hidden="true" />
+          </Link>
         </div>
       </section>
 
