@@ -244,7 +244,7 @@ export function StylistForm({
               : "text-muted hover:text-charcoal"
           }`}
         >
-          <Shirt className="w-4 h-4 text-olive" />
+          <Shirt className={`w-4 h-4 ${mode === "wardrobe" ? "text-background" : "text-olive"}`} />
           <span>จากตู้เสื้อผ้าของฉัน</span>
         </button>
       </div>
@@ -387,7 +387,7 @@ export function StylistForm({
                         : "border-line bg-background text-charcoal hover:border-muted"
                     }`}
                   >
-                    <IconComponent className={`w-5 h-5 shrink-0 ${isSelected ? "text-white" : "text-olive"}`} />
+                    <IconComponent className={`w-5 h-5 shrink-0 ${isSelected ? "text-background" : "text-olive"}`} />
                     <span className="text-xs font-medium">{w.label}</span>
                   </button>
                 );
@@ -421,7 +421,7 @@ export function StylistForm({
                     }`}
                   >
                     <strong className="text-xs font-semibold block">{m.label}</strong>
-                    <span className={`text-[11px] leading-tight ${isSelected ? "text-paper/80" : "text-muted"}`}>{m.desc}</span>
+                    <span className={`text-[11px] leading-tight ${isSelected ? "text-background/90" : "text-muted"}`}>{m.desc}</span>
                   </button>
                 );
               })}
@@ -556,15 +556,15 @@ export function StylistForm({
             <div className="space-y-3 text-xs text-muted leading-relaxed">
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-olive shrink-0 mt-0.5" />
-                <span><strong>คำแนะนำเป็นกลาง:</strong> ระบบจัดชุดจากความเหมาะสมของโอกาสและสภาพอากาศ 100%</span>
+                <span><strong className="text-charcoal font-semibold">คำแนะนำเป็นกลาง:</strong> ระบบจัดชุดจากความเหมาะสมของโอกาสและสภาพอากาศ 100%</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-olive shrink-0 mt-0.5" />
-                <span><strong>แยกโฆษณาชัดเจน:</strong> โฆษณาร้านค้าแสดงในส่วน Sponsored แยกต่างหาก ไม่ปะปนกับ AI</span>
+                <span><strong className="text-charcoal font-semibold">แยกโฆษณาชัดเจน:</strong> โฆษณาร้านค้าแสดงในส่วน Sponsored แยกต่างหาก ไม่ปะปนกับ AI</span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-olive shrink-0 mt-0.5" />
-                <span><strong>ไม่บังคับส่วนสูง/น้ำหนัก:</strong> คุณสามารถสร้างลุคได้ทันทีโดยไม่ต้องกรอกสัดส่วน</span>
+                <span><strong className="text-charcoal font-semibold">ไม่บังคับส่วนสูง/น้ำหนัก:</strong> คุณสามารถสร้างลุคได้ทันทีโดยไม่ต้องกรอกสัดส่วน</span>
               </div>
             </div>
           </div>
