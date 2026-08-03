@@ -327,7 +327,7 @@ export default async function HomePage() {
               
               <div className="mb-2">
                 <div className="text-3xl font-bold text-olive-dark">29 บาท <span className="text-lg font-normal text-muted">/ เดือน</span></div>
-                <div className="text-sm font-medium text-[#9b3930] mt-1">เดือนแรก 9 บาท</div>
+                <div className="text-sm font-medium text-danger mt-1">เดือนแรก 9 บาท</div>
               </div>
               <div className="text-xs text-muted mb-8">ชำระด้วยการโอนและตรวจสอบโดยผู้ดูแล ไม่มีการตัดเงินอัตโนมัติ</div>
               
