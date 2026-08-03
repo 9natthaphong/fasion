@@ -7,13 +7,6 @@ const themes = [
   { name: "dark-mono", theme: "dark", accent: "mono" },
 ];
 
-const viewports = [
-  { width: 1440, height: 1000, name: "desktop" },
-  { width: 1024, height: 768, name: "tablet" },
-  { width: 390, height: 844, name: "mobile" },
-  { width: 360, height: 800, name: "small-mobile" },
-];
-
 function getLuminance(r: number, g: number, b: number) {
   const [rs, gs, bs] = [r, g, b].map((v) => {
     v /= 255;
